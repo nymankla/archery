@@ -112,5 +112,5 @@ E:\utv\POC\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\aspire-sample.
 E:\utv\poc\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\aspire-sample.Web.genruntimeconfig.cache
 E:\utv\poc\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\ref\aspire-sample.Web.dll
 E:\utv\POC\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\compressed\qsrr75iiiv-{0}-5tcmr61h0s-5tcmr61h0s.gz
-E:\utv\poc\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\compressed\0pwkhely9t-{0}-qq86awr7h1-qq86awr7h1.gz
-E:\utv\poc\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\compressed\wqszq3tb5e-{0}-qq86awr7h1-qq86awr7h1.gz
+e:\utv\POC\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\compressed\0pwkhely9t-{0}-ek7tb37u38-ek7tb37u38.gz
+e:\utv\POC\aspire-sample\test\aspire-sample.Web\obj\Debug\net10.0\compressed\wqszq3tb5e-{0}-ek7tb37u38-ek7tb37u38.gz

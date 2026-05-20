@@ -15,7 +15,7 @@ public class aspire_sample_Web : global::Aspire.Hosting.IProjectMetadata
     /// <summary>
     /// The path to the aspire_sample_Web project.
     /// </summary>
-    public string ProjectPath => """E:\utv\POC\aspire-sample\test\aspire-sample.Web\aspire-sample.Web.csproj""";
+    public string ProjectPath => """e:\utv\POC\aspire-sample\test\aspire-sample.Web\aspire-sample.Web.csproj""";
 
     /// <summary>
     /// Gets a value indicating whether building the project before running it should be suppressed.

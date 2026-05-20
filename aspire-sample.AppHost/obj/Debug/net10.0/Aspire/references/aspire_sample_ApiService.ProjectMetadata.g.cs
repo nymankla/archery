@@ -15,7 +15,7 @@ public class aspire_sample_ApiService : global::Aspire.Hosting.IProjectMetadata
     /// <summary>
     /// The path to the aspire_sample_ApiService project.
     /// </summary>
-    public string ProjectPath => """E:\utv\POC\aspire-sample\test\aspire-sample.ApiService\aspire-sample.ApiService.csproj""";
+    public string ProjectPath => """e:\utv\POC\aspire-sample\test\aspire-sample.ApiService\aspire-sample.ApiService.csproj""";
 
     /// <summary>
     /// Gets a value indicating whether building the project before running it should be suppressed.

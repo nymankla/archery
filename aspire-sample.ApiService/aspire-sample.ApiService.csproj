@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
     <PackageReference Include="NymBroker" Version="0.0.2" />
     <PackageReference Include="NymBroker.Postgres" Version="0.0.2" />
     <PackageReference Include="NymBroker.RabbitMq" Version="0.0.2" />
