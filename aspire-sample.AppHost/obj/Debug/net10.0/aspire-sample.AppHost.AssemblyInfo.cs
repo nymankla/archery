@@ -15,15 +15,15 @@ using System.Reflection;
     "ols\\dcp.exe"))]
 [assembly: System.Reflection.AssemblyMetadata("dcpextensionpaths", ("C:\\Users\\KlasNyman\\.nuget\\packages\\aspire.hosting.orchestration.win-x64\\13.3.4\\to" +
     "ols\\ext\\"))]
-[assembly: System.Reflection.AssemblyMetadata("apphostprojectpath", "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost")]
+[assembly: System.Reflection.AssemblyMetadata("apphostprojectpath", "E:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost")]
 [assembly: System.Reflection.AssemblyMetadata("apphostprojectname", "aspire-sample.AppHost.csproj")]
 [assembly: System.Reflection.AssemblyMetadata("aspiredashboardpath", ("C:\\Users\\KlasNyman\\.nuget\\packages\\aspire.dashboard.sdk.win-x64\\13.3.4\\tools\\Aspi" +
     "re.Dashboard.exe"))]
-[assembly: System.Reflection.AssemblyMetadataAttribute("apphostprojectbaseintermediateoutputpath", "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost\\obj\\")]
+[assembly: System.Reflection.AssemblyMetadataAttribute("apphostprojectbaseintermediateoutputpath", "E:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost\\obj\\")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("aspire-sample.AppHost")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e205cc5526417f0daed1e8b518f8b27163bf0824")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5874d6e07a046bb8ff1674f51ccbcbcabc60dc70")]
 [assembly: System.Reflection.AssemblyProductAttribute("aspire-sample.AppHost")]
 [assembly: System.Reflection.AssemblyTitleAttribute("aspire-sample.AppHost")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

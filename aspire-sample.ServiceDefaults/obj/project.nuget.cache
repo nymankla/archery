@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "F9oRe9g66AU=",
+  "dgSpecHash": "l9zJKrYe/nQ=",
   "success": true,
-  "projectFilePath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj",
+  "projectFilePath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\KlasNyman\\.nuget\\packages\\microsoft.extensions.ambientmetadata.application\\10.6.0\\microsoft.extensions.ambientmetadata.application.10.6.0.nupkg.sha512",
     "C:\\Users\\KlasNyman\\.nuget\\packages\\microsoft.extensions.compliance.abstractions\\10.6.0\\microsoft.extensions.compliance.abstractions.10.6.0.nupkg.sha512",

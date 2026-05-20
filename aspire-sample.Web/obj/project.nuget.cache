@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "7iLdPl++VJ4=",
+  "dgSpecHash": "rl4D2c5GQP0=",
   "success": true,
-  "projectFilePath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.Web\\aspire-sample.Web.csproj",
+  "projectFilePath": "E:\\utv\\POC\\aspire-sample\\test\\aspire-sample.Web\\aspire-sample.Web.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\KlasNyman\\.nuget\\packages\\aspire.stackexchange.redis\\13.3.4\\aspire.stackexchange.redis.13.3.4.nupkg.sha512",
     "C:\\Users\\KlasNyman\\.nuget\\packages\\aspire.stackexchange.redis.outputcaching\\13.3.4\\aspire.stackexchange.redis.outputcaching.13.3.4.nupkg.sha512",

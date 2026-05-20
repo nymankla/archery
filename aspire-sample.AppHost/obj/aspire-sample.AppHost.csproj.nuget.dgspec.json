@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj": {}
+    "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj": {}
   },
   "projects": {
-    "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj": {
+    "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj",
+        "projectUniqueName": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj",
         "projectName": "aspire-sample.AppHost",
-        "projectPath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj",
+        "projectPath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.AppHost\\aspire-sample.AppHost.csproj",
         "packagesPath": "C:\\Users\\KlasNyman\\.nuget\\packages\\",
-        "outputPath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.AppHost\\obj\\",
+        "outputPath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.AppHost\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "e:\\utv\\POC\\aspire-sample\\test\\NuGet.Config",
+          "E:\\utv\\poc\\aspire-sample\\test\\NuGet.Config",
           "C:\\Users\\KlasNyman\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"

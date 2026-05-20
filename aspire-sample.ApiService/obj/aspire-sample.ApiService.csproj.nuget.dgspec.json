@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj": {}
+    "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj": {}
   },
   "projects": {
-    "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj": {
+    "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj",
+        "projectUniqueName": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj",
         "projectName": "aspire-sample.ApiService",
-        "projectPath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj",
+        "projectPath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ApiService\\aspire-sample.ApiService.csproj",
         "packagesPath": "C:\\Users\\KlasNyman\\.nuget\\packages\\",
-        "outputPath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ApiService\\obj\\",
+        "outputPath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ApiService\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "e:\\utv\\POC\\aspire-sample\\test\\NuGet.Config",
+          "E:\\utv\\poc\\aspire-sample\\test\\NuGet.Config",
           "C:\\Users\\KlasNyman\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
@@ -34,8 +34,8 @@
           "net10.0": {
             "targetAlias": "net10.0",
             "projectReferences": {
-              "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj": {
-                "projectPath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj"
+              "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj": {
+                "projectPath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj"
               }
             }
           }
@@ -56,9 +56,19 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "dependencies": {
+            "Aspire.Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[13.3.4, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[10.0.8, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[10.0.0, )"
             },
             "NymBroker": {
               "target": "Package",
@@ -514,20 +524,20 @@
         }
       }
     },
-    "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj": {
+    "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj",
+        "projectUniqueName": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj",
         "projectName": "aspire-sample.ServiceDefaults",
-        "projectPath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj",
+        "projectPath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\aspire-sample.ServiceDefaults.csproj",
         "packagesPath": "C:\\Users\\KlasNyman\\.nuget\\packages\\",
-        "outputPath": "e:\\utv\\POC\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\obj\\",
+        "outputPath": "E:\\utv\\poc\\aspire-sample\\test\\aspire-sample.ServiceDefaults\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "e:\\utv\\POC\\aspire-sample\\test\\NuGet.Config",
+          "E:\\utv\\poc\\aspire-sample\\test\\NuGet.Config",
           "C:\\Users\\KlasNyman\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
