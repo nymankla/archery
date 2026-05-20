@@ -21,6 +21,7 @@
     <PackageReference Include="NymBroker.Postgres" Version="0.0.2" />
     <PackageReference Include="NymBroker.RabbitMq" Version="0.0.2" />
     <PackageReference Include="NymBroker.Sqlite" Version="0.0.2" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.14.14" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,36 @@
-﻿@page "/"
+@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Archery Club</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Archery Club</h1>
+<p class="lead">Manage members, competitions, and results.</p>
 
-Welcome to your new app.
+<div class="row g-4 mt-2">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Members</h5>
+                <p class="card-text">Register and manage club members, contact info, and membership fees.</p>
+                <a href="/members" class="btn btn-primary">Go to Members</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Competitions</h5>
+                <p class="card-text">Create competitions, manage participants, and record results.</p>
+                <a href="/competitions" class="btn btn-primary">Go to Competitions</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">External Participants</h5>
+                <p class="card-text">Register participants from other clubs who take part in competitions.</p>
+                <a href="/external-participants" class="btn btn-primary">Go to External Participants</a>
+            </div>
+        </div>
+    </div>
+</div>

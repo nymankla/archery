@@ -1,0 +1,207 @@
+@page "/members/{Id:guid}"
+@rendermode InteractiveServer
+@inject ArcheryApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>@(member?.FullName ?? "Member")</PageTitle>
+
+@if (member == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@member.FullName</h1>
+        <a href="/members" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <dl class="row">
+                <dt class="col-sm-4">Email</dt>
+                <dd class="col-sm-8">@(member.Email ?? "—")</dd>
+                <dt class="col-sm-4">Phone</dt>
+                <dd class="col-sm-8">@(member.Phone ?? "—")</dd>
+                <dt class="col-sm-4">Address</dt>
+                <dd class="col-sm-8">@(member.Address ?? "—")</dd>
+                <dt class="col-sm-4">Date of Birth</dt>
+                <dd class="col-sm-8">@member.DateOfBirth.ToString("yyyy-MM-dd")</dd>
+                <dt class="col-sm-4">Join Date</dt>
+                <dd class="col-sm-8">@member.JoinDate.ToString("yyyy-MM-dd")</dd>
+                <dt class="col-sm-4">Bow Class</dt>
+                <dd class="col-sm-8">@member.PreferredBowClass</dd>
+                <dt class="col-sm-4">Status</dt>
+                <dd class="col-sm-8">
+                    @if (member.IsActive)
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactive</span>
+                    }
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Membership Fees</h2>
+        <button class="btn btn-primary btn-sm" @onclick="ShowAddFeeForm">Add Fee</button>
+    </div>
+
+    @if (showFeeForm)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">@(editingFee!.Id == Guid.Empty ? "New Fee" : "Edit Fee")</h6>
+                <EditForm Model="editingFee" OnValidSubmit="SaveFee">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Year</label>
+                            <InputNumber @bind-Value="editingFee.Year" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Amount</label>
+                            <InputNumber @bind-Value="editingFee.Amount" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Due Date</label>
+                            <InputDate @bind-Value="editingFee.DueDate" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <InputSelect @bind-Value="editingFee.Status" class="form-select">
+                                @foreach (var val in Enum.GetValues<FeeStatus>())
+                                {
+                                    <option value="@val">@val</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Paid Date</label>
+                            <InputDate @bind-Value="editingFee.PaidDate" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success">Save</button>
+                        <button type="button" class="btn btn-secondary ms-2" @onclick="CancelFeeForm">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @if (fees == null)
+    {
+        <p><em>Loading fees...</em></p>
+    }
+    else if (fees.Length == 0)
+    {
+        <p>No fees recorded.</p>
+    }
+    else
+    {
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Paid Date</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var fee in fees)
+                {
+                    <tr>
+                        <td>@fee.Year</td>
+                        <td>@fee.Amount.ToString("C")</td>
+                        <td>@fee.DueDate.ToString("yyyy-MM-dd")</td>
+                        <td>@(fee.PaidDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td>
+                            <span class="badge @FeeStatusClass(fee.Status)">@fee.Status</span>
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ShowEditFeeForm(fee)">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFee(fee.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    Member? member;
+    MembershipFee[]? fees;
+    MembershipFee? editingFee;
+    bool showFeeForm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        member = await Api.GetMemberAsync(Id);
+        await ReloadFees();
+    }
+
+    async Task ReloadFees()
+    {
+        fees = await Api.GetFeesByMemberAsync(Id) ?? [];
+    }
+
+    void ShowAddFeeForm()
+    {
+        editingFee = new MembershipFee
+        {
+            MemberId = Id,
+            DueDate = new DateOnly(DateTime.Today.Year, 12, 31)
+        };
+        showFeeForm = true;
+    }
+
+    void ShowEditFeeForm(MembershipFee f)
+    {
+        editingFee = new MembershipFee
+        {
+            Id = f.Id, MemberId = f.MemberId, Year = f.Year,
+            Amount = f.Amount, DueDate = f.DueDate,
+            PaidDate = f.PaidDate, Status = f.Status
+        };
+        showFeeForm = true;
+    }
+
+    void CancelFeeForm()
+    {
+        showFeeForm = false;
+        editingFee = null;
+    }
+
+    async Task SaveFee()
+    {
+        if (editingFee!.Id == Guid.Empty)
+            await Api.CreateFeeAsync(editingFee);
+        else
+            await Api.UpdateFeeAsync(editingFee.Id, editingFee);
+        showFeeForm = false;
+        await ReloadFees();
+    }
+
+    async Task DeleteFee(Guid id)
+    {
+        await Api.DeleteFeeAsync(id);
+        await ReloadFees();
+    }
+
+    static string FeeStatusClass(FeeStatus s) => s switch
+    {
+        FeeStatus.Paid => "bg-success",
+        FeeStatus.Partial => "bg-warning text-dark",
+        _ => "bg-danger"
+    };
+}
