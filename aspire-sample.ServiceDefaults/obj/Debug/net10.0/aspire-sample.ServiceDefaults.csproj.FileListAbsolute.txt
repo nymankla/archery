@@ -1,0 +1,12 @@
+E:\utv\poc\aspire-sample\test\aspire-sample.ServiceDefaults\bin\Debug\net10.0\aspire-sample.ServiceDefaults.deps.json
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\bin\Debug\net10.0\aspire-sample.ServiceDefaults.dll
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\bin\Debug\net10.0\aspire-sample.ServiceDefaults.pdb
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\aspire-sample.ServiceDefaults.csproj.AssemblyReference.cache
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\aspire-sample.ServiceDefaults.GeneratedMSBuildEditorConfig.editorconfig
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\aspire-sample.ServiceDefaults.AssemblyInfoInputs.cache
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\aspire-sample.ServiceDefaults.AssemblyInfo.cs
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\aspire-sample.ServiceDefaults.csproj.CoreCompileInputs.cache
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\aspire-sample.ServiceDefaults.dll
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\refint\aspire-sample.ServiceDefaults.dll
+E:\utv\POC\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\aspire-sample.ServiceDefaults.pdb
+E:\utv\poc\aspire-sample\test\aspire-sample.ServiceDefaults\obj\Debug\net10.0\ref\aspire-sample.ServiceDefaults.dll

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\aspire-sample.ServiceDefaults\aspire-sample.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="NymBroker" Version="0.0.2" />
+    <PackageReference Include="NymBroker.Postgres" Version="0.0.2" />
+    <PackageReference Include="NymBroker.RabbitMq" Version="0.0.2" />
+    <PackageReference Include="NymBroker.Sqlite" Version="0.0.2" />
+  </ItemGroup>
+
+</Project>
