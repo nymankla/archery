@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.Json.Serialization;
 using aspire_sample.ApiService.Data;
 using aspire_sample.ApiService.Endpoints;
 using Microsoft.EntityFrameworkCore;
@@ -5,9 +7,15 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
+
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(o =>
+    o.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
 builder.AddNpgsqlDbContext<ArcheryDbContext>("db");
 

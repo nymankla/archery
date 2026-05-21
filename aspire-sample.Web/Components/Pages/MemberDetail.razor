@@ -68,7 +68,7 @@ else
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Due Date</label>
-                            <InputDate @bind-Value="editingFee.DueDate" class="form-control" />
+                            <InputDate @bind-Value="editingFee.DueDate" @bind-Value:culture="CultureInfo.CurrentCulture" class="form-control" />
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Status</label>
@@ -81,7 +81,7 @@ else
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Paid Date</label>
-                            <InputDate @bind-Value="editingFee.PaidDate" class="form-control" />
+                            <InputDate @bind-Value="editingFee.PaidDate" @bind-Value:culture="CultureInfo.CurrentCulture" class="form-control" />
                         </div>
                     </div>
                     <div class="mt-3">
@@ -160,7 +160,9 @@ else
         editingFee = new MembershipFee
         {
             MemberId = Id,
-            DueDate = new DateOnly(DateTime.Today.Year, 12, 31)
+            Year = DateTime.Today.Year,
+            DueDate = new DateOnly(DateTime.Today.Year, 12, 31),
+            PaidDate = DateOnly.FromDateTime(DateTime.Today)
         };
         showFeeForm = true;
     }

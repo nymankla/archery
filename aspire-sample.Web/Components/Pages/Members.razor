@@ -38,11 +38,11 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Date of Birth</label>
-                        <InputDate @bind-Value="editing.DateOfBirth" class="form-control" />
+                        <InputDate @bind-Value="editing.DateOfBirth" @bind-Value:culture="CultureInfo.CurrentCulture" class="form-control" />
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Join Date</label>
-                        <InputDate @bind-Value="editing.JoinDate" class="form-control" />
+                        <InputDate @bind-Value="editing.JoinDate" @bind-Value:culture="CultureInfo.CurrentCulture" class="form-control" />
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Bow Class</label>
@@ -134,7 +134,8 @@ else
 
     void ShowAddForm()
     {
-        editing = new Member { JoinDate = DateOnly.FromDateTime(DateTime.Today) };
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        editing = new Member { DateOfBirth = today, JoinDate = today };
         showForm = true;
     }
 

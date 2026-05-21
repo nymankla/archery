@@ -22,7 +22,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Date</label>
-                        <InputDate @bind-Value="editing.Date" class="form-control" />
+                        <InputDate @bind-Value="editing.Date" @bind-Value:culture="CultureInfo.CurrentCulture" class="form-control" />
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Location</label>
