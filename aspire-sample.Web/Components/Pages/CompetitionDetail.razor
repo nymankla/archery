@@ -32,6 +32,132 @@ else
     </dl>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Participants</h2>
+        <button class="btn btn-primary btn-sm" @onclick="ShowAddParticipantForm">Register Participant</button>
+    </div>
+
+    @if (showParticipantForm)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">Register Participant</h6>
+                <EditForm Model="editingParticipant" OnValidSubmit="SaveParticipant">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" id="ppMember" @onchange="() => participantFormType = ParticipantType.Member" checked="@(participantFormType == ParticipantType.Member)" />
+                                <label class="btn btn-outline-primary" for="ppMember">Club Member</label>
+                                <input type="radio" class="btn-check" id="ppExternal" @onchange="() => participantFormType = ParticipantType.External" checked="@(participantFormType == ParticipantType.External)" />
+                                <label class="btn btn-outline-primary" for="ppExternal">External Participant</label>
+                            </div>
+                        </div>
+
+                        @if (participantFormType == ParticipantType.Member)
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label">Member</label>
+                                <InputSelect @bind-Value="editingParticipant!.MemberId" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    @foreach (var m in members ?? [])
+                                    {
+                                        <option value="@m.Id">@m.FullName</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label">External Participant</label>
+                                <InputSelect @bind-Value="editingParticipant!.ExternalParticipantId" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    @foreach (var p in externalParticipants ?? [])
+                                    {
+                                        <option value="@p.Id">@p.FullName (@(p.ClubAffiliation ?? "no club"))</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        }
+
+                        <div class="col-md-4">
+                            <label class="form-label">Bow Class</label>
+                            <InputSelect @bind-Value="editingParticipant!.BowClass" class="form-select">
+                                @foreach (var val in Enum.GetValues<BowClass>())
+                                {
+                                    <option value="@val">@val</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Age Class</label>
+                            <InputSelect @bind-Value="editingParticipant!.AgeClass" class="form-select">
+                                @foreach (var val in Enum.GetValues<AgeClass>())
+                                {
+                                    <option value="@val">@val</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Gender</label>
+                            <InputSelect @bind-Value="editingParticipant!.Gender" class="form-select">
+                                @foreach (var val in Enum.GetValues<Gender>())
+                                {
+                                    <option value="@val">@val</option>
+                                }
+                            </InputSelect>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(participantFormError))
+                    {
+                        <div class="alert alert-danger mt-3">@participantFormError</div>
+                    }
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success">Register</button>
+                        <button type="button" class="btn btn-secondary ms-2" @onclick="CancelParticipantForm">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    @if (competitionParticipants == null)
+    {
+        <p><em>Loading participants...</em></p>
+    }
+    else if (competitionParticipants.Length == 0)
+    {
+        <p>No participants registered yet.</p>
+    }
+    else
+    {
+        <table class="table table-sm table-striped mb-4">
+            <thead>
+                <tr>
+                    <th>Participant</th>
+                    <th>Bow Class</th>
+                    <th>Age Class</th>
+                    <th>Gender</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in competitionParticipants)
+                {
+                    <tr>
+                        <td>@p.ParticipantName</td>
+                        <td>@p.BowClass</td>
+                        <td>@p.AgeClass</td>
+                        <td>@p.Gender</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveParticipant(p.Id)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Results</h2>
         <button class="btn btn-primary btn-sm" @onclick="ShowAddResultForm">Add Result</button>
     </div>
@@ -195,9 +321,14 @@ else
     enum ParticipantType { Member, External }
 
     Competition? competition;
+    CompetitionParticipant[]? competitionParticipants;
     CompetitionResult[]? results;
     Member[]? members;
     ExternalParticipant[]? externalParticipants;
+    CompetitionParticipant? editingParticipant;
+    bool showParticipantForm;
+    string? participantFormError;
+    ParticipantType participantFormType = ParticipantType.Member;
     CompetitionResult? editingResult;
     bool showResultForm;
     string? formError;
@@ -212,12 +343,62 @@ else
             Api.GetExternalParticipantsAsync().ContinueWith(t => externalParticipants = t.Result ?? [])
         };
         await Task.WhenAll(tasks);
-        await ReloadResults();
+        await Task.WhenAll(ReloadParticipants(), ReloadResults());
+    }
+
+    async Task ReloadParticipants()
+    {
+        competitionParticipants = await Api.GetParticipantsByCompetitionAsync(Id) ?? [];
     }
 
     async Task ReloadResults()
     {
         results = await Api.GetResultsByCompetitionAsync(Id) ?? [];
+    }
+
+    void ShowAddParticipantForm()
+    {
+        editingParticipant = new CompetitionParticipant { CompetitionId = Id };
+        participantFormType = ParticipantType.Member;
+        participantFormError = null;
+        showParticipantForm = true;
+    }
+
+    void CancelParticipantForm()
+    {
+        showParticipantForm = false;
+        editingParticipant = null;
+        participantFormError = null;
+    }
+
+    async Task SaveParticipant()
+    {
+        if (participantFormType == ParticipantType.Member)
+            editingParticipant!.ExternalParticipantId = null;
+        else
+            editingParticipant!.MemberId = null;
+
+        if (editingParticipant.MemberId == null && editingParticipant.ExternalParticipantId == null)
+        {
+            participantFormError = "Please select a participant.";
+            return;
+        }
+
+        var response = await Api.RegisterParticipantAsync(editingParticipant);
+        if (!response.IsSuccessStatusCode)
+        {
+            participantFormError = await response.Content.ReadAsStringAsync();
+            return;
+        }
+
+        showParticipantForm = false;
+        await ReloadParticipants();
+    }
+
+    async Task RemoveParticipant(Guid id)
+    {
+        await Api.RemoveParticipantAsync(id);
+        await ReloadParticipants();
     }
 
     void ShowAddResultForm()

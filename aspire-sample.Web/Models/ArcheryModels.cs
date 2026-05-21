@@ -1,5 +1,11 @@
 namespace aspire_sample.Web;
 
+public class ImportResult
+{
+    public int Imported { get; set; }
+    public List<string> Errors { get; set; } = [];
+}
+
 public enum BowClass { Recurve, Compound, Barebow, Traditional }
 public enum AgeClass { Cadet, Junior, Senior, Master }
 public enum Gender { Male, Female, NonBinary, Unknown }
@@ -52,6 +58,20 @@ public class ExternalParticipant
     public string? Email { get; set; }
     public string? ClubAffiliation { get; set; }
     public string FullName => $"{FirstName} {LastName}";
+}
+
+public class CompetitionParticipant
+{
+    public Guid Id { get; set; }
+    public Guid CompetitionId { get; set; }
+    public Guid? MemberId { get; set; }
+    public Member? Member { get; set; }
+    public Guid? ExternalParticipantId { get; set; }
+    public ExternalParticipant? ExternalParticipant { get; set; }
+    public BowClass BowClass { get; set; }
+    public AgeClass AgeClass { get; set; }
+    public Gender Gender { get; set; }
+    public string ParticipantName => Member?.FullName ?? ExternalParticipant?.FullName ?? "Unknown";
 }
 
 public class CompetitionResult

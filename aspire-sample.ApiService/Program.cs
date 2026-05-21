@@ -38,10 +38,12 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/", () => "Archery Club API");
 
 app.MapMemberEndpoints();
+app.MapMemberImportEndpoints();
 app.MapMembershipFeeEndpoints();
 app.MapCompetitionEndpoints();
 app.MapExternalParticipantEndpoints();
 app.MapCompetitionResultEndpoints();
+app.MapCompetitionParticipantEndpoints();
 
 app.MapDefaultEndpoints();
 

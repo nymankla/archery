@@ -21,6 +21,8 @@ builder.Services.AddHttpClient<ArcheryApiClient>(client =>
         client.BaseAddress = new("https+http://apiservice");
     });
 
+builder.Services.AddHttpClient("external");
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

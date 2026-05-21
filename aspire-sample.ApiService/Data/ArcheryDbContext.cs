@@ -10,6 +10,7 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
     public DbSet<Competition> Competitions => Set<Competition>();
     public DbSet<ExternalParticipant> ExternalParticipants => Set<ExternalParticipant>();
     public DbSet<CompetitionResult> CompetitionResults => Set<CompetitionResult>();
+    public DbSet<CompetitionParticipant> CompetitionParticipants => Set<CompetitionParticipant>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -90,6 +91,41 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.HasIndex(r => new { r.CompetitionId, r.MemberId }).IsUnique()
              .HasFilter("\"MemberId\" IS NOT NULL");
             e.HasIndex(r => new { r.CompetitionId, r.ExternalParticipantId }).IsUnique()
+             .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
+        });
+
+        modelBuilder.Entity<CompetitionParticipant>(e =>
+        {
+            e.HasKey(p => p.Id);
+            e.Property(p => p.BowClass).HasConversion<string>().HasMaxLength(20);
+            e.Property(p => p.AgeClass).HasConversion<string>().HasMaxLength(20);
+            e.Property(p => p.Gender).HasConversion<string>().HasMaxLength(20);
+
+            e.HasOne(p => p.Competition)
+             .WithMany()
+             .HasForeignKey(p => p.CompetitionId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(p => p.Member)
+             .WithMany()
+             .HasForeignKey(p => p.MemberId)
+             .OnDelete(DeleteBehavior.SetNull)
+             .IsRequired(false);
+
+            e.HasOne(p => p.ExternalParticipant)
+             .WithMany()
+             .HasForeignKey(p => p.ExternalParticipantId)
+             .OnDelete(DeleteBehavior.SetNull)
+             .IsRequired(false);
+
+            e.ToTable(t => t.HasCheckConstraint(
+                "CK_CompetitionParticipant_SingleParticipant",
+                "(\"MemberId\" IS NOT NULL AND \"ExternalParticipantId\" IS NULL) OR " +
+                "(\"MemberId\" IS NULL AND \"ExternalParticipantId\" IS NOT NULL)"));
+
+            e.HasIndex(p => new { p.CompetitionId, p.MemberId }).IsUnique()
+             .HasFilter("\"MemberId\" IS NOT NULL");
+            e.HasIndex(p => new { p.CompetitionId, p.ExternalParticipantId }).IsUnique()
              .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
         });
     }

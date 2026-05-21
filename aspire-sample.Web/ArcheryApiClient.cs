@@ -2,6 +2,20 @@ namespace aspire_sample.Web;
 
 public class ArcheryApiClient(HttpClient httpClient)
 {
+    public async Task<ImportResult?> ImportMembersAsync(byte[] content, string fileName, CancellationToken ct = default)
+    {
+        using var form = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(content);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(
+            fileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)
+                ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                : "text/csv");
+        form.Add(fileContent, "file", fileName);
+        var response = await httpClient.PostAsync("/members/import", form, ct);
+        if (!response.IsSuccessStatusCode) return null;
+        return await response.Content.ReadFromJsonAsync<ImportResult>(ct);
+    }
+
     public Task<Member[]?> GetMembersAsync(CancellationToken ct = default)
         => httpClient.GetFromJsonAsync<Member[]>("/members", ct);
 
@@ -55,6 +69,15 @@ public class ArcheryApiClient(HttpClient httpClient)
 
     public Task<HttpResponseMessage> DeleteExternalParticipantAsync(Guid id, CancellationToken ct = default)
         => httpClient.DeleteAsync($"/external-participants/{id}", ct);
+
+    public Task<CompetitionParticipant[]?> GetParticipantsByCompetitionAsync(Guid competitionId, CancellationToken ct = default)
+        => httpClient.GetFromJsonAsync<CompetitionParticipant[]>($"/competition-participants/competition/{competitionId}", ct);
+
+    public Task<HttpResponseMessage> RegisterParticipantAsync(CompetitionParticipant participant, CancellationToken ct = default)
+        => httpClient.PostAsJsonAsync("/competition-participants", participant, ct);
+
+    public Task<HttpResponseMessage> RemoveParticipantAsync(Guid id, CancellationToken ct = default)
+        => httpClient.DeleteAsync($"/competition-participants/{id}", ct);
 
     public Task<CompetitionResult[]?> GetResultsByCompetitionAsync(Guid competitionId, CancellationToken ct = default)
         => httpClient.GetFromJsonAsync<CompetitionResult[]>($"/competition-results/competition/{competitionId}", ct);
