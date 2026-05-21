@@ -20,7 +20,7 @@ public static class MemberEndpoints
     }
 
     static async Task<IResult> GetAllMembers(ArcheryDbContext db, CancellationToken ct)
-        => Results.Ok(await db.Members.AsNoTracking().ToListAsync(ct));
+        => Results.Ok(await db.Members.AsNoTracking().OrderBy(m => m.LastName).ThenBy(m => m.FirstName).ToListAsync(ct));
 
     static async Task<IResult> GetMemberById(Guid id, ArcheryDbContext db, CancellationToken ct)
         => await db.Members.FindAsync([id], ct) is { } m

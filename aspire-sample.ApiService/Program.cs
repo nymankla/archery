@@ -42,6 +42,7 @@ app.MapMemberImportEndpoints();
 app.MapMembershipFeeEndpoints();
 app.MapCompetitionEndpoints();
 app.MapExternalParticipantEndpoints();
+app.MapExternalParticipantImportEndpoints();
 app.MapCompetitionResultEndpoints();
 app.MapCompetitionParticipantEndpoints();
 

@@ -143,13 +143,20 @@ else
             <tbody>
                 @foreach (var p in competitionParticipants)
                 {
+                    var hasResult = p.MemberId.HasValue
+                        ? (results ?? []).Any(r => r.MemberId == p.MemberId)
+                        : (results ?? []).Any(r => r.ExternalParticipantId == p.ExternalParticipantId);
                     <tr>
                         <td>@p.ParticipantName</td>
                         <td>@p.BowClass</td>
                         <td>@p.AgeClass</td>
                         <td>@p.Gender</td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveParticipant(p.Id)">Remove</button>
+                            @if (!hasResult)
+                            {
+                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => ShowAddResultFromParticipant(p)">Enter Result</button>
+                            }
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveParticipant(p)">Remove</button>
                         </td>
                     </tr>
                 }
@@ -168,6 +175,25 @@ else
             <div class="card-body">
                 <h6 class="card-title">@(editingResult!.Id == Guid.Empty ? "New Result" : "Edit Result")</h6>
                 <EditForm Model="editingResult" OnValidSubmit="SaveResult">
+                    @if (editingResult!.Id == Guid.Empty)
+                    {
+                        var available = RegisteredWithoutResult().ToList();
+                        @if (available.Count > 0)
+                        {
+                            <div class="mb-3">
+                                <span class="text-muted small">Fill from registered participant: </span>
+                                <div class="d-flex flex-wrap gap-2 mt-1">
+                                    @foreach (var p in available)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="() => FillFromParticipant(p)">
+                                            @p.ParticipantName
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                            <hr class="mt-0 mb-3" />
+                        }
+                    }
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="btn-group" role="group">
@@ -306,7 +332,7 @@ else
                         <td>@(r.IsDisqualified ? "Yes" : "")</td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ShowEditResultForm(r)">Edit</button>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteResult(r.Id)">Delete</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteResult(r)">Delete</button>
                         </td>
                     </tr>
                 }
@@ -315,8 +341,14 @@ else
     }
 }
 
+<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" ConfirmLabel="@confirmLabel" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+
 @code {
     [Parameter] public Guid Id { get; set; }
+
+    bool confirmVisible; string confirmMessage = string.Empty; string confirmLabel = "Delete"; Func<Task>? confirmAction;
+    void Confirm(string msg, Func<Task> action, string label = "Delete") { confirmMessage = msg; confirmLabel = label; confirmAction = action; confirmVisible = true; }
+    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
 
     enum ParticipantType { Member, External }
 
@@ -395,10 +427,35 @@ else
         await ReloadParticipants();
     }
 
-    async Task RemoveParticipant(Guid id)
+    void RemoveParticipant(CompetitionParticipant p) =>
+        Confirm($"Remove {p.ParticipantName} from this competition?", async () =>
+        {
+            await Api.RemoveParticipantAsync(p.Id);
+            await ReloadParticipants();
+        }, label: "Remove");
+
+    IEnumerable<CompetitionParticipant> RegisteredWithoutResult() =>
+        (competitionParticipants ?? []).Where(p =>
+            p.MemberId.HasValue
+                ? !(results ?? []).Any(r => r.MemberId == p.MemberId)
+                : !(results ?? []).Any(r => r.ExternalParticipantId == p.ExternalParticipantId));
+
+    void FillFromParticipant(CompetitionParticipant p)
     {
-        await Api.RemoveParticipantAsync(id);
-        await ReloadParticipants();
+        editingResult!.MemberId = p.MemberId;
+        editingResult.ExternalParticipantId = p.ExternalParticipantId;
+        editingResult.BowClass = p.BowClass;
+        editingResult.AgeClass = p.AgeClass;
+        editingResult.Gender = p.Gender;
+        participantType = p.MemberId.HasValue ? ParticipantType.Member : ParticipantType.External;
+    }
+
+    void ShowAddResultFromParticipant(CompetitionParticipant p)
+    {
+        editingResult = new CompetitionResult { CompetitionId = Id };
+        FillFromParticipant(p);
+        formError = null;
+        showResultForm = true;
     }
 
     void ShowAddResultForm()
@@ -460,9 +517,10 @@ else
         await ReloadResults();
     }
 
-    async Task DeleteResult(Guid id)
-    {
-        await Api.DeleteResultAsync(id);
-        await ReloadResults();
-    }
+    void DeleteResult(CompetitionResult r) =>
+        Confirm($"Delete result for {r.ParticipantName}?", async () =>
+        {
+            await Api.DeleteResultAsync(r.Id);
+            await ReloadResults();
+        });
 }

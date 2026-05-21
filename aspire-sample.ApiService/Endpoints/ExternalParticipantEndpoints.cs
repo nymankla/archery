@@ -20,7 +20,7 @@ public static class ExternalParticipantEndpoints
     }
 
     static async Task<IResult> GetAll(ArcheryDbContext db, CancellationToken ct)
-        => Results.Ok(await db.ExternalParticipants.AsNoTracking().ToListAsync(ct));
+        => Results.Ok(await db.ExternalParticipants.AsNoTracking().OrderBy(p => p.LastName).ThenBy(p => p.FirstName).ToListAsync(ct));
 
     static async Task<IResult> GetById(Guid id, ArcheryDbContext db, CancellationToken ct)
         => await db.ExternalParticipants.FindAsync([id], ct) is { } p

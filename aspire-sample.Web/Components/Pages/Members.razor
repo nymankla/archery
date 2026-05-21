@@ -172,7 +172,7 @@ else
                     </td>
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ShowEditForm(m)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(m.Id)">Delete</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(m)">Delete</button>
                     </td>
                 </tr>
             }
@@ -180,7 +180,13 @@ else
     </table>
 }
 
+<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+
 @code {
+    bool confirmVisible; string confirmMessage = string.Empty; Func<Task>? confirmAction;
+    void Confirm(string msg, Func<Task> action) { confirmMessage = msg; confirmAction = action; confirmVisible = true; }
+    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
+
     Member[]? members;
     Member? editing;
     bool showForm;
@@ -232,11 +238,12 @@ else
         await Reload();
     }
 
-    async Task Delete(Guid id)
-    {
-        await Api.DeleteMemberAsync(id);
-        await Reload();
-    }
+    void Delete(Member m) =>
+        Confirm($"Delete member {m.FullName}?", async () =>
+        {
+            await Api.DeleteMemberAsync(m.Id);
+            await Reload();
+        });
 
     void ToggleImport()
     {

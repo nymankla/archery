@@ -2,7 +2,10 @@ namespace aspire_sample.Web;
 
 public class ArcheryApiClient(HttpClient httpClient)
 {
-    public async Task<ImportResult?> ImportMembersAsync(byte[] content, string fileName, CancellationToken ct = default)
+    public Task<ImportResult?> ImportMembersAsync(byte[] content, string fileName, CancellationToken ct = default)
+        => ImportAsync("/members/import", content, fileName, ct);
+
+    async Task<ImportResult?> ImportAsync(string url, byte[] content, string fileName, CancellationToken ct)
     {
         using var form = new MultipartFormDataContent();
         var fileContent = new ByteArrayContent(content);
@@ -11,7 +14,7 @@ public class ArcheryApiClient(HttpClient httpClient)
                 ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 : "text/csv");
         form.Add(fileContent, "file", fileName);
-        var response = await httpClient.PostAsync("/members/import", form, ct);
+        var response = await httpClient.PostAsync(url, form, ct);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<ImportResult>(ct);
     }
@@ -57,6 +60,9 @@ public class ArcheryApiClient(HttpClient httpClient)
 
     public Task<HttpResponseMessage> DeleteCompetitionAsync(Guid id, CancellationToken ct = default)
         => httpClient.DeleteAsync($"/competitions/{id}", ct);
+
+    public Task<ImportResult?> ImportExternalParticipantsAsync(byte[] content, string fileName, CancellationToken ct = default)
+        => ImportAsync("/external-participants/import", content, fileName, ct);
 
     public Task<ExternalParticipant[]?> GetExternalParticipantsAsync(CancellationToken ct = default)
         => httpClient.GetFromJsonAsync<ExternalParticipant[]>("/external-participants", ct);

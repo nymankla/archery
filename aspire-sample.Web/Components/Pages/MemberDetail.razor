@@ -127,7 +127,7 @@ else
                         </td>
                         <td class="text-end">
                             <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ShowEditFeeForm(fee)">Edit</button>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFee(fee.Id)">Delete</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteFee(fee)">Delete</button>
                         </td>
                     </tr>
                 }
@@ -136,8 +136,14 @@ else
     }
 }
 
+<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+
 @code {
     [Parameter] public Guid Id { get; set; }
+
+    bool confirmVisible; string confirmMessage = string.Empty; Func<Task>? confirmAction;
+    void Confirm(string msg, Func<Task> action) { confirmMessage = msg; confirmAction = action; confirmVisible = true; }
+    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
 
     Member? member;
     MembershipFee[]? fees;
@@ -194,11 +200,12 @@ else
         await ReloadFees();
     }
 
-    async Task DeleteFee(Guid id)
-    {
-        await Api.DeleteFeeAsync(id);
-        await ReloadFees();
-    }
+    void DeleteFee(MembershipFee fee) =>
+        Confirm($"Delete {fee.Year} fee ({fee.Amount.ToString("C")})?", async () =>
+        {
+            await Api.DeleteFeeAsync(fee.Id);
+            await ReloadFees();
+        });
 
     static string FeeStatusClass(FeeStatus s) => s switch
     {

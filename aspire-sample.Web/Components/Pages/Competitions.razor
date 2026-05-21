@@ -87,7 +87,7 @@ else
                     <td>@c.Type</td>
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ShowEditForm(c)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(c.Id)">Delete</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(c)">Delete</button>
                     </td>
                 </tr>
             }
@@ -95,7 +95,13 @@ else
     </table>
 }
 
+<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+
 @code {
+    bool confirmVisible; string confirmMessage = string.Empty; Func<Task>? confirmAction;
+    void Confirm(string msg, Func<Task> action) { confirmMessage = msg; confirmAction = action; confirmVisible = true; }
+    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
+
     Competition[]? competitions;
     Competition? editing;
     bool showForm;
@@ -140,9 +146,10 @@ else
         await Reload();
     }
 
-    async Task Delete(Guid id)
-    {
-        await Api.DeleteCompetitionAsync(id);
-        await Reload();
-    }
+    void Delete(Competition c) =>
+        Confirm($"Delete competition \"{c.Name}\"?", async () =>
+        {
+            await Api.DeleteCompetitionAsync(c.Id);
+            await Reload();
+        });
 }

@@ -1,0 +1,28 @@
+@if (Visible)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                </div>
+                <div class="modal-body">
+                    <p>@Message</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnCancelled">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="OnConfirmed">@ConfirmLabel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string Message { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = "Confirm Delete";
+    [Parameter] public string ConfirmLabel { get; set; } = "Delete";
+    [Parameter] public EventCallback OnConfirmed { get; set; }
+    [Parameter] public EventCallback OnCancelled { get; set; }
+}
