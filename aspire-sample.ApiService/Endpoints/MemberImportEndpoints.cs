@@ -3,6 +3,7 @@ using aspire_sample.ApiService.Models;
 using ClosedXML.Excel;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 namespace aspire_sample.ApiService.Endpoints;
@@ -30,7 +31,13 @@ public static class MemberImportEndpoints
             return Results.BadRequest($"Failed to parse file: {ex.Message}");
         }
 
-        var members = new List<Member>();
+        // Load existing members with email for merge lookup — tracked so EF picks up changes
+        var existingByKey = await db.Members
+            .Where(m => m.Email != null)
+            .ToDictionaryAsync(m => (m.Email, m.DateOfBirth), ct);
+
+        var imported = 0;
+        var updated = 0;
         var errors = new List<string>();
 
         for (var i = 0; i < rows.Count; i++)
@@ -45,25 +52,45 @@ public static class MemberImportEndpoints
             if (!DateOnly.TryParse(row.DateOfBirth, out var dob))
             { errors.Add($"Row {rowNum}: Invalid DateOfBirth '{row.DateOfBirth}'."); continue; }
 
-            members.Add(new Member
+            var email = NullIfEmpty(row.Email);
+            var joinDate = DateOnly.TryParse(row.JoinDate, out var jd) ? jd : DateOnly.FromDateTime(DateTime.Today);
+            var isActive = bool.TryParse(row.IsActive, out var ia) ? ia : true;
+            var bowClass = Enum.TryParse<BowClass>(row.PreferredBowClass, true, out var bc) ? bc : BowClass.Recurve;
+
+            var existing = email != null && existingByKey.TryGetValue((email, dob), out var m) ? m : null;
+
+            if (existing != null)
             {
-                Id = Guid.NewGuid(),
-                FirstName = row.FirstName.Trim(),
-                LastName = row.LastName.Trim(),
-                Email = NullIfEmpty(row.Email),
-                Phone = NullIfEmpty(row.Phone),
-                Address = NullIfEmpty(row.Address),
-                DateOfBirth = dob,
-                JoinDate = DateOnly.TryParse(row.JoinDate, out var jd) ? jd : DateOnly.FromDateTime(DateTime.Today),
-                IsActive = bool.TryParse(row.IsActive, out var ia) ? ia : true,
-                PreferredBowClass = Enum.TryParse<BowClass>(row.PreferredBowClass, true, out var bc) ? bc : BowClass.Recurve
-            });
+                existing.FirstName = row.FirstName.Trim();
+                existing.LastName = row.LastName.Trim();
+                existing.Phone = NullIfEmpty(row.Phone);
+                existing.Address = NullIfEmpty(row.Address);
+                existing.JoinDate = joinDate;
+                existing.IsActive = isActive;
+                existing.PreferredBowClass = bowClass;
+                updated++;
+            }
+            else
+            {
+                db.Members.Add(new Member
+                {
+                    Id = Guid.NewGuid(),
+                    FirstName = row.FirstName.Trim(),
+                    LastName = row.LastName.Trim(),
+                    Email = email,
+                    Phone = NullIfEmpty(row.Phone),
+                    Address = NullIfEmpty(row.Address),
+                    DateOfBirth = dob,
+                    JoinDate = joinDate,
+                    IsActive = isActive,
+                    PreferredBowClass = bowClass
+                });
+                imported++;
+            }
         }
 
-        db.Members.AddRange(members);
         await db.SaveChangesAsync(ct);
-
-        return Results.Ok(new { imported = members.Count, errors });
+        return Results.Ok(new { imported, updated, errors });
     }
 
     static List<MemberRow> ParseCsv(Stream stream)

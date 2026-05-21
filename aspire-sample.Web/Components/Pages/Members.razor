@@ -45,7 +45,7 @@
             @if (importResult != null)
             {
                 <div class="alert @(importResult.Errors.Count == 0 ? "alert-success" : "alert-warning") mt-3">
-                    <strong>@importResult.Imported member(s) imported.</strong>
+                    <strong>@importResult.Imported new, @importResult.Updated updated.</strong>
                     @if (importResult.Errors.Count > 0)
                     {
                         <ul class="mb-0 mt-2">

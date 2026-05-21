@@ -3,6 +3,7 @@ namespace aspire_sample.Web;
 public class ImportResult
 {
     public int Imported { get; set; }
+    public int Updated { get; set; }
     public List<string> Errors { get; set; } = [];
 }
 
