@@ -2,16 +2,21 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cache = builder.AddRedis("cache")
     .WithDataVolume("redisdata")
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithContainerName("archery-redis");
 
 var postgres = builder.AddPostgres("postgres")
     .WithDataVolume("dbdata")
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithContainerName("archery-postgres");
 var db = postgres.AddDatabase("db");
 
 
 var keycloak = builder.AddKeycloak("keycloak", 8080)
-    .WithDataVolume("keycloakdata");
+    .WithDataVolume("keycloakdata")
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithContainerName("archery-keycloak");
+ 
 var apiService = builder.AddProject<Projects.aspire_sample_ApiService>("apiservice")
     .WithHttpHealthCheck("/health")
     .WithReference(db)
@@ -25,6 +30,8 @@ builder.AddProject<Projects.aspire_sample_Web>("webfrontend")
     .WithReference(cache)
     .WaitFor(cache)
     .WithReference(apiService)
-    .WaitFor(apiService);
+    .WaitFor(apiService)
+    .WithReference(keycloak)
+    .WaitFor(keycloak);
 
 builder.Build().Run();

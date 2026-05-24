@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\aspire-sample.ServiceDefaults\aspire-sample.ServiceDefaults.csproj" />
+    <ProjectReference
+      Include="..\aspire-sample.ServiceDefaults\aspire-sample.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.3.5" />
+    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.3.5-preview.1.26270.6" />
   </ItemGroup>
 
 </Project>
