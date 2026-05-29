@@ -16,7 +16,15 @@ var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
 
-builder.Services.Configure<AuthSessionOptions>(builder.Configuration.GetSection(AuthSessionOptions.SectionName));
+var authSessionSection = builder.Configuration.GetSection(AuthSessionOptions.SectionName);
+
+builder.Services.AddOptions<AuthSessionOptions>()
+    .Bind(authSessionSection)
+    .Validate(options => options.RefreshMinutes > 0, "AuthSession:RefreshMinutes must be greater than 0.")
+    .Validate(options => options.IdleTimeoutMinutes > 0, "AuthSession:IdleTimeoutMinutes must be greater than 0.")
+    .Validate(options => options.CookieExpirationMinutes > options.IdleTimeoutMinutes,
+        "AuthSession:CookieExpirationMinutes must be greater than AuthSession:IdleTimeoutMinutes.")
+    .ValidateOnStart();
 
 builder.AddServiceDefaults();
 builder.AddRedisOutputCache("cache");
