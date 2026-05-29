@@ -1,4 +1,12 @@
-﻿<!DOCTYPE html>
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.Extensions.Options
+@using aspire_sample.Web.Auth
+@inject PersistentComponentState AppState
+@inject AccessTokenProvider TokenProvider
+@inject IOptions<AuthSessionOptions> AuthSessionOptions
+@implements IDisposable
+
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -14,8 +22,36 @@
 </head>
 
 <body>
+    <AccessTokenInitializer />
+    <AuthSessionManager IdleTimeoutMinutes="@AuthSessionOptions.Value.IdleTimeoutMinutes" RefreshMinutes="@AuthSessionOptions.Value.RefreshMinutes" />
     <Routes />
+    <script src="auth-session.js"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
 
 </html>
+
+@code {
+    private PersistingComponentStateSubscription _subscription;
+    private string? _accessToken;
+
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _accessToken = await HttpContext.GetTokenAsync("access_token");
+        // Set for the current SSR request scope so prerendered components can call the API
+        TokenProvider.AccessToken = _accessToken;
+        _subscription = AppState.RegisterOnPersisting(PersistTokenAsync);
+    }
+
+    private Task PersistTokenAsync()
+    {
+        // Persist for the interactive circuit scope (consumed by AccessTokenInitializer)
+        AppState.PersistAsJson(AccessTokenProvider.PersistenceKey, _accessToken);
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() => _subscription.Dispose();
+}

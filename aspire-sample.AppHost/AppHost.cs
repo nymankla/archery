@@ -15,8 +15,9 @@ var db = postgres.AddDatabase("db");
 var keycloak = builder.AddKeycloak("keycloak", 8080)
     .WithDataVolume("keycloakdata")
     .WithLifetime(ContainerLifetime.Persistent)
-    .WithContainerName("archery-keycloak");
- 
+    .WithContainerName("archery-keycloak")
+    .WithRealmImport("keycloak");
+
 var apiService = builder.AddProject<Projects.aspire_sample_ApiService>("apiservice")
     .WithHttpHealthCheck("/health")
     .WithReference(db)

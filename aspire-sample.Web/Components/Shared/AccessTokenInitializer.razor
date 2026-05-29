@@ -1,0 +1,11 @@
+@rendermode InteractiveServer
+@inject PersistentComponentState AppState
+@inject AccessTokenProvider TokenProvider
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (AppState.TryTakeFromJson<string>(AccessTokenProvider.PersistenceKey, out var token))
+            TokenProvider.AccessToken = token;
+    }
+}

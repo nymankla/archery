@@ -8,7 +8,7 @@ public static class CompetitionResultEndpoints
 {
     public static IEndpointRouteBuilder MapCompetitionResultEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/competition-results").WithTags("CompetitionResults");
+        var group = app.MapGroup("/competition-results").WithTags("CompetitionResults").RequireAuthorization();
 
         group.MapGet("/competition/{competitionId:guid}", GetByCompetition);
         group.MapGet("/{id:guid}", GetById);

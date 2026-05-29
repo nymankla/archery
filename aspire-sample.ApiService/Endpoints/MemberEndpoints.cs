@@ -8,7 +8,7 @@ public static class MemberEndpoints
 {
     public static IEndpointRouteBuilder MapMemberEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/members").WithTags("Members");
+        var group = app.MapGroup("/members").WithTags("Members").RequireAuthorization();
 
         group.MapGet("/", GetAllMembers);
         group.MapGet("/{id:guid}", GetMemberById);

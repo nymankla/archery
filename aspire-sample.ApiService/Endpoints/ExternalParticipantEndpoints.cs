@@ -8,7 +8,7 @@ public static class ExternalParticipantEndpoints
 {
     public static IEndpointRouteBuilder MapExternalParticipantEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/external-participants").WithTags("ExternalParticipants");
+        var group = app.MapGroup("/external-participants").WithTags("ExternalParticipants").RequireAuthorization();
 
         group.MapGet("/", GetAll);
         group.MapGet("/{id:guid}", GetById);

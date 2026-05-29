@@ -1,5 +1,6 @@
 using System.Globalization;
 using aspire_sample.Web;
+using aspire_sample.Web.Auth;
 using aspire_sample.Web.Components;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -15,6 +16,8 @@ var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
 
+builder.Services.Configure<AuthSessionOptions>(builder.Configuration.GetSection(AuthSessionOptions.SectionName));
+
 builder.AddServiceDefaults();
 builder.AddRedisOutputCache("cache");
 
@@ -22,6 +25,11 @@ builder.Services.AddLocalization();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddScoped<AccessTokenProvider>();
+builder.Services.AddScoped<TokenRefreshService>();
+builder.Services.AddScoped<CookieOidcEvents>();
+builder.Services.AddScoped<OpenIdConnectEventsHandler>();
 
 builder.Services.AddHttpClient<ArcheryApiClient>(client =>
     {
@@ -35,7 +43,12 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
 })
-.AddCookie(options => options.LoginPath = "/login")
+.AddCookie(options =>
+{
+    options.LoginPath = "/login";
+    options.EventsType = typeof(CookieOidcEvents);
+    options.SlidingExpiration = true;
+})
 .AddKeycloakOpenIdConnect(
     serviceName: "keycloak",
     realm: "archery",
@@ -44,6 +57,9 @@ builder.Services.AddAuthentication(options =>
         options.ClientId = "archeryweb";
         options.ClientSecret = builder.Configuration["Keycloak:ClientSecret"];
         options.ResponseType = OpenIdConnectResponseType.Code;
+        options.SaveTokens = true;
+        options.UseTokenLifetime = false;
+        options.EventsType = typeof(OpenIdConnectEventsHandler);
         options.PushedAuthorizationBehavior = PushedAuthorizationBehavior.Disable;
         if (builder.Environment.IsDevelopment())
         {
@@ -84,6 +100,33 @@ app.MapGet("/login", (string? returnUrl) =>
         new AuthenticationProperties { RedirectUri = returnUrl ?? "/" },
         [OpenIdConnectDefaults.AuthenticationScheme]))
     .AllowAnonymous();
+
+app.MapGet("/logout", async (HttpContext httpContext) =>
+{
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    await httpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties
+    {
+        RedirectUri = "/"
+    });
+})
+    .AllowAnonymous();
+
+app.MapPost("/auth/activity", async (HttpContext httpContext) =>
+{
+    var result = await httpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    if (!result.Succeeded || result.Properties is null || result.Principal is null)
+        return Results.Unauthorized();
+
+    result.Properties.UpdateTokenValue("last_activity_utc", DateTimeOffset.UtcNow.ToString("O"));
+    await httpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, result.Principal, result.Properties);
+    return Results.Ok();
+}).RequireAuthorization();
+
+app.MapPost("/auth/refresh", async (HttpContext httpContext, TokenRefreshService tokenRefreshService) =>
+{
+    await tokenRefreshService.TryRefreshAsync(httpContext);
+    return Results.Ok();
+}).RequireAuthorization();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()

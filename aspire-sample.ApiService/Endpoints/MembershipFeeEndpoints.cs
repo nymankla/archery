@@ -8,7 +8,7 @@ public static class MembershipFeeEndpoints
 {
     public static IEndpointRouteBuilder MapMembershipFeeEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/membership-fees").WithTags("MembershipFees");
+        var group = app.MapGroup("/membership-fees").WithTags("MembershipFees").RequireAuthorization();
 
         group.MapGet("/", GetAllFees);
         group.MapGet("/{id:guid}", GetFeeById);

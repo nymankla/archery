@@ -9,7 +9,7 @@ public static class ExternalParticipantImportEndpoints
 {
     public static IEndpointRouteBuilder MapExternalParticipantImportEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/external-participants/import", Import).WithTags("ExternalParticipants").DisableAntiforgery();
+        app.MapPost("/external-participants/import", Import).WithTags("ExternalParticipants").DisableAntiforgery().RequireAuthorization();
         return app;
     }
 

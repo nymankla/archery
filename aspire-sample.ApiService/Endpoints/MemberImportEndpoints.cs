@@ -9,7 +9,7 @@ public static class MemberImportEndpoints
 {
     public static IEndpointRouteBuilder MapMemberImportEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapPost("/members/import", Import).WithTags("Members").DisableAntiforgery();
+        app.MapPost("/members/import", Import).WithTags("Members").DisableAntiforgery().RequireAuthorization();
         return app;
     }
 

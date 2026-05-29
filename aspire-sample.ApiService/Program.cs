@@ -17,14 +17,16 @@ builder.Services.AddOpenApi();
 builder.Services.ConfigureHttpJsonOptions(o =>
     o.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddAuthentication()
-.AddKeycloakJwtBearer(
-serviceName: "keycloak",
-realm: "archery",
-options =>{
-    options.Audience = "archery.api";
-    if (builder.Environment.IsDevelopment())
-        options.RequireHttpsMetadata = false;
-});
+    .AddKeycloakJwtBearer(
+        serviceName: "keycloak",
+        realm: "archery",
+        options =>
+        {
+            options.Audience = "archery.api";
+            if (builder.Environment.IsDevelopment())
+                options.RequireHttpsMetadata = false;
+        });
+builder.Services.AddAuthorization();
 builder.AddNpgsqlDbContext<ArcheryDbContext>("db");
 
 var app = builder.Build();
@@ -37,6 +39,8 @@ using (var scope = app.Services.CreateScope())
 
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 if (app.Environment.IsDevelopment())
 {

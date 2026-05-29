@@ -1,0 +1,64 @@
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<div></div>
+
+@code {
+	[Parameter] public int IdleTimeoutMinutes { get; set; }
+	[Parameter] public int RefreshMinutes { get; set; }
+
+	private PeriodicTimer? _refreshTimer;
+	private CancellationTokenSource? _cts;
+	private DotNetObjectReference<AuthSessionManager>? _self;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (!firstRender)
+			return;
+
+		_cts = new CancellationTokenSource();
+		_self = DotNetObjectReference.Create(this);
+		await JS.InvokeVoidAsync("authSession.initialize", _self, IdleTimeoutMinutes);
+		_refreshTimer = new PeriodicTimer(TimeSpan.FromMinutes(RefreshMinutes));
+		_ = RunRefreshLoopAsync(_cts.Token);
+	}
+
+	[JSInvokable]
+	public void OnIdleTimeout() => Navigation.NavigateTo("/logout", forceLoad: true);
+
+	private async Task RunRefreshLoopAsync(CancellationToken cancellationToken)
+	{
+		if (_refreshTimer is null)
+			return;
+
+		try
+		{
+			while (await _refreshTimer.WaitForNextTickAsync(cancellationToken))
+			{
+				await JS.InvokeVoidAsync("authSession.refresh", cancellationToken);
+			}
+		}
+		catch (OperationCanceledException)
+		{
+		}
+	}
+
+	public async ValueTask DisposeAsync()
+	{
+		if (_cts is not null)
+		{
+			_cts.Cancel();
+			_cts.Dispose();
+		}
+
+		_refreshTimer?.Dispose();
+
+		if (_self is not null)
+		{
+			await JS.InvokeVoidAsync("authSession.dispose");
+			_self.Dispose();
+		}
+	}
+}
