@@ -11,9 +11,11 @@ public static class MembershipFeeEndpoints
         var group = app.MapGroup("/membership-fees").WithTags("MembershipFees").RequireAuthorization();
 
         group.MapGet("/", GetAllFees);
+        group.MapGet("/overview", GetOverview);
         group.MapGet("/{id:guid}", GetFeeById);
         group.MapGet("/member/{memberId:guid}", GetFeesByMember);
         group.MapPost("/", CreateFee);
+        group.MapPost("/bulk", BulkCreate);
         group.MapPut("/{id:guid}", UpdateFee);
         group.MapDelete("/{id:guid}", DeleteFee);
 
@@ -66,4 +68,67 @@ public static class MembershipFeeEndpoints
         await db.SaveChangesAsync(ct);
         return Results.NoContent();
     }
+
+    static async Task<IResult> GetOverview(int? year, ArcheryDbContext db, CancellationToken ct)
+    {
+        var targetYear = year ?? DateTime.Today.Year;
+
+        var members = await db.Members
+            .AsNoTracking()
+            .Where(m => m.IsActive)
+            .OrderBy(m => m.LastName).ThenBy(m => m.FirstName)
+            .ToListAsync(ct);
+
+        var memberIds = members.Select(m => m.Id).ToList();
+
+        var fees = await db.MembershipFees
+            .AsNoTracking()
+            .Where(f => f.Year == targetYear && memberIds.Contains(f.MemberId))
+            .ToListAsync(ct);
+
+        var feeByMember = fees.ToDictionary(f => f.MemberId);
+
+        var result = members.Select(m =>
+        {
+            feeByMember.TryGetValue(m.Id, out var fee);
+            return new MemberFeeOverviewDto(
+                m.Id, m.FirstName, m.LastName, m.Email,
+                fee?.Id, fee?.Status, fee?.Amount, fee?.DueDate, fee?.PaidDate);
+        });
+
+        return Results.Ok(result);
+    }
+
+    static async Task<IResult> BulkCreate(BulkFeeRequest req, ArcheryDbContext db, CancellationToken ct)
+    {
+        var existingMemberIds = await db.MembershipFees
+            .Where(f => f.Year == req.Year)
+            .Select(f => f.MemberId)
+            .ToHashSetAsync(ct);
+
+        var memberIds = await db.Members
+            .Where(m => m.IsActive && !existingMemberIds.Contains(m.Id))
+            .Select(m => m.Id)
+            .ToListAsync(ct);
+
+        foreach (var memberId in memberIds)
+            db.MembershipFees.Add(new MembershipFee
+            {
+                Id = Guid.NewGuid(),
+                MemberId = memberId,
+                Year = req.Year,
+                Amount = req.Amount,
+                DueDate = req.DueDate,
+                Status = FeeStatus.Unpaid
+            });
+
+        await db.SaveChangesAsync(ct);
+        return Results.Ok(new { Created = memberIds.Count });
+    }
+
+    private record MemberFeeOverviewDto(
+        Guid MemberId, string FirstName, string LastName, string? Email,
+        Guid? FeeId, FeeStatus? Status, decimal? Amount, DateOnly? DueDate, DateOnly? PaidDate);
+
+    private record BulkFeeRequest(int Year, decimal Amount, DateOnly DueDate);
 }

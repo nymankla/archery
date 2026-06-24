@@ -57,7 +57,11 @@
 
 		if (_self is not null)
 		{
-			await JS.InvokeVoidAsync("authSession.dispose");
+			try
+			{
+				await JS.InvokeVoidAsync("authSession.dispose");
+			}
+			catch (JSDisconnectedException) { }
 			_self.Dispose();
 		}
 	}

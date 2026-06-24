@@ -6,5 +6,5 @@ public class AuthSessionOptions
 
     public int RefreshMinutes { get; set; } = 5;
     public int IdleTimeoutMinutes { get; set; } = 20;
-    public int CookieExpirationMinutes { get; set; } = 20;
+    public int CookieExpirationMinutes { get; set; } = 30;
 }

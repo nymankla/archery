@@ -1,5 +1,26 @@
 namespace aspire_sample.Web;
 
+public class MemberFeeOverview
+{
+    public Guid MemberId { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public Guid? FeeId { get; set; }
+    public FeeStatus? Status { get; set; }
+    public decimal? Amount { get; set; }
+    public DateOnly? DueDate { get; set; }
+    public DateOnly? PaidDate { get; set; }
+    public string FullName => $"{FirstName} {LastName}";
+}
+
+public class BulkFeeRequest
+{
+    public int Year { get; set; }
+    public decimal Amount { get; set; }
+    public DateOnly DueDate { get; set; }
+}
+
 public class ImportResult
 {
     public int Imported { get; set; }

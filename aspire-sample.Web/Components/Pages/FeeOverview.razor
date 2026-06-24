@@ -1,0 +1,287 @@
+@page "/fees"
+@rendermode InteractiveServer
+@inject ArcheryApiClient Api
+
+<PageTitle>Membership Fees</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Membership Fees</h1>
+    <div class="d-flex align-items-center gap-2">
+        <select class="form-select" style="width:auto" @bind="selectedYear" @bind:after="Reload">
+            @for (var y = currentYear + 1; y >= currentYear - 3; y--)
+            {
+                <option value="@y">@y</option>
+            }
+        </select>
+        <button class="btn btn-outline-primary" @onclick="ToggleBulkCreate">
+            Create fees for all
+        </button>
+    </div>
+</div>
+
+@if (showBulkCreate)
+{
+    var noFeeCount = rows?.Count(r => r.FeeId == null) ?? 0;
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Create fees for active members without a @selectedYear fee</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Amount (SEK)</label>
+                    <input type="number" class="form-control" @bind="defaultAmount" min="0" step="50" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Due date</label>
+                    <input type="date" class="form-control" @bind="defaultDueDate" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-primary" @onclick="BulkCreate" disabled="@(busy || noFeeCount == 0)">
+                    @if (busy) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    Create @noFeeCount fee@(noFeeCount == 1 ? "" : "s")
+                </button>
+                <button class="btn btn-secondary ms-2" @onclick="ToggleBulkCreate">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (rows == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    var paid    = rows.Count(r => r.Status == FeeStatus.Paid);
+    var unpaid  = rows.Count(r => r.Status == FeeStatus.Unpaid);
+    var partial = rows.Count(r => r.Status == FeeStatus.Partial);
+    var noFee   = rows.Count(r => r.FeeId == null);
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold">@rows.Count</div>
+                    <div class="text-muted small">Active members</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0" style="background:#d1e7dd">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold text-success">@paid</div>
+                    <div class="text-muted small">Paid</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0" style="background:#fff3cd">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold" style="color:#856404">@(unpaid + partial)</div>
+                    <div class="text-muted small">Unpaid / Partial</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 bg-light">
+                <div class="card-body py-2">
+                    <div class="fs-4 fw-bold text-secondary">@noFee</div>
+                    <div class="text-muted small">No fee created</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        @foreach (var (label, key) in FilterOptions)
+        {
+            <button class="btn btn-sm @(activeFilter == key ? "btn-primary" : "btn-outline-secondary") me-1"
+                    @onclick="() => activeFilter = key">
+                @label
+            </button>
+        }
+    </div>
+
+    var visible = FilteredRows.ToList();
+    @if (visible.Count == 0)
+    {
+        <p class="text-muted">No rows match the current filter.</p>
+    }
+    else
+    {
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th class="text-end">Amount</th>
+                    <th>Due</th>
+                    <th>Paid</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in visible)
+                {
+                    <tr>
+                        <td><a href="/members/@r.MemberId">@r.FullName</a></td>
+                        <td>@r.Email</td>
+                        <td>
+                            @if (r.FeeId == null)
+                            {
+                                <span class="badge bg-secondary">No fee</span>
+                            }
+                            else
+                            {
+                                <span class="badge @StatusBadge(r.Status)">@r.Status</span>
+                            }
+                        </td>
+                        <td class="text-end">@(r.Amount?.ToString("N0") ?? "—")</td>
+                        <td>@(r.DueDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td>@(r.PaidDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td class="text-end text-nowrap">
+                            @if (r.FeeId == null)
+                            {
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => CreateSingleFee(r)">
+                                    Create
+                                </button>
+                            }
+                            else
+                            {
+                                @if (r.Status != FeeStatus.Paid)
+                                {
+                                    <button class="btn btn-sm btn-success me-1"
+                                            @onclick="() => MarkPaid(r)">
+                                        Mark paid
+                                    </button>
+                                }
+                                <button class="btn btn-sm btn-outline-danger"
+                                        @onclick="() => ConfirmDeleteFee(r)">
+                                    Delete
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage"
+               OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+
+@code {
+    static readonly (string Label, string Key)[] FilterOptions =
+    [
+        ("All", "all"), ("Paid", "paid"), ("Unpaid / Partial", "unpaid"), ("No fee", "nofee")
+    ];
+
+    bool confirmVisible;
+    string confirmMessage = string.Empty;
+    Func<Task>? confirmAction;
+
+    void Confirm(string msg, Func<Task> action)
+    {
+        confirmMessage = msg;
+        confirmAction = action;
+        confirmVisible = true;
+    }
+
+    async Task ExecuteConfirm()
+    {
+        confirmVisible = false;
+        if (confirmAction != null) await confirmAction();
+    }
+
+    int currentYear = DateTime.Today.Year;
+    int selectedYear = DateTime.Today.Year;
+    string activeFilter = "all";
+    bool showBulkCreate;
+    bool busy;
+
+    decimal defaultAmount = 500;
+    DateOnly defaultDueDate;
+
+    List<MemberFeeOverview>? rows;
+
+    IEnumerable<MemberFeeOverview> FilteredRows => activeFilter switch
+    {
+        "paid"   => rows?.Where(r => r.Status == FeeStatus.Paid) ?? [],
+        "unpaid" => rows?.Where(r => r.Status is FeeStatus.Unpaid or FeeStatus.Partial) ?? [],
+        "nofee"  => rows?.Where(r => r.FeeId == null) ?? [],
+        _        => rows ?? []
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        defaultDueDate = new DateOnly(currentYear, 3, 31);
+        await Reload();
+    }
+
+    async Task Reload()
+    {
+        rows = null;
+        rows = (await Api.GetFeeOverviewAsync(selectedYear))?.ToList() ?? [];
+    }
+
+    void ToggleBulkCreate() => showBulkCreate = !showBulkCreate;
+
+    async Task BulkCreate()
+    {
+        busy = true;
+        await Api.BulkCreateFeesAsync(new BulkFeeRequest
+        {
+            Year = selectedYear,
+            Amount = defaultAmount,
+            DueDate = defaultDueDate
+        });
+        showBulkCreate = false;
+        busy = false;
+        await Reload();
+    }
+
+    async Task CreateSingleFee(MemberFeeOverview r)
+    {
+        await Api.CreateFeeAsync(new MembershipFee
+        {
+            MemberId = r.MemberId,
+            Year = selectedYear,
+            Amount = defaultAmount,
+            DueDate = defaultDueDate,
+            Status = FeeStatus.Unpaid
+        });
+        await Reload();
+    }
+
+    async Task MarkPaid(MemberFeeOverview r)
+    {
+        await Api.UpdateFeeAsync(r.FeeId!.Value, new MembershipFee
+        {
+            Id = r.FeeId.Value,
+            MemberId = r.MemberId,
+            Year = selectedYear,
+            Amount = r.Amount!.Value,
+            DueDate = r.DueDate!.Value,
+            PaidDate = DateOnly.FromDateTime(DateTime.Today),
+            Status = FeeStatus.Paid
+        });
+        await Reload();
+    }
+
+    void ConfirmDeleteFee(MemberFeeOverview r) =>
+        Confirm($"Delete fee for {r.FullName}?", async () =>
+        {
+            await Api.DeleteFeeAsync(r.FeeId!.Value);
+            await Reload();
+        });
+
+    static string StatusBadge(FeeStatus? status) => status switch
+    {
+        FeeStatus.Paid    => "bg-success",
+        FeeStatus.Partial => "bg-warning text-dark",
+        _                 => "bg-danger"
+    };
+}

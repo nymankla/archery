@@ -45,6 +45,12 @@ public class ArcheryApiClient(HttpClient httpClient, AccessTokenProvider tokenPr
     public Task<MembershipFee[]?> GetFeesByMemberAsync(Guid memberId, CancellationToken ct = default)
         => GetFromJsonAsync<MembershipFee[]>($"/membership-fees/member/{memberId}", ct);
 
+    public Task<MemberFeeOverview[]?> GetFeeOverviewAsync(int year, CancellationToken ct = default)
+        => GetFromJsonAsync<MemberFeeOverview[]>($"/membership-fees/overview?year={year}", ct);
+
+    public Task<HttpResponseMessage> BulkCreateFeesAsync(BulkFeeRequest req, CancellationToken ct = default)
+        => SendAsJsonAsync(HttpMethod.Post, "/membership-fees/bulk", req, ct);
+
     public Task<HttpResponseMessage> CreateFeeAsync(MembershipFee fee, CancellationToken ct = default)
         => SendAsJsonAsync(HttpMethod.Post, "/membership-fees", fee, ct);
 

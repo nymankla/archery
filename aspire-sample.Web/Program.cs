@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestHeadersTotalSize = 65536);
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestHeadersTotalSize = 131072);
 
 var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
 CultureInfo.DefaultThreadCurrentCulture = culture;
