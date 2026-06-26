@@ -27,6 +27,9 @@ public class ArcheryApiClient(HttpClient httpClient, AccessTokenProvider tokenPr
         return await response.Content.ReadFromJsonAsync<ImportResult>(ct);
     }
 
+    public Task<DashboardData?> GetDashboardAsync(CancellationToken ct = default)
+        => GetFromJsonAsync<DashboardData>("/dashboard", ct);
+
     public Task<Member[]?> GetMembersAsync(CancellationToken ct = default)
         => GetFromJsonAsync<Member[]>("/members", ct);
 

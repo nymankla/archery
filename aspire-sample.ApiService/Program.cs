@@ -55,6 +55,7 @@ app.MapGet("/", (IHostEnvironment env) => env.IsDevelopment()
         """, "text/html")
     : Results.Ok("Archery Club API"));
 
+app.MapDashboardEndpoints();
 app.MapMemberEndpoints();
 app.MapMemberImportEndpoints();
 app.MapMembershipFeeEndpoints();

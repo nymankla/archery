@@ -111,11 +111,11 @@ app.MapGet("/login", (string? returnUrl) =>
 
 app.MapGet("/logout", async (HttpContext httpContext) =>
 {
-    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     await httpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties
     {
         RedirectUri = "/"
     });
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 })
     .AllowAnonymous();
 

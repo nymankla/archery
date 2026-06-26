@@ -114,3 +114,61 @@ public class CompetitionResult
     public string? Notes { get; set; }
     public string ParticipantName => Member?.FullName ?? ExternalParticipant?.FullName ?? "Unknown";
 }
+
+public class DashboardData
+{
+    public DashboardMemberStats Members { get; set; } = new();
+    public DashboardFeeStats Fees { get; set; } = new();
+    public DashboardCompetitionStats Competitions { get; set; } = new();
+    public List<DashboardTopScorer> TopScorers { get; set; } = [];
+    public List<DashboardRecentCompetition> RecentCompetitions { get; set; } = [];
+}
+
+public class DashboardMemberStats
+{
+    public int TotalActive { get; set; }
+    public int TotalInactive { get; set; }
+    public int NewThisYear { get; set; }
+}
+
+public class DashboardFeeStats
+{
+    public int Paid { get; set; }
+    public int Unpaid { get; set; }
+    public int Partial { get; set; }
+    public int NoFee { get; set; }
+    public decimal TotalCollected { get; set; }
+    public decimal TotalOutstanding { get; set; }
+    public int CollectionRatePct { get; set; }
+}
+
+public class DashboardCompetitionStats
+{
+    public int TotalThisYear { get; set; }
+    public int UpcomingCount { get; set; }
+    public DashboardNextCompetition? NextCompetition { get; set; }
+}
+
+public class DashboardNextCompetition
+{
+    public string Name { get; set; } = string.Empty;
+    public DateOnly Date { get; set; }
+    public string Location { get; set; } = string.Empty;
+}
+
+public class DashboardTopScorer
+{
+    public string MemberName { get; set; } = string.Empty;
+    public BowClass BowClass { get; set; }
+    public int Score { get; set; }
+    public string CompetitionName { get; set; } = string.Empty;
+}
+
+public class DashboardRecentCompetition
+{
+    public string Name { get; set; } = string.Empty;
+    public DateOnly Date { get; set; }
+    public string Location { get; set; } = string.Empty;
+    public CompetitionType Type { get; set; }
+    public int ParticipantCount { get; set; }
+}

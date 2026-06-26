@@ -1,36 +1,215 @@
 @page "/"
+@rendermode InteractiveServer
+@inject ArcheryApiClient Api
 
-<PageTitle>Archery Club</PageTitle>
+<PageTitle>Dashboard — Archery Club</PageTitle>
 
-<h1>Archery Club</h1>
-<p class="lead">Manage members, competitions, and results.</p>
+@if (data == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Loading dashboard...</p>
+    </div>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Dashboard</h1>
+        <span class="text-muted small">@DateTime.Today.Year overview</span>
+    </div>
 
-<div class="row g-4 mt-2">
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">Members</h5>
-                <p class="card-text">Register and manage club members, contact info, and membership fees.</p>
-                <a href="/members" class="btn btn-primary">Go to Members</a>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card h-100 border-0 bg-primary text-white">
+                <div class="card-body py-3">
+                    <div class="fs-1 fw-bold">@data.Members.TotalActive</div>
+                    <div class="small opacity-75">Active members</div>
+                    @if (data.Members.NewThisYear > 0)
+                    {
+                        <div class="small mt-1 opacity-75">+@data.Members.NewThisYear new this year</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card h-100 border-0" style="background:#d1e7dd">
+                <div class="card-body py-3">
+                    <div class="fs-1 fw-bold text-success">@data.Fees.TotalCollected.ToString("N0") kr</div>
+                    <div class="small text-muted">Fees collected @DateTime.Today.Year</div>
+                    <div class="small mt-1 text-success">@data.Fees.Paid paid</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card h-100 border-0 bg-light">
+                <div class="card-body py-3">
+                    <div class="fs-1 fw-bold">@data.Fees.CollectionRatePct%</div>
+                    <div class="small text-muted">Collection rate</div>
+                    <div class="progress mt-2" style="height:6px">
+                        <div class="progress-bar bg-success" style="width:@(data.Fees.CollectionRatePct)%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card h-100 border-0 bg-light">
+                <div class="card-body py-3">
+                    <div class="fs-1 fw-bold">@data.Competitions.TotalThisYear</div>
+                    <div class="small text-muted">Competitions @DateTime.Today.Year</div>
+                    @if (data.Competitions.UpcomingCount > 0)
+                    {
+                        <div class="small mt-1 text-primary">@data.Competitions.UpcomingCount upcoming</div>
+                    }
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">Competitions</h5>
-                <p class="card-text">Create competitions, manage participants, and record results.</p>
-                <a href="/competitions" class="btn btn-primary">Go to Competitions</a>
+
+    @if (data.Competitions.NextCompetition != null)
+    {
+        var next = data.Competitions.NextCompetition;
+        var daysUntil = next.Date.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber;
+        <div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+            <span class="bi bi-calendar-event fs-4"></span>
+            <div>
+                <strong>Next up: @next.Name</strong> — @next.Date.ToString("d MMMM yyyy") &middot; @next.Location
+                <span class="badge bg-info text-dark ms-2">
+                    @(daysUntil == 0 ? "today" : $"in {daysUntil} day{(daysUntil == 1 ? "" : "s")}")
+                </span>
+            </div>
+        </div>
+    }
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">Recent Competitions</span>
+                    <a href="/competitions" class="btn btn-sm btn-outline-primary">View all</a>
+                </div>
+                <div class="card-body p-0">
+                    @if (data.RecentCompetitions.Count == 0)
+                    {
+                        <p class="text-muted p-3 mb-0">No completed competitions yet.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var c in data.RecentCompetitions)
+                            {
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <div class="fw-semibold">@c.Name</div>
+                                            <div class="text-muted small">@c.Date.ToString("d MMM yyyy") &middot; @c.Location</div>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-secondary">@c.Type</span>
+                                            <div class="text-muted small mt-1">@c.ParticipantCount participants</div>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold">Fee Summary @DateTime.Today.Year</span>
+                    <a href="/fees" class="btn btn-sm btn-outline-primary">View all</a>
+                </div>
+                <div class="card-body">
+                    @{
+                        var total      = data.Members.TotalActive;
+                        var paidPct    = total > 0 ? data.Fees.Paid    * 100 / total : 0;
+                        var partialPct = total > 0 ? data.Fees.Partial * 100 / total : 0;
+                        var unpaidPct  = total > 0 ? data.Fees.Unpaid  * 100 / total : 0;
+                        var noFeePct   = total > 0 ? data.Fees.NoFee   * 100 / total : 0;
+                    }
+                    <div class="progress mb-3" style="height:20px">
+                        <div class="progress-bar bg-success"   style="width:@(paidPct)%"    title="Paid">@(paidPct > 7    ? $"{paidPct}%"    : "")</div>
+                        <div class="progress-bar bg-warning"   style="width:@(partialPct)%" title="Partial">@(partialPct > 7 ? $"{partialPct}%" : "")</div>
+                        <div class="progress-bar bg-danger"    style="width:@(unpaidPct)%"  title="Unpaid">@(unpaidPct > 7  ? $"{unpaidPct}%"  : "")</div>
+                        <div class="progress-bar bg-secondary" style="width:@(noFeePct)%"   title="No fee">@(noFeePct > 7   ? $"{noFeePct}%"   : "")</div>
+                    </div>
+                    <div class="row g-2 text-center">
+                        <div class="col-3">
+                            <div class="fw-bold text-success">@data.Fees.Paid</div>
+                            <div class="text-muted small">Paid</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="fw-bold" style="color:#856404">@data.Fees.Partial</div>
+                            <div class="text-muted small">Partial</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="fw-bold text-danger">@data.Fees.Unpaid</div>
+                            <div class="text-muted small">Unpaid</div>
+                        </div>
+                        <div class="col-3">
+                            <div class="fw-bold text-secondary">@data.Fees.NoFee</div>
+                            <div class="text-muted small">No fee</div>
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Outstanding</span>
+                        <span class="fw-semibold text-danger">@data.Fees.TotalOutstanding.ToString("N0") kr</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">External Participants</h5>
-                <p class="card-text">Register participants from other clubs who take part in competitions.</p>
-                <a href="/external-participants" class="btn btn-primary">Go to External Participants</a>
-            </div>
+
+    @if (data.TopScorers.Count > 0)
+    {
+        <div class="card">
+            <div class="card-header fw-semibold">Top Scorers @DateTime.Today.Year</div>
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:2.5rem">#</th>
+                        <th>Member</th>
+                        <th>Bow class</th>
+                        <th class="text-end">Score</th>
+                        <th>Competition</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < data.TopScorers.Count; i++)
+                    {
+                        var s = data.TopScorers[i];
+                        <tr>
+                            <td>
+                                @if (i == 0)
+                                {
+                                    <span class="bi bi-trophy-fill text-warning"></span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">@(i + 1)</span>
+                                }
+                            </td>
+                            <td>@s.MemberName</td>
+                            <td>@s.BowClass</td>
+                            <td class="text-end fw-bold">@s.Score</td>
+                            <td class="text-muted small">@s.CompetitionName</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-    </div>
-</div>
+    }
+}
+
+@code {
+    DashboardData? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        data = await Api.GetDashboardAsync();
+    }
+}
