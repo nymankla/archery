@@ -38,17 +38,20 @@
     [CascadingParameter]
     public HttpContext HttpContext { get; set; } = default!;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        _accessToken = await HttpContext.GetTokenAsync("access_token");
-        // Set for the current SSR request scope so prerendered components can call the API
+        // Read synchronously from the cached auth result — no async yield.
+        // An await before setting TokenProvider would let Blazor start rendering
+        // child components first, causing them to call the API with a null token (401).
+        // The auth middleware has already run and cached its result here.
+        var authFeature = HttpContext.Features.Get<IAuthenticateResultFeature>();
+        _accessToken = authFeature?.AuthenticateResult?.Properties?.GetTokenValue("access_token");
         TokenProvider.AccessToken = _accessToken;
         _subscription = AppState.RegisterOnPersisting(PersistTokenAsync);
     }
 
     private Task PersistTokenAsync()
     {
-        // Persist for the interactive circuit scope (consumed by AccessTokenInitializer)
         AppState.PersistAsJson(AccessTokenProvider.PersistenceKey, _accessToken);
         return Task.CompletedTask;
     }

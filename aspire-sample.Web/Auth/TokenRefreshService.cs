@@ -17,9 +17,15 @@ public class TokenRefreshService(IOptions<AuthSessionOptions> options)
         if (!authResult.Succeeded || authResult.Properties is null)
             return false;
 
-        var issuedUtc = authResult.Properties.IssuedUtc;
-        if (issuedUtc is not null && DateTimeOffset.UtcNow - issuedUtc.Value < TimeSpan.FromMinutes(_options.RefreshMinutes))
-            return false;
+        // Use the token's own expiry (stored by OIDC middleware as expires_at) rather than
+        // the cookie's IssuedUtc, which gets reset on every sliding-expiration renewal.
+        var expiresAtRaw = authResult.Properties.GetTokenValue("expires_at");
+        if (DateTimeOffset.TryParse(expiresAtRaw, null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out var tokenExpiry))
+        {
+            if (tokenExpiry - DateTimeOffset.UtcNow > TimeSpan.FromMinutes(_options.RefreshMinutes))
+                return false;
+        }
 
         var refreshToken = authResult.Properties.GetTokenValue(OpenIdConnectParameterNames.RefreshToken);
         if (string.IsNullOrWhiteSpace(refreshToken))

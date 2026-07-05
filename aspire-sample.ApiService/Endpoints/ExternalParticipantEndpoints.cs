@@ -1,6 +1,5 @@
-using aspire_sample.ApiService.Data;
 using aspire_sample.ApiService.Models;
-using Microsoft.EntityFrameworkCore;
+using aspire_sample.ApiService.Services;
 
 namespace aspire_sample.ApiService.Endpoints;
 
@@ -19,41 +18,21 @@ public static class ExternalParticipantEndpoints
         return app;
     }
 
-    static async Task<IResult> GetAll(ArcheryDbContext db, CancellationToken ct)
-        => Results.Ok(await db.ExternalParticipants.AsNoTracking().OrderBy(p => p.LastName).ThenBy(p => p.FirstName).ToListAsync(ct));
+    static async Task<IResult> GetAll(IExternalParticipantService svc, CancellationToken ct)
+        => Results.Ok(await svc.GetAllAsync(ct));
 
-    static async Task<IResult> GetById(Guid id, ArcheryDbContext db, CancellationToken ct)
-        => await db.ExternalParticipants.FindAsync([id], ct) is { } p
-            ? Results.Ok(p)
-            : Results.NotFound();
+    static async Task<IResult> GetById(Guid id, IExternalParticipantService svc, CancellationToken ct)
+        => await svc.GetByIdAsync(id, ct) is { } p ? Results.Ok(p) : Results.NotFound();
 
-    static async Task<IResult> Create(ExternalParticipant participant, ArcheryDbContext db, CancellationToken ct)
+    static async Task<IResult> Create(ExternalParticipant participant, IExternalParticipantService svc, CancellationToken ct)
     {
-        participant.Id = Guid.NewGuid();
-        db.ExternalParticipants.Add(participant);
-        await db.SaveChangesAsync(ct);
-        return Results.Created($"/external-participants/{participant.Id}", participant);
+        var created = await svc.CreateAsync(participant, ct);
+        return Results.Created($"/external-participants/{created.Id}", created);
     }
 
-    static async Task<IResult> Update(Guid id, ExternalParticipant input, ArcheryDbContext db, CancellationToken ct)
-    {
-        var participant = await db.ExternalParticipants.FindAsync([id], ct);
-        if (participant is null) return Results.NotFound();
-        participant.FirstName = input.FirstName;
-        participant.LastName = input.LastName;
-        participant.Phone = input.Phone;
-        participant.Email = input.Email;
-        participant.ClubAffiliation = input.ClubAffiliation;
-        await db.SaveChangesAsync(ct);
-        return Results.Ok(participant);
-    }
+    static async Task<IResult> Update(Guid id, ExternalParticipant input, IExternalParticipantService svc, CancellationToken ct)
+        => await svc.UpdateAsync(id, input, ct) is { } p ? Results.Ok(p) : Results.NotFound();
 
-    static async Task<IResult> Delete(Guid id, ArcheryDbContext db, CancellationToken ct)
-    {
-        var participant = await db.ExternalParticipants.FindAsync([id], ct);
-        if (participant is null) return Results.NotFound();
-        db.ExternalParticipants.Remove(participant);
-        await db.SaveChangesAsync(ct);
-        return Results.NoContent();
-    }
+    static async Task<IResult> Delete(Guid id, IExternalParticipantService svc, CancellationToken ct)
+        => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();
 }

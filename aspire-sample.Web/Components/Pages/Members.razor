@@ -129,6 +129,38 @@
     </div>
 }
 
+@if (members != null)
+{
+    <div class="row g-2 mb-3">
+        <div class="col-md-5">
+            <input type="search" class="form-control" placeholder="Search name or email…"
+                   @bind="searchText" @bind:event="oninput" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="statusFilter">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" @bind="bowClassFilter">
+                <option value="">All bow classes</option>
+                @foreach (var bc in Enum.GetValues<BowClass>())
+                {
+                    <option value="@bc">@bc</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-1 d-flex align-items-center">
+            @if (!string.IsNullOrEmpty(searchText) || !string.IsNullOrEmpty(statusFilter) || !string.IsNullOrEmpty(bowClassFilter))
+            {
+                <button class="btn btn-outline-secondary btn-sm w-100" @onclick="ClearFilters" title="Clear filters">✕</button>
+            }
+        </div>
+    </div>
+}
+
 @if (members == null)
 {
     <p><em>Loading...</em></p>
@@ -139,6 +171,14 @@ else if (members.Length == 0)
 }
 else
 {
+    var visible = FilteredMembers.ToList();
+    @if (visible.Count == 0)
+    {
+        <p class="text-muted">No members match the current filter. <button class="btn btn-link p-0" @onclick="ClearFilters">Clear filters</button></p>
+    }
+    else
+    {
+        <div class="text-muted small mb-2">Showing @visible.Count of @members.Length member@(members.Length == 1 ? "" : "s")</div>
     <table class="table table-striped table-hover">
         <thead>
             <tr>
@@ -152,7 +192,7 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var m in members)
+            @foreach (var m in visible)
             {
                 <tr>
                     <td><a href="/members/@m.Id">@m.FullName</a></td>
@@ -178,6 +218,7 @@ else
             }
         </tbody>
     </table>
+    }
 }
 
 <ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
@@ -195,6 +236,27 @@ else
     string? googleSheetsUrl;
     ImportResult? importResult;
     string? importError;
+
+    string searchText = string.Empty;
+    string statusFilter = string.Empty;
+    string bowClassFilter = string.Empty;
+
+    IEnumerable<Member> FilteredMembers => (members ?? []).Where(m =>
+        (string.IsNullOrWhiteSpace(searchText) ||
+            m.FullName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            (m.Email?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+        (string.IsNullOrEmpty(statusFilter) ||
+            (statusFilter == "active" && m.IsActive) ||
+            (statusFilter == "inactive" && !m.IsActive)) &&
+        (string.IsNullOrEmpty(bowClassFilter) ||
+            Enum.TryParse<BowClass>(bowClassFilter, out var bc) && m.PreferredBowClass == bc));
+
+    void ClearFilters()
+    {
+        searchText = string.Empty;
+        statusFilter = string.Empty;
+        bowClassFilter = string.Empty;
+    }
 
     protected override async Task OnInitializedAsync() => await Reload();
 

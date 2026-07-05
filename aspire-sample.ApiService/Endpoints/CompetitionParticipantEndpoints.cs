@@ -1,6 +1,5 @@
-using aspire_sample.ApiService.Data;
 using aspire_sample.ApiService.Models;
-using Microsoft.EntityFrameworkCore;
+using aspire_sample.ApiService.Services;
 
 namespace aspire_sample.ApiService.Endpoints;
 
@@ -17,34 +16,24 @@ public static class CompetitionParticipantEndpoints
         return app;
     }
 
-    static async Task<IResult> GetByCompetition(Guid competitionId, ArcheryDbContext db, CancellationToken ct)
+    static async Task<IResult> GetByCompetition(
+        Guid competitionId, ICompetitionParticipantService svc, CancellationToken ct)
+        => Results.Ok(await svc.GetByCompetitionAsync(competitionId, ct));
+
+    static async Task<IResult> Register(
+        CompetitionParticipant input, ICompetitionParticipantService svc, CancellationToken ct)
     {
-        var participants = await db.CompetitionParticipants
-            .AsNoTracking()
-            .Where(p => p.CompetitionId == competitionId)
-            .Include(p => p.Member)
-            .Include(p => p.ExternalParticipant)
-            .ToListAsync(ct);
-        return Results.Ok(participants);
+        try
+        {
+            var created = await svc.RegisterAsync(input, ct);
+            return Results.Created($"/competition-participants/{created.Id}", created);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
     }
 
-    static async Task<IResult> Register(CompetitionParticipant input, ArcheryDbContext db, CancellationToken ct)
-    {
-        if ((input.MemberId is null) == (input.ExternalParticipantId is null))
-            return Results.BadRequest("Exactly one of MemberId or ExternalParticipantId must be provided.");
-
-        input.Id = Guid.NewGuid();
-        db.CompetitionParticipants.Add(input);
-        await db.SaveChangesAsync(ct);
-        return Results.Created($"/competition-participants/{input.Id}", input);
-    }
-
-    static async Task<IResult> Remove(Guid id, ArcheryDbContext db, CancellationToken ct)
-    {
-        var participant = await db.CompetitionParticipants.FindAsync([id], ct);
-        if (participant is null) return Results.NotFound();
-        db.CompetitionParticipants.Remove(participant);
-        await db.SaveChangesAsync(ct);
-        return Results.NoContent();
-    }
+    static async Task<IResult> Remove(Guid id, ICompetitionParticipantService svc, CancellationToken ct)
+        => await svc.RemoveAsync(id, ct) ? Results.NoContent() : Results.NotFound();
 }

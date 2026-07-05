@@ -1,9 +1,13 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Authentication;
 
 namespace aspire_sample.Web;
 
-public class ArcheryApiClient(HttpClient httpClient, AccessTokenProvider tokenProvider)
+public class ArcheryApiClient(
+    HttpClient httpClient,
+    AccessTokenProvider tokenProvider,
+    IHttpContextAccessor httpContextAccessor)
 {
     public Task<ImportResult?> ImportMembersAsync(byte[] content, string fileName, CancellationToken ct = default)
         => ImportAsync("/members/import", content, fileName, ct);
@@ -116,8 +120,21 @@ public class ArcheryApiClient(HttpClient httpClient, AccessTokenProvider tokenPr
 
     void AddBearerToken(HttpRequestMessage request)
     {
-        if (!string.IsNullOrWhiteSpace(tokenProvider.AccessToken))
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenProvider.AccessToken);
+        // During interactive circuit, AccessTokenProvider holds the token.
+        // During SSR prerender, Interactive Server components run in a separate DI scope where
+        // AccessTokenProvider.AccessToken is null — fall back to reading from the HTTP context
+        // (the auth middleware cached it in IAuthenticateResultFeature for this request).
+        var token = tokenProvider.AccessToken;
+
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            var feature = httpContextAccessor.HttpContext?
+                .Features.Get<IAuthenticateResultFeature>();
+            token = feature?.AuthenticateResult?.Properties?.GetTokenValue("access_token");
+        }
+
+        if (!string.IsNullOrWhiteSpace(token))
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
     async Task<T?> GetFromJsonAsync<T>(string url, CancellationToken ct)

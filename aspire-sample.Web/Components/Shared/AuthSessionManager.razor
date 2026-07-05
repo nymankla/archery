@@ -1,6 +1,7 @@
 @rendermode InteractiveServer
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject AccessTokenProvider TokenProvider
 @implements IAsyncDisposable
 
 <div></div>
@@ -27,6 +28,9 @@
 
 	[JSInvokable]
 	public void OnIdleTimeout() => Navigation.NavigateTo("/logout", forceLoad: true);
+
+	[JSInvokable]
+	public void OnTokenRefreshed(string newToken) => TokenProvider.AccessToken = newToken;
 
 	private async Task RunRefreshLoopAsync(CancellationToken cancellationToken)
 	{

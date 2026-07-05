@@ -1,6 +1,5 @@
-using aspire_sample.ApiService.Data;
 using aspire_sample.ApiService.Models;
-using Microsoft.EntityFrameworkCore;
+using aspire_sample.ApiService.Services;
 
 namespace aspire_sample.ApiService.Endpoints;
 
@@ -10,52 +9,30 @@ public static class CompetitionEndpoints
     {
         var group = app.MapGroup("/competitions").WithTags("Competitions").RequireAuthorization();
 
-        group.MapGet("/", GetAllCompetitions);
-        group.MapGet("/{id:guid}", GetCompetitionById);
-        group.MapPost("/", CreateCompetition);
-        group.MapPut("/{id:guid}", UpdateCompetition);
-        group.MapDelete("/{id:guid}", DeleteCompetition);
+        group.MapGet("/", GetAll);
+        group.MapGet("/{id:guid}", GetById);
+        group.MapPost("/", Create);
+        group.MapPut("/{id:guid}", Update);
+        group.MapDelete("/{id:guid}", Delete);
 
         return app;
     }
 
-    static async Task<IResult> GetAllCompetitions(ArcheryDbContext db, CancellationToken ct)
-        => Results.Ok(await db.Competitions.AsNoTracking().ToListAsync(ct));
+    static async Task<IResult> GetAll(ICompetitionService svc, CancellationToken ct)
+        => Results.Ok(await svc.GetAllAsync(ct));
 
-    static async Task<IResult> GetCompetitionById(Guid id, ArcheryDbContext db, CancellationToken ct)
-        => await db.Competitions.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id, ct) is { } c
-            ? Results.Ok(c)
-            : Results.NotFound();
+    static async Task<IResult> GetById(Guid id, ICompetitionService svc, CancellationToken ct)
+        => await svc.GetByIdAsync(id, ct) is { } c ? Results.Ok(c) : Results.NotFound();
 
-    static async Task<IResult> CreateCompetition(Competition competition, ArcheryDbContext db, CancellationToken ct)
+    static async Task<IResult> Create(Competition competition, ICompetitionService svc, CancellationToken ct)
     {
-        competition.Id = Guid.NewGuid();
-        db.Competitions.Add(competition);
-        await db.SaveChangesAsync(ct);
-        return Results.Created($"/competitions/{competition.Id}", competition);
+        var created = await svc.CreateAsync(competition, ct);
+        return Results.Created($"/competitions/{created.Id}", created);
     }
 
-    static async Task<IResult> UpdateCompetition(Guid id, Competition input, ArcheryDbContext db, CancellationToken ct)
-    {
-        var competition = await db.Competitions.FindAsync([id], ct);
-        if (competition is null) return Results.NotFound();
-        competition.Name = input.Name;
-        competition.Date = input.Date;
-        competition.Location = input.Location;
-        competition.RoundType = input.RoundType;
-        competition.Type = input.Type;
-        competition.Description = input.Description;
-        await db.SaveChangesAsync(ct);
-        return Results.Ok(competition);
-    }
+    static async Task<IResult> Update(Guid id, Competition input, ICompetitionService svc, CancellationToken ct)
+        => await svc.UpdateAsync(id, input, ct) is { } c ? Results.Ok(c) : Results.NotFound();
 
-    static async Task<IResult> DeleteCompetition(Guid id, ArcheryDbContext db, CancellationToken ct)
-    {
-        var competition = await db.Competitions.FindAsync([id], ct);
-        if (competition is null) return Results.NotFound();
-        db.Competitions.Remove(competition);
-        await db.SaveChangesAsync(ct);
-        return Results.NoContent();
-    }
+    static async Task<IResult> Delete(Guid id, ICompetitionService svc, CancellationToken ct)
+        => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();
 }

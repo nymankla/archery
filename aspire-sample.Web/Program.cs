@@ -34,6 +34,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AccessTokenProvider>();
 builder.Services.AddScoped<TokenRefreshService>();
 builder.Services.AddScoped<CookieOidcEvents>();
@@ -133,7 +134,9 @@ app.MapPost("/auth/activity", async (HttpContext httpContext) =>
 app.MapPost("/auth/refresh", async (HttpContext httpContext, TokenRefreshService tokenRefreshService) =>
 {
     await tokenRefreshService.TryRefreshAsync(httpContext);
-    return Results.Ok();
+    // Return the current (possibly just-refreshed) token so the Blazor circuit can update its in-memory copy.
+    var token = await httpContext.GetTokenAsync("access_token");
+    return Results.Ok(new { accessToken = token });
 }).RequireAuthorization();
 
 app.MapRazorComponents<App>()

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json.Serialization;
 using aspire_sample.ApiService.Data;
 using aspire_sample.ApiService.Endpoints;
+using aspire_sample.ApiService.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -28,6 +29,14 @@ builder.Services.AddAuthentication()
         });
 builder.Services.AddAuthorization();
 builder.AddNpgsqlDbContext<ArcheryDbContext>("db");
+
+builder.Services.AddScoped<IMemberService, MemberService>();
+builder.Services.AddScoped<IMembershipFeeService, MembershipFeeService>();
+builder.Services.AddScoped<ICompetitionService, CompetitionService>();
+builder.Services.AddScoped<ICompetitionParticipantService, CompetitionParticipantService>();
+builder.Services.AddScoped<ICompetitionResultService, CompetitionResultService>();
+builder.Services.AddScoped<IExternalParticipantService, ExternalParticipantService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var app = builder.Build();
 

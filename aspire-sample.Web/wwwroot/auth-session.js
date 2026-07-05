@@ -28,7 +28,13 @@ window.authSession = (() => {
             handler();
         },
         async refresh() {
-            await fetch("/auth/refresh", { method: "POST", credentials: "include" });
+            const response = await fetch("/auth/refresh", { method: "POST", credentials: "include" });
+            if (response.ok && dotNetRef) {
+                const data = await response.json();
+                if (data?.accessToken) {
+                    await dotNetRef.invokeMethodAsync("OnTokenRefreshed", data.accessToken);
+                }
+            }
         },
         dispose() {
             if (handler) {
