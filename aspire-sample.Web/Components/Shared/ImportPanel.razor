@@ -1,0 +1,116 @@
+@inject IHttpClientFactory HttpFactory
+@using System.Text.RegularExpressions
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">@Title</h5>
+        @if (ColumnHint != null)
+        {
+            <p class="text-muted small">@ColumnHint</p>
+        }
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Upload file (CSV or .xlsx)</label>
+            <InputFile OnChange="OnFileSelected" class="form-control" accept=".csv,.xlsx" />
+        </div>
+
+        <div class="d-flex align-items-center my-3">
+            <hr class="flex-grow-1" /><span class="mx-3 text-muted">or</span><hr class="flex-grow-1" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Google Sheets URL (shared as "Anyone with the link")</label>
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/..." @bind="googleSheetsUrl" />
+                <button class="btn btn-outline-primary" @onclick="ImportFromGoogleSheets" disabled="@importing">Import Sheet</button>
+            </div>
+        </div>
+
+        @if (result != null)
+        {
+            <div class="alert @(result.Errors.Count == 0 ? "alert-success" : "alert-warning") mt-3">
+                <strong>@result.Imported new, @result.Updated updated.</strong>
+                @if (result.Errors.Count > 0)
+                {
+                    <ul class="mb-0 mt-2">
+                        @foreach (var err in result.Errors)
+                        {
+                            <li>@err</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger mt-3">@error</div>
+        }
+
+        <div class="mt-3">
+            <button class="btn btn-secondary" @onclick="OnClose">Close</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ColumnHint { get; set; }
+    [Parameter, EditorRequired] public Func<byte[], string, Task<ImportResult?>>? OnImport { get; set; }
+    [Parameter] public EventCallback<ImportResult> OnImported { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+
+    string? googleSheetsUrl;
+    bool importing;
+    ImportResult? result;
+    string? error;
+
+    async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        result = null;
+        error = null;
+        importing = true;
+        try
+        {
+            using var ms = new MemoryStream();
+            await e.File.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(ms);
+            result = OnImport != null ? await OnImport(ms.ToArray(), e.File.Name) : null;
+            if (result != null) await OnImported.InvokeAsync(result);
+            else error = "Import failed — server returned an error.";
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { importing = false; }
+    }
+
+    async Task ImportFromGoogleSheets()
+    {
+        result = null;
+        error = null;
+        var exportUrl = BuildGoogleSheetsExportUrl(googleSheetsUrl);
+        if (exportUrl == null)
+        {
+            error = "Invalid Google Sheets URL. Make sure it's a Google Sheets share link.";
+            return;
+        }
+        importing = true;
+        try
+        {
+            var bytes = await HttpFactory.CreateClient("external").GetByteArrayAsync(exportUrl);
+            result = OnImport != null ? await OnImport(bytes, "import.csv") : null;
+            if (result != null) await OnImported.InvokeAsync(result);
+            else error = "Import failed — server returned an error.";
+        }
+        catch (Exception ex) { error = $"Failed to fetch sheet: {ex.Message}"; }
+        finally { importing = false; }
+    }
+
+    static string? BuildGoogleSheetsExportUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        var idMatch = Regex.Match(url, @"spreadsheets/d/([^/\?#]+)");
+        if (!idMatch.Success) return null;
+        var id = idMatch.Groups[1].Value;
+        var gidMatch = Regex.Match(url, @"gid=(\d+)");
+        var gid = gidMatch.Success ? gidMatch.Groups[1].Value : "0";
+        return $"https://docs.google.com/spreadsheets/d/{id}/export?format=csv&gid={gid}";
+    }
+}

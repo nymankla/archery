@@ -11,6 +11,7 @@ public class MemberFeeOverview
     public decimal? Amount { get; set; }
     public DateOnly? DueDate { get; set; }
     public DateOnly? PaidDate { get; set; }
+    public DateOnly DateOfBirth { get; set; }
     public string FullName => $"{FirstName} {LastName}";
 }
 
@@ -19,6 +20,8 @@ public class BulkFeeRequest
     public int Year { get; set; }
     public decimal Amount { get; set; }
     public DateOnly DueDate { get; set; }
+    public int? MinAge { get; set; }
+    public string? AgeOp { get; set; }
 }
 
 public class ImportResult

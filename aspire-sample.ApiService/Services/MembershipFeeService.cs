@@ -42,7 +42,8 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
             feeByMember.TryGetValue(m.Id, out var fee);
             return new MemberFeeOverviewItem(
                 m.Id, m.FirstName, m.LastName, m.Email,
-                fee?.Id, fee?.Status, fee?.Amount, fee?.DueDate, fee?.PaidDate);
+                fee?.Id, fee?.Status, fee?.Amount, fee?.DueDate, fee?.PaidDate,
+                m.DateOfBirth);
         }).ToList();
     }
 
@@ -54,17 +55,26 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
         return fee;
     }
 
-    public async Task<int> BulkCreateAsync(int year, decimal amount, DateOnly dueDate, CancellationToken ct = default)
+    public async Task<int> BulkCreateAsync(int year, decimal amount, DateOnly dueDate, int? minAge = null, string? ageOp = null, CancellationToken ct = default)
     {
         var existingMemberIds = await db.MembershipFees
             .Where(f => f.Year == year)
             .Select(f => f.MemberId)
             .ToHashSetAsync(ct);
 
-        var memberIds = await db.Members
-            .Where(m => m.IsActive && !existingMemberIds.Contains(m.Id))
-            .Select(m => m.Id)
-            .ToListAsync(ct);
+        var query = db.Members.Where(m => m.IsActive && !existingMemberIds.Contains(m.Id));
+
+        if (minAge.HasValue)
+        {
+            // Age = year - DateOfBirth.Year (archery club uses calendar-year age classes)
+            // ">=" means age >= minAge → birth year <= year - minAge
+            // ">"  means age >  minAge → birth year <  year - minAge
+            var cutoff = year - minAge.Value;
+            query = ageOp == ">" ? query.Where(m => m.DateOfBirth.Year < cutoff)
+                                 : query.Where(m => m.DateOfBirth.Year <= cutoff);
+        }
+
+        var memberIds = await query.Select(m => m.Id).ToListAsync(ct);
 
         foreach (var memberId in memberIds)
             db.MembershipFees.Add(new MembershipFee

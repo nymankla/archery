@@ -118,7 +118,7 @@ public class MembershipFeeServiceTests
         await db.SaveChangesAsync(ct);
 
         var svc = new MembershipFeeService(db);
-        var created = await svc.BulkCreateAsync(year, 500, new DateOnly(year, 3, 31), ct);
+        var created = await svc.BulkCreateAsync(year, 500, new DateOnly(year, 3, 31), ct: ct);
 
         Assert.Equal(1, created);
         Assert.Equal(2, await db.MembershipFees.CountAsync(ct));
@@ -139,7 +139,7 @@ public class MembershipFeeServiceTests
         await db.SaveChangesAsync(ct);
 
         var svc = new MembershipFeeService(db);
-        var created = await svc.BulkCreateAsync(year, 500, new DateOnly(year, 3, 31), ct);
+        var created = await svc.BulkCreateAsync(year, 500, new DateOnly(year, 3, 31), ct: ct);
 
         Assert.Equal(1, created);
     }
@@ -155,7 +155,7 @@ public class MembershipFeeServiceTests
         await db.SaveChangesAsync(ct);
 
         var svc = new MembershipFeeService(db);
-        await svc.BulkCreateAsync(year, 600, dueDate, ct);
+        await svc.BulkCreateAsync(year, 600, dueDate, ct: ct);
 
         var fee = await db.MembershipFees.SingleAsync(ct);
         Assert.Equal(year, fee.Year);

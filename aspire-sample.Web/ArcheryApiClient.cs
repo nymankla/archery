@@ -82,6 +82,9 @@ public class ArcheryApiClient(
     public Task<HttpResponseMessage> DeleteCompetitionAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/competitions/{id}", ct);
 
+    public Task<ImportResult?> ImportCompetitionsAsync(byte[] content, string fileName, CancellationToken ct = default)
+        => ImportAsync("/competitions/import", content, fileName, ct);
+
     public Task<ImportResult?> ImportExternalParticipantsAsync(byte[] content, string fileName, CancellationToken ct = default)
         => ImportAsync("/external-participants/import", content, fileName, ct);
 

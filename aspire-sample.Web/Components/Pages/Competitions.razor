@@ -6,8 +6,24 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1>Competitions</h1>
-    <button class="btn btn-primary" @onclick="ShowAddForm">Add Competition</button>
+    <div>
+        <button class="btn btn-primary me-2" @onclick="ShowAddForm">Add Competition</button>
+        <button class="btn btn-outline-secondary" @onclick="ToggleImport">Import</button>
+    </div>
 </div>
+
+@if (showImport)
+{
+    <ImportPanel Title="Import Competitions"
+        OnImport="@((bytes, name) => Api.ImportCompetitionsAsync(bytes, name))"
+        OnImported="@(async _ => await Reload())"
+        OnClose="ToggleImport">
+        <ColumnHint>
+            Expected columns: <code>Name</code>, <code>Date</code> (YYYY-MM-DD), <code>Location</code>, <code>RoundType</code> (required),
+            optionally <code>Type</code> (Internal/External/Regional/National), <code>Description</code>.
+        </ColumnHint>
+    </ImportPanel>
+}
 
 @if (showForm)
 {
@@ -105,6 +121,7 @@ else
     Competition[]? competitions;
     Competition? editing;
     bool showForm;
+    bool showImport;
 
     protected override async Task OnInitializedAsync() => await Reload();
 
@@ -152,4 +169,6 @@ else
             await Api.DeleteCompetitionAsync(c.Id);
             await Reload();
         });
+
+    void ToggleImport() => showImport = !showImport;
 }

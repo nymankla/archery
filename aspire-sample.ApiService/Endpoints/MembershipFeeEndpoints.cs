@@ -41,7 +41,7 @@ public static class MembershipFeeEndpoints
 
     static async Task<IResult> BulkCreate(BulkFeeRequest req, IMembershipFeeService svc, CancellationToken ct)
     {
-        var count = await svc.BulkCreateAsync(req.Year, req.Amount, req.DueDate, ct);
+        var count = await svc.BulkCreateAsync(req.Year, req.Amount, req.DueDate, req.MinAge, req.AgeOp, ct);
         return Results.Ok(new { Created = count });
     }
 
@@ -51,5 +51,5 @@ public static class MembershipFeeEndpoints
     static async Task<IResult> Delete(Guid id, IMembershipFeeService svc, CancellationToken ct)
         => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();
 
-    private record BulkFeeRequest(int Year, decimal Amount, DateOnly DueDate);
+    private record BulkFeeRequest(int Year, decimal Amount, DateOnly DueDate, int? MinAge = null, string? AgeOp = null);
 }

@@ -1,0 +1,7 @@
+FirstName,LastName,Email,Phone,ClubAffiliation
+Anna,Lindqvist,anna.lindqvist@example.com,0701234567,Stockholms BK
+Erik,Johansson,erik.johansson@example.com,0709876543,Göteborgs BK
+Maria,Svensson,,0731122334,Uppsala BK
+Lars,Karlsson,lars.karlsson@example.com,,Malmö BK
+Sofia,Nilsson,sofia.nilsson@example.com,0755443322,Stockholms BK
+Björn,Eriksson,,,

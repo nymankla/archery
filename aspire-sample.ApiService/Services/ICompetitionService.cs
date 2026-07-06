@@ -1,4 +1,5 @@
 using aspire_sample.ApiService.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace aspire_sample.ApiService.Services;
 
@@ -9,4 +10,5 @@ public interface ICompetitionService
     Task<Competition> CreateAsync(Competition competition, CancellationToken ct = default);
     Task<Competition?> UpdateAsync(Guid id, Competition input, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
+    Task<ImportResult> ImportAsync(IFormFile file, CancellationToken ct = default);
 }

@@ -21,7 +21,7 @@
 
 @if (showBulkCreate)
 {
-    var noFeeCount = rows?.Count(r => r.FeeId == null) ?? 0;
+    var noFeeCount = BulkEligible.Count();
     <div class="card mb-4">
         <div class="card-body">
             <h5 class="card-title">Create fees for active members without a @selectedYear fee</h5>
@@ -34,6 +34,31 @@
                     <label class="form-label">Due date</label>
                     <input type="date" class="form-control" @bind="defaultDueDate" />
                 </div>
+            </div>
+            <div class="row g-3 mt-1 align-items-end">
+                <div class="col-auto">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="ageFilterToggle" @bind="ageFilterEnabled" />
+                        <label class="form-check-label" for="ageFilterToggle">Filter by age in @selectedYear</label>
+                    </div>
+                </div>
+                @if (ageFilterEnabled)
+                {
+                    <div class="col-auto">
+                        <label class="form-label">Age (years)</label>
+                        <input type="number" class="form-control" style="width:90px" @bind="ageFilterAge" min="1" max="120" />
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label">Operator</label>
+                        <select class="form-select" style="width:auto" @bind="ageFilterOp">
+                            <option value=">=">&ge; (at least this age)</option>
+                            <option value=">">&gt; (older than this age)</option>
+                        </select>
+                    </div>
+                    <div class="col-auto d-flex align-items-end">
+                        <span class="text-muted small pb-2">born @(ageFilterOp == ">" ? "before" : "in or before") @(selectedYear - ageFilterAge)</span>
+                    </div>
+                }
             </div>
             <div class="mt-3">
                 <button class="btn btn-primary" @onclick="BulkCreate" disabled="@(busy || noFeeCount == 0)">
@@ -217,6 +242,23 @@ else
     decimal defaultAmount = 500;
     DateOnly defaultDueDate;
 
+    bool ageFilterEnabled;
+    int ageFilterAge = 18;
+    string ageFilterOp = ">=";
+
+    IEnumerable<MemberFeeOverview> BulkEligible
+    {
+        get
+        {
+            var q = (rows ?? []).Where(r => r.FeeId == null);
+            if (!ageFilterEnabled) return q;
+            var cutoff = selectedYear - ageFilterAge;
+            return ageFilterOp == ">"
+                ? q.Where(r => r.DateOfBirth.Year < cutoff)
+                : q.Where(r => r.DateOfBirth.Year <= cutoff);
+        }
+    }
+
     List<MemberFeeOverview>? rows;
 
     string searchText = string.Empty;
@@ -261,7 +303,9 @@ else
         {
             Year = selectedYear,
             Amount = defaultAmount,
-            DueDate = defaultDueDate
+            DueDate = defaultDueDate,
+            MinAge = ageFilterEnabled ? ageFilterAge : null,
+            AgeOp = ageFilterEnabled ? ageFilterOp : null
         });
         showBulkCreate = false;
         busy = false;
