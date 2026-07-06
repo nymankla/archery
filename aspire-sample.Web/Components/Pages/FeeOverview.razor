@@ -92,6 +92,13 @@ else
         </div>
     </div>
 
+    <div class="row g-2 mb-2">
+        <div class="col-md-5">
+            <input type="search" class="form-control" placeholder="Search name or email…"
+                   @bind="searchText" @bind:event="oninput" />
+        </div>
+    </div>
+
     <div class="mb-3">
         @foreach (var (label, key) in FilterOptions)
         {
@@ -99,6 +106,10 @@ else
                     @onclick="() => activeFilter = key">
                 @label
             </button>
+        }
+        @if (!string.IsNullOrEmpty(searchText))
+        {
+            <button class="btn btn-sm btn-outline-secondary ms-2" @onclick='() => searchText = string.Empty'>✕ Clear search</button>
         }
     </div>
 
@@ -109,6 +120,7 @@ else
     }
     else
     {
+        <div class="text-muted small mb-2">Showing @visible.Count of @(rows?.Count ?? 0) member@((rows?.Count ?? 0) == 1 ? "" : "s")</div>
         <table class="table table-striped table-hover align-middle">
             <thead>
                 <tr>
@@ -207,13 +219,26 @@ else
 
     List<MemberFeeOverview>? rows;
 
-    IEnumerable<MemberFeeOverview> FilteredRows => activeFilter switch
+    string searchText = string.Empty;
+
+    IEnumerable<MemberFeeOverview> FilteredRows
     {
-        "paid"   => rows?.Where(r => r.Status == FeeStatus.Paid) ?? [],
-        "unpaid" => rows?.Where(r => r.Status is FeeStatus.Unpaid or FeeStatus.Partial) ?? [],
-        "nofee"  => rows?.Where(r => r.FeeId == null) ?? [],
-        _        => rows ?? []
-    };
+        get
+        {
+            IEnumerable<MemberFeeOverview> q = activeFilter switch
+            {
+                "paid"   => rows?.Where(r => r.Status == FeeStatus.Paid) ?? [],
+                "unpaid" => rows?.Where(r => r.Status is FeeStatus.Unpaid or FeeStatus.Partial) ?? [],
+                "nofee"  => rows?.Where(r => r.FeeId == null) ?? [],
+                _        => rows ?? []
+            };
+            if (!string.IsNullOrWhiteSpace(searchText))
+                q = q.Where(r =>
+                    r.FullName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                    (r.Email?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false));
+            return q;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

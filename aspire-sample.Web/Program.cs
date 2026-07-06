@@ -5,16 +5,31 @@ using aspire_sample.Web.Components;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestHeadersTotalSize = 131072);
 
+// Persist data-protection keys to disk so they survive restarts.
+// Without this, any in-flight OIDC correlation cookie (and existing auth cookies)
+// become unreadable after a restart, causing "Correlation failed" on the callback.
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(
+        Path.Combine(builder.Environment.ContentRootPath, ".dp-keys")));
+
+
 var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+var keycloakRealm = builder.Configuration["Keycloak:Realm"]
+    ?? throw new InvalidOperationException("Keycloak:Realm is required.");
+var keycloakClientId = builder.Configuration["Keycloak:ClientId"]
+    ?? throw new InvalidOperationException("Keycloak:ClientId is required.");
 
 var authSessionSection = builder.Configuration.GetSection(AuthSessionOptions.SectionName);
 
@@ -30,6 +45,7 @@ builder.AddServiceDefaults();
 builder.AddRedisOutputCache("cache");
 
 builder.Services.AddLocalization();
+builder.Services.AddMemoryCache();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddCascadingAuthenticationState();
@@ -39,6 +55,7 @@ builder.Services.AddScoped<AccessTokenProvider>();
 builder.Services.AddScoped<TokenRefreshService>();
 builder.Services.AddScoped<CookieOidcEvents>();
 builder.Services.AddScoped<OpenIdConnectEventsHandler>();
+builder.Services.AddSingleton<ITicketStore, MemoryCacheTicketStore>();
 
 builder.Services.AddHttpClient<ArcheryApiClient>(client =>
     {
@@ -57,13 +74,16 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = "/login";
     options.EventsType = typeof(CookieOidcEvents);
     options.SlidingExpiration = true;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 })
 .AddKeycloakOpenIdConnect(
     serviceName: "keycloak",
-    realm: "archery",
+    realm: keycloakRealm,
     options =>
     {
-        options.ClientId = "archeryweb";
+        options.ClientId = keycloakClientId;
         options.ClientSecret = builder.Configuration["Keycloak:ClientSecret"];
         options.ResponseType = OpenIdConnectResponseType.Code;
         options.SaveTokens = true;
@@ -79,6 +99,14 @@ builder.Services.AddAuthentication(options =>
             };
         }
     });
+
+builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+    .Configure<ITicketStore, IOptions<AuthSessionOptions>>((options, ticketStore, authSessionOptions) =>
+    {
+        options.SessionStore = ticketStore;
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(authSessionOptions.Value.CookieExpirationMinutes);
+    });
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -112,11 +140,15 @@ app.MapGet("/login", (string? returnUrl) =>
 
 app.MapGet("/logout", async (HttpContext httpContext) =>
 {
-    await httpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme, new AuthenticationProperties
-    {
-        RedirectUri = "/"
-    });
-    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    var authResult = await httpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    var properties = authResult.Succeeded && authResult.Properties is not null
+        ? authResult.Properties
+        : new AuthenticationProperties();
+
+    properties.RedirectUri = "/";
+
+    return Results.SignOut(properties,
+        [CookieAuthenticationDefaults.AuthenticationScheme, OpenIdConnectDefaults.AuthenticationScheme]);
 })
     .AllowAnonymous();
 

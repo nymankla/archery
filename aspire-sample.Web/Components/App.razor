@@ -1,10 +1,8 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.Extensions.Options
 @using aspire_sample.Web.Auth
-@inject PersistentComponentState AppState
 @inject AccessTokenProvider TokenProvider
 @inject IOptions<AuthSessionOptions> AuthSessionOptions
-@implements IDisposable
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,7 +20,6 @@
 </head>
 
 <body>
-    <AccessTokenInitializer />
     <AuthSessionManager IdleTimeoutMinutes="@AuthSessionOptions.Value.IdleTimeoutMinutes" RefreshMinutes="@AuthSessionOptions.Value.RefreshMinutes" />
     <Routes />
     <script src="auth-session.js"></script>
@@ -32,9 +29,6 @@
 </html>
 
 @code {
-    private PersistingComponentStateSubscription _subscription;
-    private string? _accessToken;
-
     [CascadingParameter]
     public HttpContext HttpContext { get; set; } = default!;
 
@@ -45,16 +39,6 @@
         // child components first, causing them to call the API with a null token (401).
         // The auth middleware has already run and cached its result here.
         var authFeature = HttpContext.Features.Get<IAuthenticateResultFeature>();
-        _accessToken = authFeature?.AuthenticateResult?.Properties?.GetTokenValue("access_token");
-        TokenProvider.AccessToken = _accessToken;
-        _subscription = AppState.RegisterOnPersisting(PersistTokenAsync);
+        TokenProvider.AccessToken = authFeature?.AuthenticateResult?.Properties?.GetTokenValue("access_token");
     }
-
-    private Task PersistTokenAsync()
-    {
-        AppState.PersistAsJson(AccessTokenProvider.PersistenceKey, _accessToken);
-        return Task.CompletedTask;
-    }
-
-    public void Dispose() => _subscription.Dispose();
 }

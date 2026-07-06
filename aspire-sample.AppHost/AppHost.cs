@@ -6,7 +6,7 @@ var cache = builder.AddRedis("cache")
     .WithContainerName("archery-redis");
 
 var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume("dbdata")
+    .WithDataVolume("dbdata-pg18")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithContainerName("archery-postgres");
 var db = postgres.AddDatabase("db");

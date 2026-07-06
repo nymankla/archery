@@ -28,4 +28,22 @@
             </NavLink>
         </div>
     </div>
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="user-section">
+                <span class="bi bi-person-circle" aria-hidden="true"></span>
+                <span class="username">
+                    @(context.User.FindFirst("name")?.Value
+                        ?? context.User.FindFirst("preferred_username")?.Value
+                        ?? context.User.Identity?.Name
+                        ?? "User")
+                </span>
+                <a href="/logout" class="logout-link">
+                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span>
+                    Logout
+                </a>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 </nav>

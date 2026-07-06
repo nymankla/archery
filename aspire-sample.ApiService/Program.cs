@@ -12,6 +12,11 @@ var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
 
+var keycloakRealm = builder.Configuration["Keycloak:Realm"]
+    ?? throw new InvalidOperationException("Keycloak:Realm is required.");
+var keycloakAudience = builder.Configuration["Keycloak:Audience"]
+    ?? throw new InvalidOperationException("Keycloak:Audience is required.");
+
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
@@ -20,10 +25,10 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer(
         serviceName: "keycloak",
-        realm: "archery",
+        realm: keycloakRealm,
         options =>
         {
-            options.Audience = "archery.api";
+            options.Audience = keycloakAudience;
             if (builder.Environment.IsDevelopment())
                 options.RequireHttpsMetadata = false;
         });

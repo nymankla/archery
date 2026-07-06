@@ -130,6 +130,38 @@ else
     }
     else
     {
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <select class="form-select" @bind="participantBowClassFilter">
+                    <option value="">All bow classes</option>
+                    @foreach (var bc in Enum.GetValues<BowClass>())
+                    {
+                        <option value="@bc">@bc</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="participantTypeFilter">
+                    <option value="">All types</option>
+                    <option value="member">Club members</option>
+                    <option value="external">External</option>
+                </select>
+            </div>
+            @if (!string.IsNullOrEmpty(participantBowClassFilter) || !string.IsNullOrEmpty(participantTypeFilter))
+            {
+                <div class="col-auto d-flex align-items-center">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ClearParticipantFilters">✕ Clear</button>
+                </div>
+            }
+        </div>
+
+        var visibleParticipants = FilteredParticipants.ToList();
+        @if (visibleParticipants.Count == 0)
+        {
+            <p class="text-muted">No participants match the current filter.</p>
+        }
+        else
+        {
         <table class="table table-sm table-striped mb-4">
             <thead>
                 <tr>
@@ -141,7 +173,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var p in competitionParticipants)
+                @foreach (var p in visibleParticipants)
                 {
                     var hasResult = p.MemberId.HasValue
                         ? (results ?? []).Any(r => r.MemberId == p.MemberId)
@@ -162,6 +194,7 @@ else
                 }
             </tbody>
         </table>
+        }
     }
 
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -304,6 +337,44 @@ else
     }
     else
     {
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <input type="search" class="form-control" placeholder="Search participant…"
+                       @bind="resultSearchText" @bind:event="oninput" />
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" @bind="resultBowClassFilter">
+                    <option value="">All bow classes</option>
+                    @foreach (var bc in Enum.GetValues<BowClass>())
+                    {
+                        <option value="@bc">@bc</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" @bind="resultGenderFilter">
+                    <option value="">All genders</option>
+                    @foreach (var g in Enum.GetValues<Gender>())
+                    {
+                        <option value="@g">@g</option>
+                    }
+                </select>
+            </div>
+            @if (!string.IsNullOrEmpty(resultSearchText) || !string.IsNullOrEmpty(resultBowClassFilter) || !string.IsNullOrEmpty(resultGenderFilter))
+            {
+                <div class="col-auto d-flex align-items-center">
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="ClearResultFilters">✕ Clear</button>
+                </div>
+            }
+        </div>
+
+        var visibleResults = FilteredResults.ToList();
+        @if (visibleResults.Count == 0)
+        {
+            <p class="text-muted">No results match the current filter.</p>
+        }
+        else
+        {
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
@@ -319,7 +390,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var r in results)
+                @foreach (var r in visibleResults)
                 {
                     <tr class="@(r.IsDisqualified ? "table-danger" : "")">
                         <td>@(r.Placement?.ToString() ?? "—")</td>
@@ -338,6 +409,7 @@ else
                 }
             </tbody>
         </table>
+        }
     }
 }
 
@@ -365,6 +437,32 @@ else
     bool showResultForm;
     string? formError;
     ParticipantType participantType = ParticipantType.Member;
+
+    string participantBowClassFilter = string.Empty;
+    string participantTypeFilter = string.Empty;
+
+    IEnumerable<CompetitionParticipant> FilteredParticipants => (competitionParticipants ?? []).Where(p =>
+        (string.IsNullOrEmpty(participantBowClassFilter) ||
+            (Enum.TryParse<BowClass>(participantBowClassFilter, out var pbc) && p.BowClass == pbc)) &&
+        (string.IsNullOrEmpty(participantTypeFilter) ||
+            (participantTypeFilter == "member" && p.MemberId.HasValue) ||
+            (participantTypeFilter == "external" && p.ExternalParticipantId.HasValue)));
+
+    void ClearParticipantFilters() { participantBowClassFilter = string.Empty; participantTypeFilter = string.Empty; }
+
+    string resultSearchText = string.Empty;
+    string resultBowClassFilter = string.Empty;
+    string resultGenderFilter = string.Empty;
+
+    IEnumerable<CompetitionResult> FilteredResults => (results ?? []).Where(r =>
+        (string.IsNullOrWhiteSpace(resultSearchText) ||
+            r.ParticipantName.Contains(resultSearchText, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrEmpty(resultBowClassFilter) ||
+            (Enum.TryParse<BowClass>(resultBowClassFilter, out var rbc) && r.BowClass == rbc)) &&
+        (string.IsNullOrEmpty(resultGenderFilter) ||
+            (Enum.TryParse<Gender>(resultGenderFilter, out var rg) && r.Gender == rg)));
+
+    void ClearResultFilters() { resultSearchText = string.Empty; resultBowClassFilter = string.Empty; resultGenderFilter = string.Empty; }
 
     protected override async Task OnInitializedAsync()
     {

@@ -105,6 +105,31 @@
     </div>
 }
 
+@if (participants != null)
+{
+    <div class="row g-2 mb-3">
+        <div class="col-md-5">
+            <input type="search" class="form-control" placeholder="Search name, email or club…"
+                   @bind="searchText" @bind:event="oninput" />
+        </div>
+        <div class="col-md-4">
+            <select class="form-select" @bind="clubFilter">
+                <option value="">All clubs</option>
+                @foreach (var club in DistinctClubs)
+                {
+                    <option value="@club">@club</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-1 d-flex align-items-center">
+            @if (!string.IsNullOrEmpty(searchText) || !string.IsNullOrEmpty(clubFilter))
+            {
+                <button class="btn btn-outline-secondary btn-sm w-100" @onclick="ClearFilters" title="Clear filters">✕</button>
+            }
+        </div>
+    </div>
+}
+
 @if (participants == null)
 {
     <p><em>Loading...</em></p>
@@ -115,32 +140,41 @@ else if (participants.Length == 0)
 }
 else
 {
-    <table class="table table-striped table-hover">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Club</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var p in participants)
-            {
+    var visible = FilteredParticipants.ToList();
+    @if (visible.Count == 0)
+    {
+        <p class="text-muted">No participants match the current filter. <button class="btn btn-link p-0" @onclick="ClearFilters">Clear filters</button></p>
+    }
+    else
+    {
+        <div class="text-muted small mb-2">Showing @visible.Count of @participants.Length participant@(participants.Length == 1 ? "" : "s")</div>
+        <table class="table table-striped table-hover">
+            <thead>
                 <tr>
-                    <td>@p.FullName</td>
-                    <td>@(p.Email ?? "—")</td>
-                    <td>@(p.Phone ?? "—")</td>
-                    <td>@(p.ClubAffiliation ?? "—")</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ShowEditForm(p)">Edit</button>
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(p)">Delete</button>
-                    </td>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Club</th>
+                    <th></th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var p in visible)
+                {
+                    <tr>
+                        <td>@p.FullName</td>
+                        <td>@(p.Email ?? "—")</td>
+                        <td>@(p.Phone ?? "—")</td>
+                        <td>@(p.ClubAffiliation ?? "—")</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => ShowEditForm(p)">Edit</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => Delete(p)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
 }
 
 <ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
@@ -158,6 +192,27 @@ else
     string? googleSheetsUrl;
     ImportResult? importResult;
     string? importError;
+
+    string searchText = string.Empty;
+    string clubFilter = string.Empty;
+
+    IEnumerable<ExternalParticipant> FilteredParticipants => (participants ?? []).Where(p =>
+        (string.IsNullOrWhiteSpace(searchText) ||
+            p.FullName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+            (p.Email?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (p.ClubAffiliation?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)) &&
+        (string.IsNullOrEmpty(clubFilter) ||
+            string.Equals(p.ClubAffiliation, clubFilter, StringComparison.OrdinalIgnoreCase)));
+
+    void ClearFilters() { searchText = string.Empty; clubFilter = string.Empty; }
+
+    IEnumerable<string> DistinctClubs =>
+        (participants ?? [])
+            .Select(p => p.ClubAffiliation)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Select(c => c!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c);
 
     protected override async Task OnInitializedAsync() => await Reload();
 
