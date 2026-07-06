@@ -15,36 +15,50 @@ public class DashboardService(ArcheryDbContext db) : IDashboardService
         var totalInactive = await db.Members.CountAsync(m => !m.IsActive, ct);
         var newThisYear   = await db.Members.CountAsync(m => m.IsActive && m.JoinDate.Year == year, ct);
 
-        var yearFees = await db.MembershipFees
+        var feeStats = await db.MembershipFees
             .AsNoTracking()
             .Where(f => f.Year == year)
-            .Select(f => new { f.Status, f.Amount })
-            .ToListAsync(ct);
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Paid = g.Count(f => f.Status == FeeStatus.Paid),
+                Unpaid = g.Count(f => f.Status == FeeStatus.Unpaid),
+                Partial = g.Count(f => f.Status == FeeStatus.Partial),
+                TotalCollected = g.Where(f => f.Status == FeeStatus.Paid).Sum(f => f.Amount),
+                TotalOutstanding = g.Where(f => f.Status != FeeStatus.Paid).Sum(f => f.Amount)
+            })
+            .SingleOrDefaultAsync(ct);
 
-        var paid             = yearFees.Count(f => f.Status == FeeStatus.Paid);
-        var unpaid           = yearFees.Count(f => f.Status == FeeStatus.Unpaid);
-        var partial          = yearFees.Count(f => f.Status == FeeStatus.Partial);
-        var noFee            = Math.Max(totalActive - yearFees.Count, 0);
-        var totalCollected   = yearFees.Where(f => f.Status == FeeStatus.Paid).Sum(f => f.Amount);
-        var totalOutstanding = yearFees.Where(f => f.Status != FeeStatus.Paid).Sum(f => f.Amount);
+        var paid             = feeStats?.Paid ?? 0;
+        var unpaid           = feeStats?.Unpaid ?? 0;
+        var partial          = feeStats?.Partial ?? 0;
+        var noFee            = Math.Max(totalActive - (feeStats?.Total ?? 0), 0);
+        var totalCollected   = feeStats?.TotalCollected ?? 0;
+        var totalOutstanding = feeStats?.TotalOutstanding ?? 0;
         var collectionRatePct = totalActive > 0
             ? (int)Math.Round(paid * 100.0 / totalActive)
             : 0;
 
-        var allComps = await db.Competitions
+        var thisYearCount = await db.Competitions
             .AsNoTracking()
-            .Select(c => new { c.Id, c.Name, c.Date, c.Location, c.Type })
+            .CountAsync(c => c.Date.Year == year, ct);
+
+        var upcoming = await db.Competitions
+            .AsNoTracking()
+            .Where(c => c.Date > today)
+            .OrderBy(c => c.Date)
+            .Select(c => new { c.Name, c.Date, c.Location })
             .ToListAsync(ct);
+        var nextComp = upcoming.FirstOrDefault();
 
-        var thisYearCount = allComps.Count(c => c.Date.Year == year);
-        var upcoming      = allComps.Where(c => c.Date > today).OrderBy(c => c.Date).ToList();
-        var nextComp      = upcoming.FirstOrDefault();
-
-        var recentComps = allComps
+        var recentComps = await db.Competitions
+            .AsNoTracking()
             .Where(c => c.Date <= today)
             .OrderByDescending(c => c.Date)
             .Take(3)
-            .ToList();
+            .Select(c => new { c.Id, c.Name, c.Date, c.Location, c.Type })
+            .ToListAsync(ct);
 
         Dictionary<Guid, int> participantCounts = [];
         if (recentComps.Count > 0)

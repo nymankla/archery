@@ -1,5 +1,6 @@
 using aspire_sample.ApiService.Models;
 using aspire_sample.ApiService.Services;
+using aspire_sample.ApiService.Infrastructure;
 
 namespace aspire_sample.ApiService.Endpoints;
 
@@ -35,18 +36,41 @@ public static class MembershipFeeEndpoints
 
     static async Task<IResult> Create(MembershipFee fee, IMembershipFeeService svc, CancellationToken ct)
     {
-        var created = await svc.CreateAsync(fee, ct);
-        return Results.Created($"/membership-fees/{created.Id}", created);
+        try
+        {
+            var created = await svc.CreateAsync(fee, ct);
+            return Results.Created($"/membership-fees/{created.Id}", created);
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
+        }
     }
 
     static async Task<IResult> BulkCreate(BulkFeeRequest req, IMembershipFeeService svc, CancellationToken ct)
     {
-        var count = await svc.BulkCreateAsync(req.Year, req.Amount, req.DueDate, req.MinAge, req.AgeOp, ct);
-        return Results.Ok(new { Created = count });
+        try
+        {
+            var count = await svc.BulkCreateAsync(req.Year, req.Amount, req.DueDate, req.MinAge, req.AgeOp, ct);
+            return Results.Ok(new { Created = count });
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
+        }
     }
 
     static async Task<IResult> Update(Guid id, MembershipFee input, IMembershipFeeService svc, CancellationToken ct)
-        => await svc.UpdateAsync(id, input, ct) is { } f ? Results.Ok(f) : Results.NotFound();
+    {
+        try
+        {
+            return await svc.UpdateAsync(id, input, ct) is { } f ? Results.Ok(f) : Results.NotFound();
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
+        }
+    }
 
     static async Task<IResult> Delete(Guid id, IMembershipFeeService svc, CancellationToken ct)
         => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();

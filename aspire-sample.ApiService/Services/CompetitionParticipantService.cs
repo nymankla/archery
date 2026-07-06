@@ -1,4 +1,5 @@
 using aspire_sample.ApiService.Data;
+using aspire_sample.ApiService.Infrastructure;
 using aspire_sample.ApiService.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,19 @@ public class CompetitionParticipantService(ArcheryDbContext db) : ICompetitionPa
 
         input.Id = Guid.NewGuid();
         db.CompetitionParticipants.Add(input);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            throw new ConflictException("This participant is already registered for the competition.");
+        }
+        catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionParticipant_SingleParticipant"))
+        {
+            throw new ArgumentException("Exactly one of MemberId or ExternalParticipantId must be provided.");
+        }
+
         return input;
     }
 

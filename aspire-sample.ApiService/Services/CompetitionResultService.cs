@@ -1,4 +1,5 @@
 using aspire_sample.ApiService.Data;
+using aspire_sample.ApiService.Infrastructure;
 using aspire_sample.ApiService.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,7 +32,19 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
 
         input.Id = Guid.NewGuid();
         db.CompetitionResults.Add(input);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            throw new ConflictException("A result already exists for this participant in the competition.");
+        }
+        catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionResult_SingleParticipant"))
+        {
+            throw new ArgumentException("Exactly one of MemberId or ExternalParticipantId must be provided.");
+        }
+
         return input;
     }
 
@@ -53,7 +66,19 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
         result.Notes                   = input.Notes;
         result.MemberId                = input.MemberId;
         result.ExternalParticipantId   = input.ExternalParticipantId;
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            throw new ConflictException("A result already exists for this participant in the competition.");
+        }
+        catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionResult_SingleParticipant"))
+        {
+            throw new ArgumentException("Exactly one of MemberId or ExternalParticipantId must be provided.");
+        }
+
         return result;
     }
 

@@ -1,4 +1,5 @@
 using aspire_sample.ApiService.Data;
+using aspire_sample.ApiService.Infrastructure;
 using aspire_sample.ApiService.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,35 +24,40 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
 
     public async Task<IReadOnlyList<MemberFeeOverviewItem>> GetOverviewAsync(int year, CancellationToken ct = default)
     {
-        var members = await db.Members
-            .AsNoTracking()
-            .Where(m => m.IsActive)
-            .OrderBy(m => m.LastName).ThenBy(m => m.FirstName)
+        return await (
+            from member in db.Members.AsNoTracking()
+            where member.IsActive
+            join fee in db.MembershipFees.AsNoTracking().Where(f => f.Year == year)
+                on member.Id equals fee.MemberId into feeGroup
+            from fee in feeGroup.DefaultIfEmpty()
+            orderby member.LastName, member.FirstName
+            select new MemberFeeOverviewItem(
+                member.Id,
+                member.FirstName,
+                member.LastName,
+                member.Email,
+                fee != null ? fee.Id : null,
+                fee != null ? fee.Status : null,
+                fee != null ? fee.Amount : null,
+                fee != null ? fee.DueDate : null,
+                fee != null ? fee.PaidDate : null,
+                member.DateOfBirth))
             .ToListAsync(ct);
-
-        var memberIds = members.Select(m => m.Id).ToList();
-        var fees = await db.MembershipFees
-            .AsNoTracking()
-            .Where(f => f.Year == year && memberIds.Contains(f.MemberId))
-            .ToListAsync(ct);
-
-        var feeByMember = fees.ToDictionary(f => f.MemberId);
-
-        return members.Select(m =>
-        {
-            feeByMember.TryGetValue(m.Id, out var fee);
-            return new MemberFeeOverviewItem(
-                m.Id, m.FirstName, m.LastName, m.Email,
-                fee?.Id, fee?.Status, fee?.Amount, fee?.DueDate, fee?.PaidDate,
-                m.DateOfBirth);
-        }).ToList();
     }
 
     public async Task<MembershipFee> CreateAsync(MembershipFee fee, CancellationToken ct = default)
     {
         fee.Id = Guid.NewGuid();
         db.MembershipFees.Add(fee);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            throw new ConflictException("A membership fee already exists for this member and year.");
+        }
+
         return fee;
     }
 
@@ -87,7 +93,15 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
                 Status   = FeeStatus.Unpaid
             });
 
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            throw new ConflictException("One or more selected members already have a membership fee for this year.");
+        }
+
         return memberIds.Count;
     }
 
@@ -100,7 +114,15 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
         fee.DueDate  = input.DueDate;
         fee.PaidDate = input.PaidDate;
         fee.Status   = input.Status;
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            throw new ConflictException("A membership fee already exists for this member and year.");
+        }
+
         return fee;
     }
 

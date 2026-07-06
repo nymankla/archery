@@ -1,5 +1,6 @@
 using aspire_sample.ApiService.Models;
 using aspire_sample.ApiService.Services;
+using aspire_sample.ApiService.Infrastructure;
 
 namespace aspire_sample.ApiService.Endpoints;
 
@@ -36,6 +37,10 @@ public static class CompetitionResultEndpoints
         {
             return Results.BadRequest(ex.Message);
         }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
+        }
     }
 
     static async Task<IResult> Update(Guid id, CompetitionResult input, ICompetitionResultService svc, CancellationToken ct)
@@ -47,6 +52,10 @@ public static class CompetitionResultEndpoints
         catch (ArgumentException ex)
         {
             return Results.BadRequest(ex.Message);
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
         }
     }
 

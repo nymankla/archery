@@ -35,6 +35,7 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
              .WithMany(m => m.MembershipFees)
              .HasForeignKey(f => f.MemberId)
              .OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(f => f.Year);
             e.HasIndex(f => new { f.MemberId, f.Year }).IsUnique();
         });
 
@@ -46,6 +47,7 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.Property(c => c.RoundType).IsRequired().HasMaxLength(50);
             e.Property(c => c.Type).HasConversion<string>().HasMaxLength(20);
             e.Property(c => c.Description).HasMaxLength(1000);
+            e.HasIndex(c => c.Date);
         });
 
         modelBuilder.Entity<ExternalParticipant>(e =>
@@ -65,6 +67,7 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.Property(r => r.AgeClass).HasConversion<string>().HasMaxLength(20);
             e.Property(r => r.Gender).HasConversion<string>().HasMaxLength(20);
             e.Property(r => r.Notes).HasMaxLength(500);
+            e.HasIndex(r => r.CompetitionId);
 
             e.HasOne(r => r.Competition)
              .WithMany(c => c.Results)
@@ -100,6 +103,7 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.Property(p => p.BowClass).HasConversion<string>().HasMaxLength(20);
             e.Property(p => p.AgeClass).HasConversion<string>().HasMaxLength(20);
             e.Property(p => p.Gender).HasConversion<string>().HasMaxLength(20);
+            e.HasIndex(p => p.CompetitionId);
 
             e.HasOne(p => p.Competition)
              .WithMany()

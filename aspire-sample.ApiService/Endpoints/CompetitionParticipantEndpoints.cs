@@ -1,5 +1,6 @@
 using aspire_sample.ApiService.Models;
 using aspire_sample.ApiService.Services;
+using aspire_sample.ApiService.Infrastructure;
 
 namespace aspire_sample.ApiService.Endpoints;
 
@@ -31,6 +32,10 @@ public static class CompetitionParticipantEndpoints
         catch (ArgumentException ex)
         {
             return Results.BadRequest(ex.Message);
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
         }
     }
 
