@@ -81,19 +81,20 @@ else if (competitions.Length == 0)
 }
 else
 {
+    var visible = sort.Apply(competitions);
     <table class="table table-striped table-hover">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Date</th>
-                <th>Location</th>
-                <th>Round</th>
-                <th>Type</th>
+                <SortableHeader Column="name" Title="Name" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="date" Title="Date" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="location" Title="Location" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="round" Title="Round" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="type" Title="Type" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var c in competitions)
+            @foreach (var c in visible)
             {
                 <tr>
                     <td><a href="/competitions/@c.Id">@c.Name</a></td>
@@ -122,6 +123,16 @@ else
     Competition? editing;
     bool showForm;
     bool showImport;
+
+    readonly SortState<Competition> sort = new SortState<Competition>()
+        .Add("name", c => c.Name)
+        .Add("date", c => c.Date)
+        .Add("location", c => c.Location)
+        .Add("round", c => c.RoundType)
+        .Add("type", c => c.Type)
+        .Default("date", ascending: false);
+
+    void OnSort(string column) => sort.Toggle(column);
 
     protected override async Task OnInitializedAsync() => await Reload();
 

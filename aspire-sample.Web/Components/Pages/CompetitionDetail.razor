@@ -155,7 +155,7 @@ else
             }
         </div>
 
-        var visibleParticipants = FilteredParticipants.ToList();
+        var visibleParticipants = participantSort.Apply(FilteredParticipants);
         @if (visibleParticipants.Count == 0)
         {
             <p class="text-muted">No participants match the current filter.</p>
@@ -165,10 +165,10 @@ else
         <table class="table table-sm table-striped mb-4">
             <thead>
                 <tr>
-                    <th>Participant</th>
-                    <th>Bow Class</th>
-                    <th>Age Class</th>
-                    <th>Gender</th>
+                    <SortableHeader Column="name" Title="Participant" ActiveColumn="participantSort.Column" Ascending="participantSort.Ascending" OnSort="OnSortParticipants" />
+                    <SortableHeader Column="bowclass" Title="Bow Class" ActiveColumn="participantSort.Column" Ascending="participantSort.Ascending" OnSort="OnSortParticipants" />
+                    <SortableHeader Column="ageclass" Title="Age Class" ActiveColumn="participantSort.Column" Ascending="participantSort.Ascending" OnSort="OnSortParticipants" />
+                    <SortableHeader Column="gender" Title="Gender" ActiveColumn="participantSort.Column" Ascending="participantSort.Ascending" OnSort="OnSortParticipants" />
                     <th></th>
                 </tr>
             </thead>
@@ -368,7 +368,7 @@ else
             }
         </div>
 
-        var visibleResults = FilteredResults.ToList();
+        var visibleResults = resultSort.Apply(FilteredResults);
         @if (visibleResults.Count == 0)
         {
             <p class="text-muted">No results match the current filter.</p>
@@ -378,14 +378,14 @@ else
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>Participant</th>
-                    <th>Bow Class</th>
-                    <th>Age Class</th>
-                    <th>Gender</th>
-                    <th>Score</th>
-                    <th>X</th>
-                    <th>DQ</th>
+                    <SortableHeader Column="placement" Title="#" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
+                    <SortableHeader Column="name" Title="Participant" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
+                    <SortableHeader Column="bowclass" Title="Bow Class" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
+                    <SortableHeader Column="ageclass" Title="Age Class" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
+                    <SortableHeader Column="gender" Title="Gender" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
+                    <SortableHeader Column="score" Title="Score" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
+                    <SortableHeader Column="x" Title="X" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
+                    <SortableHeader Column="dq" Title="DQ" ActiveColumn="resultSort.Column" Ascending="resultSort.Ascending" OnSort="OnSortResults" />
                     <th></th>
                 </tr>
             </thead>
@@ -440,6 +440,28 @@ else
 
     string participantBowClassFilter = string.Empty;
     string participantTypeFilter = string.Empty;
+
+    readonly SortState<CompetitionParticipant> participantSort = new SortState<CompetitionParticipant>()
+        .Add("name", p => p.ParticipantName)
+        .Add("bowclass", p => p.BowClass)
+        .Add("ageclass", p => p.AgeClass)
+        .Add("gender", p => p.Gender)
+        .Default("name");
+
+    void OnSortParticipants(string column) => participantSort.Toggle(column);
+
+    readonly SortState<CompetitionResult> resultSort = new SortState<CompetitionResult>()
+        .Add("placement", r => r.Placement)
+        .Add("name", r => r.ParticipantName)
+        .Add("bowclass", r => r.BowClass)
+        .Add("ageclass", r => r.AgeClass)
+        .Add("gender", r => r.Gender)
+        .Add("score", r => r.TotalScore)
+        .Add("x", r => r.XCount)
+        .Add("dq", r => r.IsDisqualified)
+        .Default("score", ascending: false);
+
+    void OnSortResults(string column) => resultSort.Toggle(column);
 
     IEnumerable<CompetitionParticipant> FilteredParticipants => (competitionParticipants ?? []).Where(p =>
         (string.IsNullOrEmpty(participantBowClassFilter) ||

@@ -128,7 +128,7 @@ else if (members.Length == 0)
 }
 else
 {
-    var visible = FilteredMembers.ToList();
+    var visible = sort.Apply(FilteredMembers);
     @if (visible.Count == 0)
     {
         <p class="text-muted">No members match the current filter. <button class="btn btn-link p-0" @onclick="ClearFilters">Clear filters</button></p>
@@ -139,12 +139,12 @@ else
     <table class="table table-striped table-hover">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Bow Class</th>
-                <th>Join Date</th>
-                <th>Status</th>
+                <SortableHeader Column="name" Title="Name" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="email" Title="Email" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="phone" Title="Phone" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="bowclass" Title="Bow Class" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="joindate" Title="Join Date" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                <SortableHeader Column="status" Title="Status" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
                 <th></th>
             </tr>
         </thead>
@@ -193,6 +193,17 @@ else
     string searchText = string.Empty;
     string statusFilter = string.Empty;
     string bowClassFilter = string.Empty;
+
+    readonly SortState<Member> sort = new SortState<Member>()
+        .Add("name", m => m.FullName)
+        .Add("email", m => m.Email)
+        .Add("phone", m => m.Phone)
+        .Add("bowclass", m => m.PreferredBowClass)
+        .Add("joindate", m => m.JoinDate)
+        .Add("status", m => m.IsActive)
+        .Default("name");
+
+    void OnSort(string column) => sort.Toggle(column);
 
     IEnumerable<Member> FilteredMembers => (members ?? []).Where(m =>
         (string.IsNullOrWhiteSpace(searchText) ||

@@ -1,0 +1,31 @@
+<th role="columnheader" aria-sort="@AriaSort" @onclick="HandleClick"
+    class="@Class" style="cursor:pointer; user-select:none; white-space:nowrap;">
+    @Title
+    <span class="ms-1" style="opacity:@(IsActive ? "1" : "0.3");">@Indicator</span>
+</th>
+
+@code {
+    /// <summary>The key passed back to <see cref="OnSort"/>; must match a registered SortState column.</summary>
+    [Parameter, EditorRequired] public string Column { get; set; } = string.Empty;
+
+    /// <summary>Header text shown to the user.</summary>
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The currently sorted column (from SortState.Column).</summary>
+    [Parameter] public string? ActiveColumn { get; set; }
+
+    /// <summary>Current sort direction (from SortState.Ascending).</summary>
+    [Parameter] public bool Ascending { get; set; } = true;
+
+    /// <summary>Invoked with <see cref="Column"/> when the header is clicked.</summary>
+    [Parameter] public EventCallback<string> OnSort { get; set; }
+
+    /// <summary>Optional extra CSS classes (e.g. <c>text-end</c>).</summary>
+    [Parameter] public string? Class { get; set; }
+
+    bool IsActive => string.Equals(ActiveColumn, Column, StringComparison.OrdinalIgnoreCase);
+    string Indicator => IsActive ? (Ascending ? "▲" : "▼") : "↕";
+    string AriaSort => !IsActive ? "none" : Ascending ? "ascending" : "descending";
+
+    Task HandleClick() => OnSort.InvokeAsync(Column);
+}

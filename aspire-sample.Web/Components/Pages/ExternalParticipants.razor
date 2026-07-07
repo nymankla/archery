@@ -97,7 +97,7 @@ else if (participants.Length == 0)
 }
 else
 {
-    var visible = FilteredParticipants.ToList();
+    var visible = sort.Apply(FilteredParticipants);
     @if (visible.Count == 0)
     {
         <p class="text-muted">No participants match the current filter. <button class="btn btn-link p-0" @onclick="ClearFilters">Clear filters</button></p>
@@ -108,10 +108,10 @@ else
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Club</th>
+                    <SortableHeader Column="name" Title="Name" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                    <SortableHeader Column="email" Title="Email" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                    <SortableHeader Column="phone" Title="Phone" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                    <SortableHeader Column="club" Title="Club" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
                     <th></th>
                 </tr>
             </thead>
@@ -148,6 +148,15 @@ else
 
     string searchText = string.Empty;
     string clubFilter = string.Empty;
+
+    readonly SortState<ExternalParticipant> sort = new SortState<ExternalParticipant>()
+        .Add("name", p => p.FullName)
+        .Add("email", p => p.Email)
+        .Add("phone", p => p.Phone)
+        .Add("club", p => p.ClubAffiliation)
+        .Default("name");
+
+    void OnSort(string column) => sort.Toggle(column);
 
     IEnumerable<ExternalParticipant> FilteredParticipants => (participants ?? []).Where(p =>
         (string.IsNullOrWhiteSpace(searchText) ||

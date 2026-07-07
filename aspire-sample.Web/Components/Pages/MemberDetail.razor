@@ -103,19 +103,20 @@ else
     }
     else
     {
+        var visibleFees = sort.Apply(fees);
         <table class="table table-sm table-striped">
             <thead>
                 <tr>
-                    <th>Year</th>
-                    <th>Amount</th>
-                    <th>Due Date</th>
-                    <th>Paid Date</th>
-                    <th>Status</th>
+                    <SortableHeader Column="year" Title="Year" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                    <SortableHeader Column="amount" Title="Amount" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                    <SortableHeader Column="due" Title="Due Date" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                    <SortableHeader Column="paid" Title="Paid Date" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
+                    <SortableHeader Column="status" Title="Status" ActiveColumn="sort.Column" Ascending="sort.Ascending" OnSort="OnSort" />
                     <th></th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var fee in fees)
+                @foreach (var fee in visibleFees)
                 {
                     <tr>
                         <td>@fee.Year</td>
@@ -149,6 +150,16 @@ else
     MembershipFee[]? fees;
     MembershipFee? editingFee;
     bool showFeeForm;
+
+    readonly SortState<MembershipFee> sort = new SortState<MembershipFee>()
+        .Add("year", f => f.Year)
+        .Add("amount", f => f.Amount)
+        .Add("due", f => f.DueDate)
+        .Add("paid", f => f.PaidDate)
+        .Add("status", f => f.Status)
+        .Default("year", ascending: false);
+
+    void OnSort(string column) => sort.Toggle(column);
 
     protected override async Task OnInitializedAsync()
     {
