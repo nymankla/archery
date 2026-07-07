@@ -6,22 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Run the distributed app (AppHost orchestrates Redis, PostgreSQL, Keycloak, the API, and the Web frontend)
-dotnet run --project aspire-sample.AppHost
+dotnet run --project aspire.AppHost
 
 # Build entire solution
-dotnet build aspire-sample.sln
+dotnet build Archery.sln
 
 # Run all tests (unit + integration)
-dotnet test aspire-sample.sln
+dotnet test Archery.sln
 
 # Fast unit tests only (no containers required)
-dotnet test aspire-sample.UnitTests
+dotnet test UnitTests
 
 # A single integration test class
-dotnet test aspire-sample.Tests --filter "FullyQualifiedName~WebTests"
+dotnet test Tests --filter "FullyQualifiedName~WebTests"
 ```
 
-The AppHost launches the Aspire dashboard at the URL shown in terminal output (typically `https://localhost:17034`). A container runtime (Docker/Podman) is required — the integration tests in `aspire-sample.Tests` boot the full AppHost in-process and also need it.
+The AppHost launches the Aspire dashboard at the URL shown in terminal output (typically `https://localhost:17034`). A container runtime (Docker/Podman) is required — the integration tests in `Tests` boot the full AppHost in-process and also need it.
 
 ## Overview
 
@@ -31,12 +31,12 @@ The AppHost launches the Aspire dashboard at the URL shown in terminal output (t
 
 Four runtime pieces, one shared library, two test projects:
 
-- **aspire-sample.AppHost** — Orchestrator only. Defines the resource graph. No business logic.
-- **aspire-sample.ApiService** — ASP.NET Core minimal-API backend. EF Core (Npgsql/PostgreSQL) persistence, domain services, spreadsheet import. Secured with Keycloak JWT bearer.
-- **aspire-sample.Web** — Blazor interactive server frontend. Keycloak OIDC login, calls the API with a bearer token, Redis output caching.
-- **aspire-sample.ServiceDefaults** — Shared extension methods applied in every service's `Program.cs`: OpenTelemetry (OTLP), service discovery, HTTP resilience (retry + circuit breaker), default `/health` + `/alive` endpoints.
-- **aspire-sample.Tests** — xUnit integration tests using `Aspire.Hosting.Testing` to spin up the full AppHost in-process (incl. Postgres persistence).
-- **aspire-sample.UnitTests** — fast xUnit unit tests for services (dashboard stats, membership fee logic).
+- **aspire.AppHost** — Orchestrator only. Defines the resource graph. No business logic.
+- **aspire.ApiService** — ASP.NET Core minimal-API backend. EF Core (Npgsql/PostgreSQL) persistence, domain services, spreadsheet import. Secured with Keycloak JWT bearer.
+- **aspire.Web** — Blazor interactive server frontend. Keycloak OIDC login, calls the API with a bearer token, Redis output caching.
+- **aspire.ServiceDefaults** — Shared extension methods applied in every service's `Program.cs`: OpenTelemetry (OTLP), service discovery, HTTP resilience (retry + circuit breaker), default `/health` + `/alive` endpoints.
+- **Tests** — xUnit integration tests using `Aspire.Hosting.Testing` to spin up the full AppHost in-process (incl. Postgres persistence).
+- **UnitTests** — fast xUnit unit tests for services (dashboard stats, membership fee logic).
 
 ### Resource graph (AppHost.cs)
 
@@ -75,7 +75,7 @@ Uses Aspire service discovery — no hardcoded URLs. The Web `ArcheryApiClient` 
 
 - Endpoints delegate to services; keep business logic out of the `Map*` methods.
 - Expected domain conflicts (e.g. duplicate fee for a member/year) throw `ConflictException` and are translated to HTTP `409` in the endpoint.
-- Schema changes go through EF Core migrations (`dotnet ef migrations add <Name> --project aspire-sample.ApiService`); they are applied automatically on API startup.
+- Schema changes go through EF Core migrations (`dotnet ef migrations add <Name> --project aspire.ApiService`); they are applied automatically on API startup.
 
 ### Adding a new service
 

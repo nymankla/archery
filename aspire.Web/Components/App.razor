@@ -1,0 +1,44 @@
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.Extensions.Options
+@using aspire.Web.Auth
+@inject AccessTokenProvider TokenProvider
+@inject IOptions<AuthSessionOptions> AuthSessionOptions
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["aspire.Web.styles.css"]" />
+    <ImportMap />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <AuthSessionManager IdleTimeoutMinutes="@AuthSessionOptions.Value.IdleTimeoutMinutes" RefreshMinutes="@AuthSessionOptions.Value.RefreshMinutes" />
+    <Routes />
+    <script src="auth-session.js"></script>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        // Read synchronously from the cached auth result — no async yield.
+        // An await before setting TokenProvider would let Blazor start rendering
+        // child components first, causing them to call the API with a null token (401).
+        // The auth middleware has already run and cached its result here.
+        var authFeature = HttpContext.Features.Get<IAuthenticateResultFeature>();
+        TokenProvider.AccessToken = authFeature?.AuthenticateResult?.Properties?.GetTokenValue("access_token");
+    }
+}
