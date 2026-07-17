@@ -42,6 +42,7 @@ builder.Services.AddScoped<ICompetitionParticipantService, CompetitionParticipan
 builder.Services.AddScoped<ICompetitionResultService, CompetitionResultService>();
 builder.Services.AddScoped<IExternalParticipantService, ExternalParticipantService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ITrainingAttendanceService, TrainingAttendanceService>();
 
 var app = builder.Build();
 
@@ -79,6 +80,7 @@ app.MapExternalParticipantEndpoints();
 app.MapExternalParticipantImportEndpoints();
 app.MapCompetitionResultEndpoints();
 app.MapCompetitionParticipantEndpoints();
+app.MapTrainingAttendanceEndpoints();
 
 app.MapDefaultEndpoints();
 

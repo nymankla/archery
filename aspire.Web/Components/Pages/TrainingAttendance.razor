@@ -1,0 +1,229 @@
+@page "/training-attendance"
+@rendermode InteractiveServer
+@inject ArcheryApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>Training Attendance</PageTitle>
+
+<h1>Training Attendance</h1>
+
+<div class="card mb-4">
+	<div class="card-body">
+		<div class="row g-3">
+			<div class="col-md-4">
+				<label class="form-label">Training Date</label>
+				<input type="date" class="form-control" @bind="selectedDate" @bind:event="oninput" @bind:after="OnDateChanged" />
+			</div>
+			<div class="col-md-8">
+				<label class="form-label">Notes (optional)</label>
+				<input type="text" class="form-control" @bind="notes" placeholder="Notes about this training session..." />
+			</div>
+		</div>
+	</div>
+</div>
+
+@if (members == null || externalParticipants == null)
+{
+	<p><em>Loading...</em></p>
+}
+else
+{
+	<div class="row">
+		<div class="col-md-6">
+			<div class="card mb-3">
+				<div class="card-header d-flex justify-content-between align-items-center">
+					<span><strong>Club Members</strong></span>
+					<div class="form-check form-check-inline mb-0">
+						<input type="checkbox" class="form-check-input" id="activeOnly" @bind="activeOnly" />
+						<label class="form-check-label" for="activeOnly">Active only</label>
+					</div>
+				</div>
+				<div class="card-body">
+					<input type="search" class="form-control mb-3" placeholder="Search members..." @bind="memberSearch" @bind:event="oninput" />
+					<div style="max-height: 400px; overflow-y: auto;">
+						@{
+							var filteredMembers = members
+								.Where(m => !activeOnly || m.IsActive)
+								.Where(m => string.IsNullOrWhiteSpace(memberSearch) ||
+									m.FullName.Contains(memberSearch, StringComparison.OrdinalIgnoreCase))
+								.OrderBy(m => m.LastName).ThenBy(m => m.FirstName);
+						}
+						@foreach (var m in filteredMembers)
+						{
+							<div class="form-check mb-2">
+								<input type="checkbox" class="form-check-input" id="member-@m.Id"
+									   checked="@selectedMemberIds.Contains(m.Id)"
+									   @onchange="e => ToggleMember(m.Id, (bool)(e.Value ?? false))" />
+								<label class="form-check-label" for="member-@m.Id">
+									@m.FullName
+									@if (!m.IsActive)
+									{
+										<span class="badge bg-secondary ms-1">Inactive</span>
+									}
+								</label>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-md-6">
+			<div class="card mb-3">
+				<div class="card-header">
+					<strong>External Participants</strong>
+				</div>
+				<div class="card-body">
+					<input type="search" class="form-control mb-3" placeholder="Search external participants..." @bind="externalSearch" @bind:event="oninput" />
+					<div style="max-height: 400px; overflow-y: auto;">
+						@{
+							var filteredExternals = externalParticipants
+								.Where(e => string.IsNullOrWhiteSpace(externalSearch) ||
+									e.FullName.Contains(externalSearch, StringComparison.OrdinalIgnoreCase) ||
+									(e.ClubAffiliation?.Contains(externalSearch, StringComparison.OrdinalIgnoreCase) ?? false))
+								.OrderBy(e => e.LastName).ThenBy(e => e.FirstName);
+						}
+						@foreach (var p in filteredExternals)
+						{
+							<div class="form-check mb-2">
+								<input type="checkbox" class="form-check-input" id="external-@p.Id"
+									   checked="@selectedExternalIds.Contains(p.Id)"
+									   @onchange="e => ToggleExternal(p.Id, (bool)(e.Value ?? false))" />
+								<label class="form-check-label" for="external-@p.Id">
+									@p.FullName
+									@if (!string.IsNullOrEmpty(p.ClubAffiliation))
+									{
+										<span class="text-muted small">(@p.ClubAffiliation)</span>
+									}
+								</label>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="d-flex justify-content-between align-items-center">
+		<div>
+			<strong>Total selected:</strong> @(selectedMemberIds.Count + selectedExternalIds.Count)
+		</div>
+		<div>
+			<button class="btn btn-primary" @onclick="Save" disabled="@saving">
+				@if (saving)
+				{
+					<span class="spinner-border spinner-border-sm me-1"></span>
+				}
+				Save Attendance
+			</button>
+			<button class="btn btn-outline-secondary ms-2" @onclick="Clear">Clear Selection</button>
+		</div>
+	</div>
+
+	@if (!string.IsNullOrEmpty(saveMessage))
+	{
+		<div class="alert alert-success mt-3">@saveMessage</div>
+	}
+}
+
+@code {
+	Member[]? members;
+	ExternalParticipant[]? externalParticipants;
+
+	DateOnly selectedDate = DateOnly.FromDateTime(DateTime.Today);
+	string? notes;
+
+	HashSet<Guid> selectedMemberIds = new();
+	HashSet<Guid> selectedExternalIds = new();
+
+	bool activeOnly = true;
+	string memberSearch = string.Empty;
+	string externalSearch = string.Empty;
+
+	bool saving;
+	string? saveMessage;
+
+	protected override async Task OnInitializedAsync()
+	{
+		members = await Api.GetMembersAsync() ?? [];
+		externalParticipants = await Api.GetExternalParticipantsAsync() ?? [];
+		await LoadAttendance();
+	}
+
+	async Task OnDateChanged()
+	{
+		saveMessage = null;
+		await LoadAttendance();
+	}
+
+	async Task LoadAttendance()
+	{
+		var detail = await Api.GetTrainingAttendanceByDateAsync(selectedDate);
+		if (detail is not null)
+		{
+			notes = detail.Notes;
+			selectedMemberIds = detail.Attendees
+				.Where(a => a.MemberId.HasValue)
+				.Select(a => a.MemberId!.Value)
+				.ToHashSet();
+			selectedExternalIds = detail.Attendees
+				.Where(a => a.ExternalParticipantId.HasValue)
+				.Select(a => a.ExternalParticipantId!.Value)
+				.ToHashSet();
+		}
+		else
+		{
+			notes = null;
+			selectedMemberIds.Clear();
+			selectedExternalIds.Clear();
+		}
+	}
+
+	void ToggleMember(Guid id, bool isChecked)
+	{
+		if (isChecked)
+			selectedMemberIds.Add(id);
+		else
+			selectedMemberIds.Remove(id);
+	}
+
+	void ToggleExternal(Guid id, bool isChecked)
+	{
+		if (isChecked)
+			selectedExternalIds.Add(id);
+		else
+			selectedExternalIds.Remove(id);
+	}
+
+	void Clear()
+	{
+		selectedMemberIds.Clear();
+		selectedExternalIds.Clear();
+	}
+
+	async Task Save()
+	{
+		saving = true;
+		saveMessage = null;
+		try
+		{
+			var request = new SaveTrainingAttendanceRequest
+			{
+				Notes = notes,
+				MemberIds = selectedMemberIds.ToList(),
+				ExternalParticipantIds = selectedExternalIds.ToList()
+			};
+
+			var response = await Api.SaveTrainingAttendanceAsync(selectedDate, request);
+			if (response.IsSuccessStatusCode)
+			{
+				var total = selectedMemberIds.Count + selectedExternalIds.Count;
+				saveMessage = $"Saved attendance for {selectedDate:yyyy-MM-dd} with {total} participant(s).";
+			}
+		}
+		finally
+		{
+			saving = false;
+		}
+	}
+}

@@ -53,6 +53,10 @@
                         <label class="form-label">Email</label>
                         <InputText @bind-Value="editing.Email" class="form-control" />
                     </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Personnummer</label>
+                        <InputText @bind-Value="editing.Personnummer" class="form-control" />
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label">Date of Birth</label>
                         <InputDate @bind-Value="editing.DateOfBirth" @bind-Value:culture="CultureInfo.CurrentCulture" class="form-control" />
@@ -241,7 +245,7 @@ else
         editing = new Member
         {
             Id = m.Id, FirstName = m.FirstName, LastName = m.LastName,
-            Address = m.Address, Phone = m.Phone, Email = m.Email,
+            Address = m.Address, Phone = m.Phone, Email = m.Email, Personnummer = m.Personnummer,
             DateOfBirth = m.DateOfBirth, JoinDate = m.JoinDate,
             IsActive = m.IsActive, PreferredBowClass = m.PreferredBowClass
         };

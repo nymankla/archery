@@ -8,6 +8,7 @@ public class Member
     public string? Address { get; set; }
     public string? Phone { get; set; }
     public string? Email { get; set; }
+    public string? Personnummer { get; set; }
     public DateOnly DateOfBirth { get; set; }
     public DateOnly JoinDate { get; set; }
     public bool IsActive { get; set; } = true;

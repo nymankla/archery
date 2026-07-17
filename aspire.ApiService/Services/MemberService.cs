@@ -18,6 +18,7 @@ public class MemberService(ArcheryDbContext db) : IMemberService
 
     public async Task<Member> CreateAsync(Member member, CancellationToken ct = default)
     {
+        member.Personnummer = await NormalizeAndValidatePersonnummerAsync(member.Personnummer, null, ct);
         member.Id = Guid.NewGuid();
         db.Members.Add(member);
         await db.SaveChangesAsync(ct);
@@ -33,6 +34,7 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         member.Address           = input.Address;
         member.Phone             = input.Phone;
         member.Email             = input.Email;
+        member.Personnummer      = await NormalizeAndValidatePersonnummerAsync(input.Personnummer, id, ct);
         member.DateOfBirth       = input.DateOfBirth;
         member.JoinDate          = input.JoinDate;
         member.IsActive          = input.IsActive;
@@ -77,17 +79,23 @@ public class MemberService(ArcheryDbContext db) : IMemberService
             { errors.Add($"Row {rowNum}: Invalid DateOfBirth '{row.Col("DateOfBirth")}'."); continue; }
 
             var email    = SpreadsheetParser.NullIfEmpty(row.Col("Email"));
+            var personnummerRaw = SpreadsheetParser.NullIfEmpty(row.Col("Personnummer"));
             var joinDate = DateOnly.TryParse(row.Col("JoinDate"), out var jd) ? jd : DateOnly.FromDateTime(DateTime.Today);
             var isActive = bool.TryParse(row.Col("IsActive"), out var ia) ? ia : true;
             var bowClass = Enum.TryParse<BowClass>(row.Col("PreferredBowClass"), ignoreCase: true, out var bc) ? bc : BowClass.Recurve;
-
             var existing = email is not null ? existingByKey.GetValueOrDefault((email, dob)) : null;
+            var normalizedPersonnummer = await NormalizeAndValidatePersonnummerForImportAsync(personnummerRaw, existing?.Id, rowNum, ct);
+            if (normalizedPersonnummer == ImportValidationFailed.Value)
+                continue;
+
             if (existing != null)
             {
                 existing.FirstName         = firstName;
                 existing.LastName          = lastName;
                 existing.Phone             = SpreadsheetParser.NullIfEmpty(row.Col("Phone"));
                 existing.Address           = SpreadsheetParser.NullIfEmpty(row.Col("Address"));
+                existing.Email             = email;
+                existing.Personnummer      = normalizedPersonnummer;
                 existing.JoinDate          = joinDate;
                 existing.IsActive          = isActive;
                 existing.PreferredBowClass = bowClass;
@@ -101,6 +109,7 @@ public class MemberService(ArcheryDbContext db) : IMemberService
                     FirstName         = firstName,
                     LastName          = lastName,
                     Email             = email,
+                    Personnummer      = normalizedPersonnummer,
                     Phone             = SpreadsheetParser.NullIfEmpty(row.Col("Phone")),
                     Address           = SpreadsheetParser.NullIfEmpty(row.Col("Address")),
                     DateOfBirth       = dob,
@@ -114,5 +123,43 @@ public class MemberService(ArcheryDbContext db) : IMemberService
 
         await db.SaveChangesAsync(ct);
         return new ImportResult(imported, updated, errors);
+
+        async Task<string?> NormalizeAndValidatePersonnummerForImportAsync(string? personnummer, Guid? memberId, int rowNumber, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await NormalizeAndValidatePersonnummerAsync(personnummer, memberId, cancellationToken);
+            }
+            catch (ArgumentException ex)
+            {
+                errors.Add($"Row {rowNumber}: {ex.Message}");
+                return ImportValidationFailed.Value;
+            }
+            catch (ConflictException ex)
+            {
+                errors.Add($"Row {rowNumber}: {ex.Message}");
+                return ImportValidationFailed.Value;
+            }
+        }
+    }
+
+    async Task<string?> NormalizeAndValidatePersonnummerAsync(string? personnummer, Guid? memberId, CancellationToken ct)
+    {
+        if (!PersonnummerParser.TryNormalize(personnummer, out var normalized))
+            throw new ArgumentException("Personnummer is invalid.");
+
+        if (normalized is null)
+            return null;
+
+        var exists = await db.Members.AnyAsync(m => m.Personnummer == normalized && m.Id != memberId, ct);
+        if (exists)
+            throw new ConflictException("A member with this personnummer already exists.");
+
+        return normalized;
+    }
+
+    private static class ImportValidationFailed
+    {
+        public const string Value = "__INVALID__";
     }
 }

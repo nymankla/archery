@@ -45,6 +45,7 @@ public class Member
     public string? Address { get; set; }
     public string? Phone { get; set; }
     public string? Email { get; set; }
+    public string? Personnummer { get; set; }
     public DateOnly DateOfBirth { get; set; }
     public DateOnly JoinDate { get; set; }
     public bool IsActive { get; set; } = true;
@@ -174,4 +175,29 @@ public class DashboardRecentCompetition
     public string Location { get; set; } = string.Empty;
     public CompetitionType Type { get; set; }
     public int ParticipantCount { get; set; }
+}
+
+public class TrainingSessionDetail
+{
+    public Guid? SessionId { get; set; }
+    public DateOnly Date { get; set; }
+    public string? Notes { get; set; }
+    public List<TrainingAttendeeInfo> Attendees { get; set; } = [];
+}
+
+public class TrainingAttendeeInfo
+{
+    public Guid AttendanceId { get; set; }
+    public Guid? MemberId { get; set; }
+    public string? MemberName { get; set; }
+    public Guid? ExternalParticipantId { get; set; }
+    public string? ExternalParticipantName { get; set; }
+    public string ParticipantName => MemberName ?? ExternalParticipantName ?? "Unknown";
+}
+
+public class SaveTrainingAttendanceRequest
+{
+    public string? Notes { get; set; }
+    public List<Guid> MemberIds { get; set; } = [];
+    public List<Guid> ExternalParticipantIds { get; set; } = [];
 }

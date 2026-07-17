@@ -11,6 +11,8 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
     public DbSet<ExternalParticipant> ExternalParticipants => Set<ExternalParticipant>();
     public DbSet<CompetitionResult> CompetitionResults => Set<CompetitionResult>();
     public DbSet<CompetitionParticipant> CompetitionParticipants => Set<CompetitionParticipant>();
+    public DbSet<TrainingSession> TrainingSessions => Set<TrainingSession>();
+    public DbSet<TrainingAttendance> TrainingAttendances => Set<TrainingAttendance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,8 +24,10 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.Property(m => m.Address).HasMaxLength(300);
             e.Property(m => m.Phone).HasMaxLength(30);
             e.Property(m => m.Email).HasMaxLength(200);
+            e.Property(m => m.Personnummer).HasMaxLength(12);
             e.Property(m => m.PreferredBowClass).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(m => m.Email);
+            e.HasIndex(m => m.Personnummer).IsUnique().HasFilter("\"Personnummer\" IS NOT NULL");
         });
 
         modelBuilder.Entity<MembershipFee>(e =>
@@ -130,6 +134,46 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.HasIndex(p => new { p.CompetitionId, p.MemberId }).IsUnique()
              .HasFilter("\"MemberId\" IS NOT NULL");
             e.HasIndex(p => new { p.CompetitionId, p.ExternalParticipantId }).IsUnique()
+             .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
+        });
+
+        modelBuilder.Entity<TrainingSession>(e =>
+        {
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Notes).HasMaxLength(1000);
+            e.HasIndex(s => s.Date);
+        });
+
+        modelBuilder.Entity<TrainingAttendance>(e =>
+        {
+            e.HasKey(a => a.Id);
+            e.HasIndex(a => a.TrainingSessionId);
+
+            e.HasOne(a => a.TrainingSession)
+             .WithMany(s => s.Attendances)
+             .HasForeignKey(a => a.TrainingSessionId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(a => a.Member)
+             .WithMany()
+             .HasForeignKey(a => a.MemberId)
+             .OnDelete(DeleteBehavior.SetNull)
+             .IsRequired(false);
+
+            e.HasOne(a => a.ExternalParticipant)
+             .WithMany()
+             .HasForeignKey(a => a.ExternalParticipantId)
+             .OnDelete(DeleteBehavior.SetNull)
+             .IsRequired(false);
+
+            e.ToTable(t => t.HasCheckConstraint(
+                "CK_TrainingAttendance_SingleParticipant",
+                "(\"MemberId\" IS NOT NULL AND \"ExternalParticipantId\" IS NULL) OR " +
+                "(\"MemberId\" IS NULL AND \"ExternalParticipantId\" IS NOT NULL)"));
+
+            e.HasIndex(a => new { a.TrainingSessionId, a.MemberId }).IsUnique()
+             .HasFilter("\"MemberId\" IS NOT NULL");
+            e.HasIndex(a => new { a.TrainingSessionId, a.ExternalParticipantId }).IsUnique()
              .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
         });
     }

@@ -121,6 +121,15 @@ public class ArcheryApiClient(
     public Task<HttpResponseMessage> DeleteResultAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/competition-results/{id}", ct);
 
+    public Task<DateOnly[]?> GetTrainingDatesAsync(CancellationToken ct = default)
+        => GetFromJsonAsync<DateOnly[]>("/training-attendance/dates", ct);
+
+    public Task<TrainingSessionDetail?> GetTrainingAttendanceByDateAsync(DateOnly date, CancellationToken ct = default)
+        => GetFromJsonAsync<TrainingSessionDetail>($"/training-attendance/by-date?date={date:yyyy-MM-dd}", ct);
+
+    public Task<HttpResponseMessage> SaveTrainingAttendanceAsync(DateOnly date, SaveTrainingAttendanceRequest request, CancellationToken ct = default)
+        => SendAsJsonAsync(HttpMethod.Put, $"/training-attendance/by-date?date={date:yyyy-MM-dd}", request, ct);
+
     void AddBearerToken(HttpRequestMessage request)
     {
         // During interactive circuit, AccessTokenProvider holds the token.

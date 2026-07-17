@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using aspire.ApiService.Data;
@@ -11,9 +12,11 @@ using aspire.ApiService.Data;
 namespace aspiresample.ApiService.Migrations
 {
     [DbContext(typeof(ArcheryDbContext))]
-    partial class ArcheryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717141025_AddMemberPersonnummer")]
+    partial class AddMemberPersonnummer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

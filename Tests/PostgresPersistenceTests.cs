@@ -151,6 +151,62 @@ public class PostgresPersistenceTests
         }
     }
 
+    [Fact]
+    public async Task MemberService_CreateAsync_ThrowsConflict_ForDuplicatePersonnummer()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.aspire_AppHost>(ct);
+        appHost.Services.AddLogging(logging =>
+        {
+            logging.SetMinimumLevel(LogLevel.Warning);
+            logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Warning);
+            logging.AddFilter("Aspire.", LogLevel.Warning);
+        });
+        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
+        {
+            clientBuilder.AddStandardResilienceHandler();
+        });
+
+        await using var app = await appHost.BuildAsync(ct).WaitAsync(DefaultTimeout, ct);
+        await app.StartAsync(ct).WaitAsync(DefaultTimeout, ct);
+        await app.ResourceNotifications.WaitForResourceHealthyAsync("db", ct).WaitAsync(DefaultTimeout, ct);
+
+        var connectionString = await app.GetConnectionStringAsync("db", ct);
+
+        await using (var db = CreateDb(connectionString))
+        {
+            db.Members.Add(new Member
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Anna",
+                LastName = "First",
+                Personnummer = "199001010017",
+                IsActive = true,
+                DateOfBirth = new DateOnly(1990, 1, 1),
+                JoinDate = new DateOnly(2020, 1, 1)
+            });
+            await db.SaveChangesAsync(ct);
+        }
+
+        await using (var db = CreateDb(connectionString))
+        {
+            var svc = new MemberService(db);
+
+            var ex = await Assert.ThrowsAsync<ConflictException>(() => svc.CreateAsync(new Member
+            {
+                FirstName = "Bertil",
+                LastName = "Second",
+                Personnummer = "900101-0017",
+                IsActive = true,
+                DateOfBirth = new DateOnly(1990, 1, 1),
+                JoinDate = new DateOnly(2020, 1, 1)
+            }, ct));
+
+            Assert.Equal("A member with this personnummer already exists.", ex.Message);
+        }
+    }
+
     private static ArcheryDbContext CreateDb(string connectionString)
         => new(new DbContextOptionsBuilder<ArcheryDbContext>()
             .UseNpgsql(connectionString)

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using aspire.ApiService.Data;
@@ -11,9 +12,11 @@ using aspire.ApiService.Data;
 namespace aspiresample.ApiService.Migrations
 {
     [DbContext(typeof(ArcheryDbContext))]
-    partial class ArcheryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260717133737_AddTrainingAttendance")]
+    partial class AddTrainingAttendance
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -248,10 +251,6 @@ namespace aspiresample.ApiService.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Personnummer")
-                        .HasMaxLength(12)
-                        .HasColumnType("character varying(12)");
-
                     b.Property<string>("Phone")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
@@ -264,10 +263,6 @@ namespace aspiresample.ApiService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Email");
-
-                    b.HasIndex("Personnummer")
-                        .IsUnique()
-                        .HasFilter("\"Personnummer\" IS NOT NULL");
 
                     b.ToTable("Members");
                 });

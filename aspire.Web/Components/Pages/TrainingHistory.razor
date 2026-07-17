@@ -1,0 +1,122 @@
+@page "/training-history"
+@rendermode InteractiveServer
+@inject ArcheryApiClient Api
+
+<PageTitle>Training History</PageTitle>
+
+<h1>Training History</h1>
+
+<div class="card mb-4">
+	<div class="card-body">
+		<div class="row g-3 align-items-end">
+			<div class="col-md-6">
+				<label class="form-label">Select Training Date</label>
+				@if (trainingDates == null)
+				{
+					<p class="text-muted"><em>Loading available dates...</em></p>
+				}
+				else if (trainingDates.Length == 0)
+				{
+					<p class="text-muted">No training sessions recorded yet.</p>
+				}
+				else
+				{
+					<select class="form-select" @bind="selectedDate" @bind:after="OnDateSelected">
+						<option value="">-- Select a date --</option>
+						@foreach (var date in trainingDates)
+						{
+							<option value="@date">@date.ToString("yyyy-MM-dd")</option>
+						}
+					</select>
+				}
+			</div>
+		</div>
+	</div>
+</div>
+
+@if (selectedDate.HasValue && sessionDetail != null)
+{
+	<div class="card">
+		<div class="card-header">
+			<strong>Attendance for @selectedDate.Value.ToString("yyyy-MM-dd")</strong>
+		</div>
+		<div class="card-body">
+			@if (!string.IsNullOrWhiteSpace(sessionDetail.Notes))
+			{
+				<div class="alert alert-info">
+					<strong>Notes:</strong> @sessionDetail.Notes
+				</div>
+			}
+
+			@if (sessionDetail.Attendees.Count == 0)
+			{
+				<p class="text-muted">No attendees recorded for this date.</p>
+			}
+			else
+			{
+				var memberAttendees = sessionDetail.Attendees.Where(a => a.MemberId.HasValue).ToList();
+				var externalAttendees = sessionDetail.Attendees.Where(a => a.ExternalParticipantId.HasValue).ToList();
+
+				<div class="row">
+					@if (memberAttendees.Count > 0)
+					{
+						<div class="col-md-6">
+							<h5>Club Members (@memberAttendees.Count)</h5>
+							<ul class="list-group">
+								@foreach (var attendee in memberAttendees.OrderBy(a => a.MemberName))
+								{
+									<li class="list-group-item">
+										<span class="bi bi-person-fill me-2"></span>@attendee.MemberName
+									</li>
+								}
+							</ul>
+						</div>
+					}
+
+					@if (externalAttendees.Count > 0)
+					{
+						<div class="col-md-6">
+							<h5>External Participants (@externalAttendees.Count)</h5>
+							<ul class="list-group">
+								@foreach (var attendee in externalAttendees.OrderBy(a => a.ExternalParticipantName))
+								{
+									<li class="list-group-item">
+										<span class="bi bi-person-badge me-2"></span>@attendee.ExternalParticipantName
+									</li>
+								}
+							</ul>
+						</div>
+					}
+				</div>
+
+				<div class="mt-3">
+					<strong>Total participants:</strong> @sessionDetail.Attendees.Count
+				</div>
+			}
+		</div>
+	</div>
+}
+else if (selectedDate.HasValue && sessionDetail == null)
+{
+	<p class="text-muted"><em>Loading attendance data...</em></p>
+}
+
+@code {
+	DateOnly[]? trainingDates;
+	DateOnly? selectedDate;
+	TrainingSessionDetail? sessionDetail;
+
+	protected override async Task OnInitializedAsync()
+	{
+		trainingDates = await Api.GetTrainingDatesAsync();
+	}
+
+	async Task OnDateSelected()
+	{
+		sessionDetail = null;
+		if (selectedDate.HasValue)
+		{
+			sessionDetail = await Api.GetTrainingAttendanceByDateAsync(selectedDate.Value);
+		}
+	}
+}

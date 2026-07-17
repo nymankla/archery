@@ -1,5 +1,6 @@
 using aspire.ApiService.Models;
 using aspire.ApiService.Services;
+using aspire.ApiService.Infrastructure;
 
 namespace aspire.ApiService.Endpoints;
 
@@ -26,12 +27,28 @@ public static class MemberEndpoints
 
     static async Task<IResult> Create(Member member, IMemberService svc, CancellationToken ct)
     {
-        var created = await svc.CreateAsync(member, ct);
-        return Results.Created($"/members/{created.Id}", created);
+        try
+        {
+            var created = await svc.CreateAsync(member, ct);
+            return Results.Created($"/members/{created.Id}", created);
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
+        }
     }
 
     static async Task<IResult> Update(Guid id, Member input, IMemberService svc, CancellationToken ct)
-        => await svc.UpdateAsync(id, input, ct) is { } m ? Results.Ok(m) : Results.NotFound();
+    {
+        try
+        {
+            return await svc.UpdateAsync(id, input, ct) is { } m ? Results.Ok(m) : Results.NotFound();
+        }
+        catch (ConflictException ex)
+        {
+            return Results.Conflict(new { message = ex.Message });
+        }
+    }
 
     static async Task<IResult> Delete(Guid id, IMemberService svc, CancellationToken ct)
         => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();

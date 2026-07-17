@@ -25,6 +25,8 @@ public class OpenIdConnectEventsHandler : OpenIdConnectEvents
 
     public override async Task RedirectToIdentityProviderForSignOut(RedirectContext context)
     {
+        context.ProtocolMessage.ClientId = context.Options.ClientId;
+
         var idToken = context.Properties?.GetTokenValue(OpenIdConnectParameterNames.IdToken);
 
         if (string.IsNullOrWhiteSpace(idToken))
