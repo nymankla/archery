@@ -539,7 +539,7 @@ else
         var response = await Api.RegisterParticipantAsync(editingParticipant);
         if (!response.IsSuccessStatusCode)
         {
-            participantFormError = await response.Content.ReadAsStringAsync();
+            participantFormError = string.Join(" ", await ReadValidationErrorsAsync(response));
             return;
         }
 
@@ -629,7 +629,7 @@ else
 
         if (!response.IsSuccessStatusCode)
         {
-            formError = await response.Content.ReadAsStringAsync();
+            formError = string.Join(" ", await ReadValidationErrorsAsync(response));
             return;
         }
 
@@ -643,4 +643,25 @@ else
             await Api.DeleteResultAsync(r.Id);
             await ReloadResults();
         });
+
+    static async Task<List<string>> ReadValidationErrorsAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<ValidationErrorsResponse>();
+            if (payload?.Errors.Count > 0)
+                return payload.Errors;
+
+            var message = await response.Content.ReadFromJsonAsync<MessageResponse>();
+            if (!string.IsNullOrWhiteSpace(message?.Message))
+                return [message.Message];
+        }
+        catch (Exception ex)
+        {
+            return [$"Failed to parse server validation response: {ex.Message}"];
+        }
+
+        var text = await response.Content.ReadAsStringAsync();
+        return string.IsNullOrWhiteSpace(text) ? ["Operation failed."] : [text];
+    }
 }

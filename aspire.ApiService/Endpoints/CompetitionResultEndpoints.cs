@@ -28,35 +28,27 @@ public static class CompetitionResultEndpoints
 
     static async Task<IResult> Create(CompetitionResult input, ICompetitionResultService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.CreateAsync(input, ct);
+        if (result.IsSuccess)
         {
-            var created = await svc.CreateAsync(input, ct);
+            var created = result.Value!;
             return Results.Created($"/competition-results/{created.Id}", created);
         }
-        catch (ArgumentException ex)
-        {
-            return Results.BadRequest(ex.Message);
-        }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> Update(Guid id, CompetitionResult input, ICompetitionResultService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.UpdateAsync(id, input, ct);
+        if (result.IsSuccess)
         {
-            return await svc.UpdateAsync(id, input, ct) is { } r ? Results.Ok(r) : Results.NotFound();
+            return Results.Ok(result.Value!);
         }
-        catch (ArgumentException ex)
-        {
-            return Results.BadRequest(ex.Message);
-        }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return result.Errors.Contains("Competition result not found.")
+            ? Results.NotFound()
+            : Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> Delete(Guid id, ICompetitionResultService svc, CancellationToken ct)

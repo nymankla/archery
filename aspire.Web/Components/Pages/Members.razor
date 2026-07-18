@@ -32,6 +32,8 @@
         <div class="card-body">
             <h5 class="card-title">@(editing!.Id == Guid.Empty ? "New Member" : "Edit Member")</h5>
             <EditForm Model="editing" OnValidSubmit="Save">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">First Name</label>
@@ -85,6 +87,17 @@
                     <button type="submit" class="btn btn-success">Save</button>
                     <button type="button" class="btn btn-secondary ms-2" @onclick="CancelForm">Cancel</button>
                 </div>
+                @if (validationErrors.Count > 0)
+                {
+                    <div class="alert alert-danger mt-3 mb-0">
+                        <ul class="mb-0">
+                            @foreach (var error in validationErrors)
+                            {
+                                <li>@error</li>
+                            }
+                        </ul>
+                    </div>
+                }
             </EditForm>
         </div>
     </div>
@@ -193,6 +206,7 @@ else
     Member? editing;
     bool showForm;
     bool showImport;
+    List<string> validationErrors = [];
 
     string searchText = string.Empty;
     string statusFilter = string.Empty;
@@ -235,6 +249,7 @@ else
 
     void ShowAddForm()
     {
+        validationErrors = [];
         var today = DateOnly.FromDateTime(DateTime.Today);
         editing = new Member { DateOfBirth = today, JoinDate = today };
         showForm = true;
@@ -242,6 +257,7 @@ else
 
     void ShowEditForm(Member m)
     {
+        validationErrors = [];
         editing = new Member
         {
             Id = m.Id, FirstName = m.FirstName, LastName = m.LastName,
@@ -256,16 +272,47 @@ else
     {
         showForm = false;
         editing = null;
+        validationErrors = [];
     }
 
     async Task Save()
     {
-        if (editing!.Id == Guid.Empty)
-            await Api.CreateMemberAsync(editing);
-        else
-            await Api.UpdateMemberAsync(editing.Id, editing);
-        showForm = false;
-        await Reload();
+        validationErrors = [];
+
+        using var response = editing!.Id == Guid.Empty
+            ? await Api.CreateMemberAsync(editing)
+            : await Api.UpdateMemberAsync(editing.Id, editing);
+
+        if (response.IsSuccessStatusCode)
+        {
+            showForm = false;
+            editing = null;
+            await Reload();
+            return;
+        }
+
+        validationErrors = await ReadValidationErrorsAsync(response);
+    }
+
+    static async Task<List<string>> ReadValidationErrorsAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<ValidationErrorsResponse>();
+            if (payload?.Errors.Count > 0)
+                return payload.Errors;
+
+            var message = await response.Content.ReadFromJsonAsync<MessageResponse>();
+            if (!string.IsNullOrWhiteSpace(message?.Message))
+                return [message.Message];
+        }
+        catch (Exception ex)
+        {
+            return [$"Failed to parse server validation response: {ex.Message}"];
+        }
+
+        var text = await response.Content.ReadAsStringAsync();
+        return string.IsNullOrWhiteSpace(text) ? ["Save failed."] : [text];
     }
 
     void Delete(Member m) =>

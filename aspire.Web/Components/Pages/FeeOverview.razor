@@ -19,6 +19,11 @@
     </div>
 </div>
 
+@if (!string.IsNullOrWhiteSpace(formError))
+{
+    <div class="alert alert-danger">@formError</div>
+}
+
 @if (showBulkCreate)
 {
     var noFeeCount = BulkEligible.Count();
@@ -238,6 +243,7 @@ else
     string activeFilter = "all";
     bool showBulkCreate;
     bool busy;
+    string? formError;
 
     decimal defaultAmount = 500;
     DateOnly defaultDueDate;
@@ -309,8 +315,9 @@ else
 
     async Task BulkCreate()
     {
+        formError = null;
         busy = true;
-        await Api.BulkCreateFeesAsync(new BulkFeeRequest
+        using var response = await Api.BulkCreateFeesAsync(new BulkFeeRequest
         {
             Year = selectedYear,
             Amount = defaultAmount,
@@ -318,6 +325,14 @@ else
             MinAge = ageFilterEnabled ? ageFilterAge : null,
             AgeOp = ageFilterEnabled ? ageFilterOp : null
         });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            formError = string.Join(" ", await ReadValidationErrorsAsync(response));
+            busy = false;
+            return;
+        }
+
         showBulkCreate = false;
         busy = false;
         await Reload();
@@ -325,7 +340,8 @@ else
 
     async Task CreateSingleFee(MemberFeeOverview r)
     {
-        await Api.CreateFeeAsync(new MembershipFee
+        formError = null;
+        using var response = await Api.CreateFeeAsync(new MembershipFee
         {
             MemberId = r.MemberId,
             Year = selectedYear,
@@ -333,12 +349,20 @@ else
             DueDate = defaultDueDate,
             Status = FeeStatus.Unpaid
         });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            formError = string.Join(" ", await ReadValidationErrorsAsync(response));
+            return;
+        }
+
         await Reload();
     }
 
     async Task MarkPaid(MemberFeeOverview r)
     {
-        await Api.UpdateFeeAsync(r.FeeId!.Value, new MembershipFee
+        formError = null;
+        using var response = await Api.UpdateFeeAsync(r.FeeId!.Value, new MembershipFee
         {
             Id = r.FeeId.Value,
             MemberId = r.MemberId,
@@ -348,6 +372,13 @@ else
             PaidDate = DateOnly.FromDateTime(DateTime.Today),
             Status = FeeStatus.Paid
         });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            formError = string.Join(" ", await ReadValidationErrorsAsync(response));
+            return;
+        }
+
         await Reload();
     }
 
@@ -364,4 +395,25 @@ else
         FeeStatus.Partial => "bg-warning text-dark",
         _                 => "bg-danger"
     };
+
+    static async Task<List<string>> ReadValidationErrorsAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            var payload = await response.Content.ReadFromJsonAsync<ValidationErrorsResponse>();
+            if (payload?.Errors.Count > 0)
+                return payload.Errors;
+
+            var message = await response.Content.ReadFromJsonAsync<MessageResponse>();
+            if (!string.IsNullOrWhiteSpace(message?.Message))
+                return [message.Message];
+        }
+        catch (Exception ex)
+        {
+            return [$"Failed to parse server validation response: {ex.Message}"];
+        }
+
+        var text = await response.Content.ReadAsStringAsync();
+        return string.IsNullOrWhiteSpace(text) ? ["Operation failed."] : [text];
+    }
 }

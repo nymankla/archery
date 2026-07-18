@@ -5,22 +5,20 @@ namespace aspire.ApiService.Infrastructure;
 
 public static class PersonnummerParser
 {
-    public static bool TryNormalize(string? input, out string? normalized)
+    public static Result<string?> Normalize(string? input)
     {
-        normalized = null;
         if (string.IsNullOrWhiteSpace(input))
-            return true;
+            return Result<string?>.Success(null);
 
         var trimmed = input.Trim();
         if (!TryExtractParts(trimmed, out var birthDate, out var serial))
-            return false;
+            return Result<string?>.Failure("Personnummer is invalid.");
 
         var digits = birthDate.ToString("yyyyMMdd", CultureInfo.InvariantCulture) + serial;
         if (!HasValidChecksum(digits))
-            return false;
+            return Result<string?>.Failure("Personnummer is invalid.");
 
-        normalized = digits;
-        return true;
+        return Result<string?>.Success(digits);
     }
 
     static bool TryExtractParts(string input, out DateOnly birthDate, out string serial)

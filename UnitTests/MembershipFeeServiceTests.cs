@@ -1,4 +1,5 @@
 using aspire.ApiService.Data;
+using aspire.ApiService.Infrastructure;
 using aspire.ApiService.Models;
 using aspire.ApiService.Services;
 using Microsoft.EntityFrameworkCore;
@@ -120,7 +121,8 @@ public class MembershipFeeServiceTests
         var svc = new MembershipFeeService(db);
         var created = await svc.BulkCreateAsync(year, 500, new DateOnly(year, 3, 31), ct: ct);
 
-        Assert.Equal(1, created);
+        Assert.True(created.IsSuccess);
+        Assert.Equal(1, created.Value);
         Assert.Equal(2, await db.MembershipFees.CountAsync(ct));
     }
 
@@ -141,7 +143,8 @@ public class MembershipFeeServiceTests
         var svc = new MembershipFeeService(db);
         var created = await svc.BulkCreateAsync(year, 500, new DateOnly(year, 3, 31), ct: ct);
 
-        Assert.Equal(1, created);
+        Assert.True(created.IsSuccess);
+        Assert.Equal(1, created.Value);
     }
 
     [Fact]
@@ -155,7 +158,8 @@ public class MembershipFeeServiceTests
         await db.SaveChangesAsync(ct);
 
         var svc = new MembershipFeeService(db);
-        await svc.BulkCreateAsync(year, 600, dueDate, ct: ct);
+        var created = await svc.BulkCreateAsync(year, 600, dueDate, ct: ct);
+        Assert.True(created.IsSuccess);
 
         var fee = await db.MembershipFees.SingleAsync(ct);
         Assert.Equal(year, fee.Year);
@@ -163,5 +167,38 @@ public class MembershipFeeServiceTests
         Assert.Equal(FeeStatus.Unpaid, fee.Status);
         Assert.Equal(dueDate, fee.DueDate);
         Assert.Null(fee.PaidDate);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ReturnsValidationError_ForDuplicateMemberYear()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = CreateDb();
+        var year = DateTime.Today.Year;
+        var member = ActiveMember("Anna", "Duplicate");
+        db.Members.Add(member);
+        db.MembershipFees.Add(new MembershipFee
+        {
+            Id = Guid.NewGuid(),
+            MemberId = member.Id,
+            Year = year,
+            Amount = 500,
+            DueDate = new DateOnly(year, 3, 31),
+            Status = FeeStatus.Unpaid
+        });
+        await db.SaveChangesAsync(ct);
+
+        var svc = new MembershipFeeService(db);
+        var result = await svc.CreateAsync(new MembershipFee
+        {
+            MemberId = member.Id,
+            Year = year,
+            Amount = 600,
+            DueDate = new DateOnly(year, 4, 30),
+            Status = FeeStatus.Unpaid
+        }, ct);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("A membership fee already exists for this member and year.", result.Errors);
     }
 }

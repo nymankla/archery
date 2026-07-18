@@ -30,10 +30,10 @@ public class MemberPersonnummerTests
     [InlineData("900101-0017", "199001010017")]
     public void PersonnummerParser_NormalizesValidFormats(string input, string expected)
     {
-        var ok = PersonnummerParser.TryNormalize(input, out var normalized);
+        var result = PersonnummerParser.Normalize(input);
 
-        Assert.True(ok);
-        Assert.Equal(expected, normalized);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expected, result.Value);
     }
 
     [Theory]
@@ -42,10 +42,10 @@ public class MemberPersonnummerTests
     [InlineData("not-a-number")]
     public void PersonnummerParser_RejectsInvalidValues(string input)
     {
-        var ok = PersonnummerParser.TryNormalize(input, out var normalized);
+        var result = PersonnummerParser.Normalize(input);
 
-        Assert.False(ok);
-        Assert.Null(normalized);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("Personnummer is invalid.", result.Errors);
     }
 
     [Fact]
@@ -57,7 +57,8 @@ public class MemberPersonnummerTests
 
         var member = await svc.CreateAsync(NewMember("Anna", "Optional"), ct);
 
-        Assert.Null(member.Personnummer);
+        Assert.True(member.IsSuccess);
+        Assert.Null(member.Value!.Personnummer);
     }
 
     [Fact]
@@ -69,21 +70,22 @@ public class MemberPersonnummerTests
 
         var member = await svc.CreateAsync(NewMember("Anna", "Normalized", "900101-0017"), ct);
 
-        Assert.Equal("199001010017", member.Personnummer);
+        Assert.True(member.IsSuccess);
+        Assert.Equal("199001010017", member.Value!.Personnummer);
     }
 
     [Fact]
-    public async Task CreateAsync_ThrowsConflict_ForDuplicatePersonnummer()
+    public async Task CreateAsync_ReturnsValidationError_ForDuplicatePersonnummer()
     {
         var ct = TestContext.Current.CancellationToken;
         await using var db = CreateDb();
         var svc = new MemberService(db);
         await svc.CreateAsync(NewMember("Anna", "First", "900101-0017"), ct);
 
-        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            svc.CreateAsync(NewMember("Bertil", "Second", "199001010017"), ct));
+        var result = await svc.CreateAsync(NewMember("Bertil", "Second", "199001010017"), ct);
 
-        Assert.Equal("A member with this personnummer already exists.", ex.Message);
+        Assert.False(result.IsSuccess);
+        Assert.Contains("A member with this personnummer already exists.", result.Errors);
     }
 
     [Fact]
@@ -94,13 +96,14 @@ public class MemberPersonnummerTests
         var svc = new MemberService(db);
         var created = await svc.CreateAsync(NewMember("Anna", "Keep", "900101-0017"), ct);
 
-        created.Phone = "123";
-        created.Personnummer = "19900101-0017";
+        Assert.True(created.IsSuccess);
+        created.Value!.Phone = "123";
+        created.Value.Personnummer = "19900101-0017";
 
-        var updated = await svc.UpdateAsync(created.Id, created, ct);
+        var updated = await svc.UpdateAsync(created.Value.Id, created.Value, ct);
 
-        Assert.NotNull(updated);
-        Assert.Equal("199001010017", updated!.Personnummer);
-        Assert.Equal("123", updated.Phone);
+        Assert.True(updated.IsSuccess);
+        Assert.Equal("199001010017", updated.Value!.Personnummer);
+        Assert.Equal("123", updated.Value.Phone);
     }
 }

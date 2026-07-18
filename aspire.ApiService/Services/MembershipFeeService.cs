@@ -7,6 +7,10 @@ namespace aspire.ApiService.Services;
 
 public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
 {
+    const string DuplicateFeeError = "A membership fee already exists for this member and year.";
+    const string BulkDuplicateFeeError = "One or more selected members already have a membership fee for this year.";
+    const string NotFoundError = "Membership fee not found.";
+
     public async Task<IReadOnlyList<MembershipFee>> GetAllAsync(Guid? memberId = null, CancellationToken ct = default)
     {
         var query = db.MembershipFees.AsNoTracking();
@@ -45,7 +49,7 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
             .ToListAsync(ct);
     }
 
-    public async Task<MembershipFee> CreateAsync(MembershipFee fee, CancellationToken ct = default)
+    public async Task<Result<MembershipFee>> CreateAsync(MembershipFee fee, CancellationToken ct = default)
     {
         fee.Id = Guid.NewGuid();
         db.MembershipFees.Add(fee);
@@ -55,13 +59,13 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            throw new ConflictException("A membership fee already exists for this member and year.");
+            return Result<MembershipFee>.Failure(DuplicateFeeError);
         }
 
-        return fee;
+        return Result<MembershipFee>.Success(fee);
     }
 
-    public async Task<int> BulkCreateAsync(int year, decimal amount, DateOnly dueDate, int? minAge = null, string? ageOp = null, CancellationToken ct = default)
+    public async Task<Result<int>> BulkCreateAsync(int year, decimal amount, DateOnly dueDate, int? minAge = null, string? ageOp = null, CancellationToken ct = default)
     {
         var existingMemberIds = await db.MembershipFees
             .Where(f => f.Year == year)
@@ -99,16 +103,16 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            throw new ConflictException("One or more selected members already have a membership fee for this year.");
+            return Result<int>.Failure(BulkDuplicateFeeError);
         }
 
-        return memberIds.Count;
+        return Result<int>.Success(memberIds.Count);
     }
 
-    public async Task<MembershipFee?> UpdateAsync(Guid id, MembershipFee input, CancellationToken ct = default)
+    public async Task<Result<MembershipFee>> UpdateAsync(Guid id, MembershipFee input, CancellationToken ct = default)
     {
         var fee = await db.MembershipFees.FindAsync([id], ct);
-        if (fee is null) return null;
+        if (fee is null) return Result<MembershipFee>.Failure(NotFoundError);
         fee.Year     = input.Year;
         fee.Amount   = input.Amount;
         fee.DueDate  = input.DueDate;
@@ -120,10 +124,10 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            throw new ConflictException("A membership fee already exists for this member and year.");
+            return Result<MembershipFee>.Failure(DuplicateFeeError);
         }
 
-        return fee;
+        return Result<MembershipFee>.Success(fee);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)

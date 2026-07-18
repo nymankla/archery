@@ -16,31 +16,39 @@ public class MemberService(ArcheryDbContext db) : IMemberService
     public async Task<Member?> GetByIdAsync(Guid id, CancellationToken ct = default)
         => await db.Members.FindAsync([id], ct);
 
-    public async Task<Member> CreateAsync(Member member, CancellationToken ct = default)
+    public async Task<Result<Member>> CreateAsync(Member member, CancellationToken ct = default)
     {
-        member.Personnummer = await NormalizeAndValidatePersonnummerAsync(member.Personnummer, null, ct);
+        var personnummerResult = await NormalizeAndValidatePersonnummerAsync(member.Personnummer, null, ct);
+        if (!personnummerResult.IsSuccess)
+            return Result<Member>.Failure(personnummerResult.Errors);
+
+        member.Personnummer = personnummerResult.Value;
         member.Id = Guid.NewGuid();
         db.Members.Add(member);
         await db.SaveChangesAsync(ct);
-        return member;
+        return Result<Member>.Success(member);
     }
 
-    public async Task<Member?> UpdateAsync(Guid id, Member input, CancellationToken ct = default)
+    public async Task<Result<Member>> UpdateAsync(Guid id, Member input, CancellationToken ct = default)
     {
         var member = await db.Members.FindAsync([id], ct);
-        if (member is null) return null;
+        if (member is null) return Result<Member>.Failure("Member not found.");
         member.FirstName         = input.FirstName;
         member.LastName          = input.LastName;
         member.Address           = input.Address;
         member.Phone             = input.Phone;
         member.Email             = input.Email;
-        member.Personnummer      = await NormalizeAndValidatePersonnummerAsync(input.Personnummer, id, ct);
+        var personnummerResult = await NormalizeAndValidatePersonnummerAsync(input.Personnummer, id, ct);
+        if (!personnummerResult.IsSuccess)
+            return Result<Member>.Failure(personnummerResult.Errors);
+
+        member.Personnummer      = personnummerResult.Value;
         member.DateOfBirth       = input.DateOfBirth;
         member.JoinDate          = input.JoinDate;
         member.IsActive          = input.IsActive;
         member.PreferredBowClass = input.PreferredBowClass;
         await db.SaveChangesAsync(ct);
-        return member;
+        return Result<Member>.Success(member);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
@@ -126,36 +134,32 @@ public class MemberService(ArcheryDbContext db) : IMemberService
 
         async Task<string?> NormalizeAndValidatePersonnummerForImportAsync(string? personnummer, Guid? memberId, int rowNumber, CancellationToken cancellationToken)
         {
-            try
-            {
-                return await NormalizeAndValidatePersonnummerAsync(personnummer, memberId, cancellationToken);
-            }
-            catch (ArgumentException ex)
-            {
-                errors.Add($"Row {rowNumber}: {ex.Message}");
-                return ImportValidationFailed.Value;
-            }
-            catch (ConflictException ex)
-            {
-                errors.Add($"Row {rowNumber}: {ex.Message}");
-                return ImportValidationFailed.Value;
-            }
+            var result = await NormalizeAndValidatePersonnummerAsync(personnummer, memberId, cancellationToken);
+            if (result.IsSuccess)
+                return result.Value;
+
+            foreach (var error in result.Errors)
+                errors.Add($"Row {rowNumber}: {error}");
+
+            return ImportValidationFailed.Value;
         }
     }
 
-    async Task<string?> NormalizeAndValidatePersonnummerAsync(string? personnummer, Guid? memberId, CancellationToken ct)
+    async Task<Result<string?>> NormalizeAndValidatePersonnummerAsync(string? personnummer, Guid? memberId, CancellationToken ct)
     {
-        if (!PersonnummerParser.TryNormalize(personnummer, out var normalized))
-            throw new ArgumentException("Personnummer is invalid.");
+        var normalizedResult = PersonnummerParser.Normalize(personnummer);
+        if (!normalizedResult.IsSuccess)
+            return Result<string?>.Failure(normalizedResult.Errors);
 
+        var normalized = normalizedResult.Value;
         if (normalized is null)
-            return null;
+            return normalizedResult;
 
         var exists = await db.Members.AnyAsync(m => m.Personnummer == normalized && m.Id != memberId, ct);
         if (exists)
-            throw new ConflictException("A member with this personnummer already exists.");
+            return Result<string?>.Failure("A member with this personnummer already exists.");
 
-        return normalized;
+        return normalizedResult;
     }
 
     private static class ImportValidationFailed

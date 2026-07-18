@@ -13,7 +13,7 @@ public class PostgresPersistenceTests
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
     [Fact]
-    public async Task MembershipFeeService_CreateAsync_ThrowsConflict_ForDuplicateMemberYear()
+    public async Task MembershipFeeService_CreateAsync_ReturnsValidationError_ForDuplicateMemberYear()
     {
         var ct = TestContext.Current.CancellationToken;
 
@@ -64,21 +64,22 @@ public class PostgresPersistenceTests
         {
             var svc = new MembershipFeeService(db);
 
-            var ex = await Assert.ThrowsAsync<ConflictException>(() => svc.CreateAsync(new MembershipFee
+            var result = await svc.CreateAsync(new MembershipFee
             {
                 MemberId = memberId,
                 Year = year,
                 Amount = 600,
                 DueDate = new DateOnly(year, 4, 30),
                 Status = FeeStatus.Unpaid
-            }, ct));
+            }, ct);
 
-            Assert.Equal("A membership fee already exists for this member and year.", ex.Message);
+            Assert.False(result.IsSuccess);
+            Assert.Contains("A membership fee already exists for this member and year.", result.Errors);
         }
     }
 
     [Fact]
-    public async Task CompetitionParticipantService_RegisterAsync_ThrowsConflict_ForDuplicateRegistration()
+    public async Task CompetitionParticipantService_RegisterAsync_ReturnsValidationError_ForDuplicateRegistration()
     {
         var ct = TestContext.Current.CancellationToken;
 
@@ -138,21 +139,22 @@ public class PostgresPersistenceTests
         {
             var svc = new CompetitionParticipantService(db);
 
-            var ex = await Assert.ThrowsAsync<ConflictException>(() => svc.RegisterAsync(new CompetitionParticipant
+            var result = await svc.RegisterAsync(new CompetitionParticipant
             {
                 CompetitionId = competitionId,
                 MemberId = memberId,
                 BowClass = BowClass.Recurve,
                 AgeClass = AgeClass.Senior,
                 Gender = Gender.Male
-            }, ct));
+            }, ct);
 
-            Assert.Equal("This participant is already registered for the competition.", ex.Message);
+            Assert.False(result.IsSuccess);
+            Assert.Contains("This participant is already registered for the competition.", result.Errors);
         }
     }
 
     [Fact]
-    public async Task MemberService_CreateAsync_ThrowsConflict_ForDuplicatePersonnummer()
+    public async Task MemberService_CreateAsync_ReturnsValidationError_ForDuplicatePersonnummer()
     {
         var ct = TestContext.Current.CancellationToken;
 
@@ -193,7 +195,7 @@ public class PostgresPersistenceTests
         {
             var svc = new MemberService(db);
 
-            var ex = await Assert.ThrowsAsync<ConflictException>(() => svc.CreateAsync(new Member
+            var result = await svc.CreateAsync(new Member
             {
                 FirstName = "Bertil",
                 LastName = "Second",
@@ -201,9 +203,10 @@ public class PostgresPersistenceTests
                 IsActive = true,
                 DateOfBirth = new DateOnly(1990, 1, 1),
                 JoinDate = new DateOnly(2020, 1, 1)
-            }, ct));
+            }, ct);
 
-            Assert.Equal("A member with this personnummer already exists.", ex.Message);
+            Assert.False(result.IsSuccess);
+            Assert.Contains("A member with this personnummer already exists.", result.Errors);
         }
     }
 

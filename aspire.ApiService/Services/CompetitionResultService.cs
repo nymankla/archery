@@ -7,6 +7,10 @@ namespace aspire.ApiService.Services;
 
 public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultService
 {
+    const string InvalidParticipantSelectionError = "Exactly one of MemberId or ExternalParticipantId must be provided.";
+    const string DuplicateResultError = "A result already exists for this participant in the competition.";
+    const string NotFoundError = "Competition result not found.";
+
     public async Task<IReadOnlyList<CompetitionResult>> GetByCompetitionAsync(
         Guid competitionId, CancellationToken ct = default)
         => await db.CompetitionResults
@@ -24,11 +28,10 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
             .Include(r => r.ExternalParticipant)
             .FirstOrDefaultAsync(r => r.Id == id, ct);
 
-    public async Task<CompetitionResult> CreateAsync(CompetitionResult input, CancellationToken ct = default)
+    public async Task<Result<CompetitionResult>> CreateAsync(CompetitionResult input, CancellationToken ct = default)
     {
         if ((input.MemberId is null) == (input.ExternalParticipantId is null))
-            throw new ArgumentException(
-                "Exactly one of MemberId or ExternalParticipantId must be provided.");
+            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
 
         input.Id = Guid.NewGuid();
         db.CompetitionResults.Add(input);
@@ -38,24 +41,23 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            throw new ConflictException("A result already exists for this participant in the competition.");
+            return Result<CompetitionResult>.Failure(DuplicateResultError);
         }
         catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionResult_SingleParticipant"))
         {
-            throw new ArgumentException("Exactly one of MemberId or ExternalParticipantId must be provided.");
+            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
         }
 
-        return input;
+        return Result<CompetitionResult>.Success(input);
     }
 
-    public async Task<CompetitionResult?> UpdateAsync(Guid id, CompetitionResult input, CancellationToken ct = default)
+    public async Task<Result<CompetitionResult>> UpdateAsync(Guid id, CompetitionResult input, CancellationToken ct = default)
     {
         if ((input.MemberId is null) == (input.ExternalParticipantId is null))
-            throw new ArgumentException(
-                "Exactly one of MemberId or ExternalParticipantId must be provided.");
+            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
 
         var result = await db.CompetitionResults.FindAsync([id], ct);
-        if (result is null) return null;
+        if (result is null) return Result<CompetitionResult>.Failure(NotFoundError);
         result.BowClass                = input.BowClass;
         result.AgeClass                = input.AgeClass;
         result.Gender                  = input.Gender;
@@ -72,14 +74,14 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            throw new ConflictException("A result already exists for this participant in the competition.");
+            return Result<CompetitionResult>.Failure(DuplicateResultError);
         }
         catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionResult_SingleParticipant"))
         {
-            throw new ArgumentException("Exactly one of MemberId or ExternalParticipantId must be provided.");
+            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
         }
 
-        return result;
+        return Result<CompetitionResult>.Success(result);
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)

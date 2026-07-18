@@ -31,6 +31,16 @@ public class ImportResult
     public List<string> Errors { get; set; } = [];
 }
 
+public class ValidationErrorsResponse
+{
+    public List<string> Errors { get; set; } = [];
+}
+
+public class MessageResponse
+{
+    public string? Message { get; set; }
+}
+
 public enum BowClass { Recurve, Compound, Barebow, Traditional }
 public enum AgeClass { Cadet, Junior, Senior, Master }
 public enum Gender { Male, Female, NonBinary, Unknown }

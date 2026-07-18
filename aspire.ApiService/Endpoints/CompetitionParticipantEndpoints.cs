@@ -24,19 +24,14 @@ public static class CompetitionParticipantEndpoints
     static async Task<IResult> Register(
         CompetitionParticipant input, ICompetitionParticipantService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.RegisterAsync(input, ct);
+        if (result.IsSuccess)
         {
-            var created = await svc.RegisterAsync(input, ct);
+            var created = result.Value!;
             return Results.Created($"/competition-participants/{created.Id}", created);
         }
-        catch (ArgumentException ex)
-        {
-            return Results.BadRequest(ex.Message);
-        }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> Remove(Guid id, ICompetitionParticipantService svc, CancellationToken ct)

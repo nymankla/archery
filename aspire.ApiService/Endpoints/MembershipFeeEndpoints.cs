@@ -36,40 +36,39 @@ public static class MembershipFeeEndpoints
 
     static async Task<IResult> Create(MembershipFee fee, IMembershipFeeService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.CreateAsync(fee, ct);
+        if (result.IsSuccess)
         {
-            var created = await svc.CreateAsync(fee, ct);
+            var created = result.Value!;
             return Results.Created($"/membership-fees/{created.Id}", created);
         }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> BulkCreate(BulkFeeRequest req, IMembershipFeeService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.BulkCreateAsync(req.Year, req.Amount, req.DueDate, req.MinAge, req.AgeOp, ct);
+        if (result.IsSuccess)
         {
-            var count = await svc.BulkCreateAsync(req.Year, req.Amount, req.DueDate, req.MinAge, req.AgeOp, ct);
+            var count = result.Value;
             return Results.Ok(new { Created = count });
         }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> Update(Guid id, MembershipFee input, IMembershipFeeService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.UpdateAsync(id, input, ct);
+        if (result.IsSuccess)
         {
-            return await svc.UpdateAsync(id, input, ct) is { } f ? Results.Ok(f) : Results.NotFound();
+            return Results.Ok(result.Value!);
         }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return result.Errors.Contains("Membership fee not found.")
+            ? Results.NotFound()
+            : Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> Delete(Guid id, IMembershipFeeService svc, CancellationToken ct)

@@ -27,27 +27,27 @@ public static class MemberEndpoints
 
     static async Task<IResult> Create(Member member, IMemberService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.CreateAsync(member, ct);
+        if (result.IsSuccess)
         {
-            var created = await svc.CreateAsync(member, ct);
+            var created = result.Value!;
             return Results.Created($"/members/{created.Id}", created);
         }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> Update(Guid id, Member input, IMemberService svc, CancellationToken ct)
     {
-        try
+        var result = await svc.UpdateAsync(id, input, ct);
+        if (result.IsSuccess)
         {
-            return await svc.UpdateAsync(id, input, ct) is { } m ? Results.Ok(m) : Results.NotFound();
+            return Results.Ok(result.Value!);
         }
-        catch (ConflictException ex)
-        {
-            return Results.Conflict(new { message = ex.Message });
-        }
+
+        return result.Errors.Contains("Member not found.")
+            ? Results.NotFound()
+            : Results.BadRequest(new { errors = result.Errors });
     }
 
     static async Task<IResult> Delete(Guid id, IMemberService svc, CancellationToken ct)

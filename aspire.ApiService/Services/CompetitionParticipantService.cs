@@ -7,6 +7,9 @@ namespace aspire.ApiService.Services;
 
 public class CompetitionParticipantService(ArcheryDbContext db) : ICompetitionParticipantService
 {
+    const string InvalidParticipantSelectionError = "Exactly one of MemberId or ExternalParticipantId must be provided.";
+    const string DuplicateRegistrationError = "This participant is already registered for the competition.";
+
     public async Task<IReadOnlyList<CompetitionParticipant>> GetByCompetitionAsync(
         Guid competitionId, CancellationToken ct = default)
         => await db.CompetitionParticipants
@@ -16,12 +19,11 @@ public class CompetitionParticipantService(ArcheryDbContext db) : ICompetitionPa
             .Include(p => p.ExternalParticipant)
             .ToListAsync(ct);
 
-    public async Task<CompetitionParticipant> RegisterAsync(
+    public async Task<Result<CompetitionParticipant>> RegisterAsync(
         CompetitionParticipant input, CancellationToken ct = default)
     {
         if ((input.MemberId is null) == (input.ExternalParticipantId is null))
-            throw new ArgumentException(
-                "Exactly one of MemberId or ExternalParticipantId must be provided.");
+            return Result<CompetitionParticipant>.Failure(InvalidParticipantSelectionError);
 
         input.Id = Guid.NewGuid();
         db.CompetitionParticipants.Add(input);
@@ -31,14 +33,14 @@ public class CompetitionParticipantService(ArcheryDbContext db) : ICompetitionPa
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            throw new ConflictException("This participant is already registered for the competition.");
+            return Result<CompetitionParticipant>.Failure(DuplicateRegistrationError);
         }
         catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionParticipant_SingleParticipant"))
         {
-            throw new ArgumentException("Exactly one of MemberId or ExternalParticipantId must be provided.");
+            return Result<CompetitionParticipant>.Failure(InvalidParticipantSelectionError);
         }
 
-        return input;
+        return Result<CompetitionParticipant>.Success(input);
     }
 
     public async Task<bool> RemoveAsync(Guid id, CancellationToken ct = default)
