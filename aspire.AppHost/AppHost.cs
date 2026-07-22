@@ -1,5 +1,7 @@
 var builder = DistributedApplication.CreateBuilder(args);
-
+// Enable Docker 
+ builder.AddDockerComposeEnvironment("production");
+ 
 var cache = builder.AddRedis("cache")
     .WithDataVolume("redisdata")
     .WithLifetime(ContainerLifetime.Persistent)

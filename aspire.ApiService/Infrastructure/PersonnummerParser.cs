@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace aspire.ApiService.Infrastructure;
 
-public static class PersonnummerParser
+public static partial class PersonnummerParser
 {
     public static Result<string?> Normalize(string? input)
     {
@@ -84,5 +84,10 @@ public static class PersonnummerParser
         return sum % 10 == 0;
     }
 
-    private static readonly Regex PersonnummerRegex = new("^(\\d{2}|\\d{4})(\\d{2})(\\d{2})([-+]?)?(\\d{4})$", RegexOptions.Compiled);
+    private static readonly Regex PersonnummerRegex = MyRegex();
+
+    [GeneratedRegex("^(\\d{2}|\\d{4})(\\d{2})(\\d{2})([-+]?)?(\\d{4})$", RegexOptions.Compiled)]
+    private static partial Regex MyRegex();
+
+
 }

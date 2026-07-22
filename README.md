@@ -109,6 +109,24 @@ The Aspire dashboard URL is printed in the terminal (typically `https://localhos
 
 On first run the API applies EF Core migrations automatically, and Keycloak imports its realm from the `keycloak/` folder.
 
+### Publish and deploy to Docker
+
+This AppHost already includes a Docker Compose deployment environment (`production`) in [AppHost.cs](aspire.AppHost/AppHost.cs).
+
+```bash
+# Preview deployment pipeline steps
+aspire publish --list-steps
+aspire deploy --list-steps
+
+# Generate Docker Compose deployment artifacts
+aspire publish -o aspire-output/docker
+
+# Deploy with Docker Compose using the configured Aspire environment
+aspire deploy
+```
+
+The generated artifacts are written under `aspire-output/docker` (including Docker Compose files and environment templates).
+
 ### Build & test
 
 ```bash

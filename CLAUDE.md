@@ -8,6 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Run the distributed app (AppHost orchestrates Redis, PostgreSQL, Keycloak, the API, and the Web frontend)
 dotnet run --project aspire.AppHost
 
+# Publish deployment artifacts from the AppHost model
+aspire publish
+
+# Deploy using the configured Aspire deployment environment
+aspire deploy
+
 # Build entire solution
 dotnet build Archery.sln
 
