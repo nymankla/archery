@@ -1,6 +1,7 @@
 @page "/training-history"
 @rendermode InteractiveServer
 @inject ArcheryApiClient Api
+@inject FileDownloader FileDownloader
 
 <PageTitle>Training History</PageTitle>
 
@@ -37,8 +38,15 @@
 @if (selectedDate.HasValue && sessionDetail != null)
 {
 	<div class="card">
-		<div class="card-header">
+		<div class="card-header d-flex justify-content-between align-items-center">
 			<strong>Attendance for @selectedDate.Value.ToString("yyyy-MM-dd")</strong>
+			@if (sessionDetail.Attendees.Count > 0)
+			{
+				<div class="btn-group btn-group-sm">
+					<button class="btn btn-outline-secondary" disabled="@exporting" @onclick='() => ExportAsync("csv")'>Export CSV</button>
+					<button class="btn btn-outline-secondary" disabled="@exporting" @onclick='() => ExportAsync("xlsx")'>Export Excel</button>
+				</div>
+			}
 		</div>
 		<div class="card-body">
 			@if (!string.IsNullOrWhiteSpace(sessionDetail.Notes))
@@ -62,14 +70,25 @@
 					{
 						<div class="col-md-6">
 							<h5>Club Members (@memberAttendees.Count)</h5>
-							<ul class="list-group">
-								@foreach (var attendee in memberAttendees.OrderBy(a => a.MemberName))
-								{
-									<li class="list-group-item">
-										<span class="bi bi-person-fill me-2"></span>@attendee.MemberName
-									</li>
-								}
-							</ul>
+							<table class="table table-sm">
+								<thead>
+									<tr>
+										<th>First Name</th>
+										<th>Last Name</th>
+										<th>Personnummer</th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach (var attendee in memberAttendees.OrderBy(a => a.MemberLastName).ThenBy(a => a.MemberFirstName))
+									{
+										<tr>
+											<td>@attendee.MemberFirstName</td>
+											<td>@attendee.MemberLastName</td>
+											<td>@(attendee.MemberPersonnummer ?? "—")</td>
+										</tr>
+									}
+								</tbody>
+							</table>
 						</div>
 					}
 
@@ -77,14 +96,23 @@
 					{
 						<div class="col-md-6">
 							<h5>External Participants (@externalAttendees.Count)</h5>
-							<ul class="list-group">
-								@foreach (var attendee in externalAttendees.OrderBy(a => a.ExternalParticipantName))
-								{
-									<li class="list-group-item">
-										<span class="bi bi-person-badge me-2"></span>@attendee.ExternalParticipantName
-									</li>
-								}
-							</ul>
+							<table class="table table-sm">
+								<thead>
+									<tr>
+										<th>First Name</th>
+										<th>Last Name</th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach (var attendee in externalAttendees.OrderBy(a => a.ExternalParticipantLastName).ThenBy(a => a.ExternalParticipantFirstName))
+									{
+										<tr>
+											<td>@attendee.ExternalParticipantFirstName</td>
+											<td>@attendee.ExternalParticipantLastName</td>
+										</tr>
+									}
+								</tbody>
+							</table>
 						</div>
 					}
 				</div>
@@ -105,6 +133,7 @@ else if (selectedDate.HasValue && sessionDetail == null)
 	DateOnly[]? trainingDates;
 	DateOnly? selectedDate;
 	TrainingSessionDetail? sessionDetail;
+	bool exporting;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -117,6 +146,25 @@ else if (selectedDate.HasValue && sessionDetail == null)
 		if (selectedDate.HasValue)
 		{
 			sessionDetail = await Api.GetTrainingAttendanceByDateAsync(selectedDate.Value);
+		}
+	}
+
+	async Task ExportAsync(string format)
+	{
+		if (!selectedDate.HasValue) return;
+
+		exporting = true;
+		try
+		{
+			var file = await Api.ExportTrainingAttendanceAsync(selectedDate.Value, format);
+			if (file != null)
+			{
+				await FileDownloader.SaveAsync(file);
+			}
+		}
+		finally
+		{
+			exporting = false;
 		}
 	}
 }

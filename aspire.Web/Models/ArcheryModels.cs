@@ -199,10 +199,12 @@ public class TrainingAttendeeInfo
 {
     public Guid AttendanceId { get; set; }
     public Guid? MemberId { get; set; }
-    public string? MemberName { get; set; }
+    public string? MemberFirstName { get; set; }
+    public string? MemberLastName { get; set; }
+    public string? MemberPersonnummer { get; set; }
     public Guid? ExternalParticipantId { get; set; }
-    public string? ExternalParticipantName { get; set; }
-    public string ParticipantName => MemberName ?? ExternalParticipantName ?? "Unknown";
+    public string? ExternalParticipantFirstName { get; set; }
+    public string? ExternalParticipantLastName { get; set; }
 }
 
 public class SaveTrainingAttendanceRequest
@@ -211,3 +213,6 @@ public class SaveTrainingAttendanceRequest
     public List<Guid> MemberIds { get; set; } = [];
     public List<Guid> ExternalParticipantIds { get; set; } = [];
 }
+
+/// <summary>A downloaded file's bytes plus the metadata needed to save it in the browser.</summary>
+public record ExportedFile(string FileName, string ContentType, byte[] Content);

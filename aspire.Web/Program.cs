@@ -52,6 +52,7 @@ builder.Services.AddCascadingAuthenticationState();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AccessTokenProvider>();
+builder.Services.AddScoped<FileDownloader>();
 builder.Services.AddScoped<TokenRefreshService>();
 builder.Services.AddScoped<CookieOidcEvents>();
 builder.Services.AddScoped<OpenIdConnectEventsHandler>();

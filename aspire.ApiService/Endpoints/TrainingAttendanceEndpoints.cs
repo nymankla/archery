@@ -1,3 +1,4 @@
+using aspire.ApiService.Infrastructure;
 using aspire.ApiService.Services;
 
 namespace aspire.ApiService.Endpoints;
@@ -11,6 +12,7 @@ public static class TrainingAttendanceEndpoints
         group.MapGet("/dates", GetDates);
         group.MapGet("/by-date", GetByDate);
         group.MapPut("/by-date", SaveAttendance);
+        group.MapGet("/by-date/export", ExportAttendance);
 
         return app;
     }
@@ -29,5 +31,17 @@ public static class TrainingAttendanceEndpoints
         return result.IsSuccess
             ? Results.Ok(result.Value)
             : Results.BadRequest(new { errors = result.Errors });
+    }
+
+    static async Task<IResult> ExportAttendance(DateOnly date, string format, ITrainingAttendanceService svc, CancellationToken ct)
+    {
+        var exportFormat = string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase)
+            ? ExportFormat.Xlsx
+            : ExportFormat.Csv;
+
+        var file = await svc.ExportAsync(date, exportFormat, ct);
+        return file is null
+            ? Results.NotFound()
+            : Results.File(file.Content, file.ContentType, file.FileName);
     }
 }

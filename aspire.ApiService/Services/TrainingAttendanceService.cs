@@ -33,9 +33,12 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
         var attendees = session.Attendances.Select(a => new AttendeeInfo(
             a.Id,
             a.MemberId,
-            a.Member is not null ? $"{a.Member.FirstName} {a.Member.LastName}" : null,
+            a.Member?.FirstName,
+            a.Member?.LastName,
+            a.Member?.Personnummer,
             a.ExternalParticipantId,
-            a.ExternalParticipant is not null ? $"{a.ExternalParticipant.FirstName} {a.ExternalParticipant.LastName}" : null
+            a.ExternalParticipant?.FirstName,
+            a.ExternalParticipant?.LastName
         )).ToList();
 
         return new TrainingSessionDetail(session.Id, session.Date, session.Notes, attendees);
@@ -110,5 +113,21 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
         var detail = await GetByDateAsync(date, ct)
             ?? new TrainingSessionDetail(session.Id, session.Date, session.Notes, []);
         return Result<TrainingSessionDetail>.Success(detail);
+    }
+
+    public async Task<ExportFile?> ExportAsync(DateOnly date, ExportFormat format, CancellationToken ct = default)
+    {
+        var detail = await GetByDateAsync(date, ct);
+        if (detail is null) return null;
+
+        string[] headers = ["First Name", "Last Name", "Personnummer", "Category"];
+        var rows = detail.Attendees
+            .OrderBy(a => a.MemberLastName ?? a.ExternalParticipantLastName)
+            .ThenBy(a => a.MemberFirstName ?? a.ExternalParticipantFirstName)
+            .Select(a => a.MemberId.HasValue
+                ? (IReadOnlyList<string?>)[a.MemberFirstName, a.MemberLastName, a.MemberPersonnummer, "Member"]
+                : [a.ExternalParticipantFirstName, a.ExternalParticipantLastName, null, "Guest"]);
+
+        return SpreadsheetWriter.Write(format, $"training-attendance-{date:yyyy-MM-dd}", "Attendance", headers, rows);
     }
 }

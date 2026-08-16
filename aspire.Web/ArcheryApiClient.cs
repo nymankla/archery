@@ -130,6 +130,9 @@ public class ArcheryApiClient(
     public Task<HttpResponseMessage> SaveTrainingAttendanceAsync(DateOnly date, SaveTrainingAttendanceRequest request, CancellationToken ct = default)
         => SendAsJsonAsync(HttpMethod.Put, $"/training-attendance/by-date?date={date:yyyy-MM-dd}", request, ct);
 
+    public Task<ExportedFile?> ExportTrainingAttendanceAsync(DateOnly date, string format, CancellationToken ct = default)
+        => GetBytesAsync($"/training-attendance/by-date/export?date={date:yyyy-MM-dd}&format={format}", ct);
+
     void AddBearerToken(HttpRequestMessage request)
     {
         // During interactive circuit, AccessTokenProvider holds the token.
@@ -156,6 +159,21 @@ public class ArcheryApiClient(
         using var response = await httpClient.SendAsync(request, ct);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<T>(ct);
+    }
+
+    async Task<ExportedFile?> GetBytesAsync(string url, CancellationToken ct)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        AddBearerToken(request);
+        using var response = await httpClient.SendAsync(request, ct);
+        if (!response.IsSuccessStatusCode) return null;
+
+        var content = await response.Content.ReadAsByteArrayAsync(ct);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var fileName = response.Content.Headers.ContentDisposition?.FileNameStar
+            ?? response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+            ?? "export";
+        return new ExportedFile(fileName, contentType, content);
     }
 
     Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, CancellationToken ct)
