@@ -25,7 +25,9 @@ public static class TrainingAttendanceEndpoints
 
     static async Task<IResult> SaveAttendance(DateOnly date, SaveAttendanceRequest request, ITrainingAttendanceService svc, CancellationToken ct)
     {
-        var saved = await svc.SaveAttendanceAsync(date, request, ct);
-        return Results.Ok(saved);
+        var result = await svc.SaveAttendanceAsync(date, request, ct);
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.BadRequest(new { errors = result.Errors });
     }
 }

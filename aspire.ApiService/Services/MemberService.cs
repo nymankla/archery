@@ -25,7 +25,14 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         member.Personnummer = personnummerResult.Value;
         member.Id = Guid.NewGuid();
         db.Members.Add(member);
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            return Result<Member>.Failure("A member with this personnummer already exists.");
+        }
         return Result<Member>.Success(member);
     }
 
@@ -47,7 +54,14 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         member.JoinDate          = input.JoinDate;
         member.IsActive          = input.IsActive;
         member.PreferredBowClass = input.PreferredBowClass;
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            return Result<Member>.Failure("A member with this personnummer already exists.");
+        }
         return Result<Member>.Success(member);
     }
 

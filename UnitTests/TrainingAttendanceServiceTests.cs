@@ -49,9 +49,10 @@ public class TrainingAttendanceServiceTests
             [member.Id],
             [external.Id]), ct);
 
-        Assert.Equal(date, result.Date);
-        Assert.Equal("Evening practice", result.Notes);
-        Assert.Equal(2, result.Attendees.Count);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(date, result.Value!.Date);
+        Assert.Equal("Evening practice", result.Value.Notes);
+        Assert.Equal(2, result.Value.Attendees.Count);
         Assert.Single(await db.TrainingSessions.ToListAsync(ct));
         Assert.Equal(2, await db.TrainingAttendances.CountAsync(ct));
     }
@@ -72,11 +73,13 @@ public class TrainingAttendanceServiceTests
         var date = new DateOnly(2026, 7, 18);
 
         await svc.SaveAttendanceAsync(date, new SaveAttendanceRequest(null, [first.Id], []), ct);
-        var updated = await svc.SaveAttendanceAsync(date, new SaveAttendanceRequest(
+        var updatedResult = await svc.SaveAttendanceAsync(date, new SaveAttendanceRequest(
             "Updated",
             [second.Id],
             [external.Id]), ct);
 
+        Assert.True(updatedResult.IsSuccess);
+        var updated = updatedResult.Value!;
         Assert.Single(await db.TrainingSessions.ToListAsync(ct));
         Assert.Equal(2, await db.TrainingAttendances.CountAsync(ct));
         Assert.DoesNotContain(updated.Attendees, a => a.MemberId == first.Id);

@@ -1,4 +1,5 @@
 using aspire.ApiService.Data;
+using aspire.ApiService.Infrastructure;
 using aspire.ApiService.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,6 +7,9 @@ namespace aspire.ApiService.Services;
 
 public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanceService
 {
+    const string DuplicateAttendanceError = "One or more selected participants are already registered for this training session.";
+
+
     public async Task<IReadOnlyList<DateOnly>> GetTrainingDatesAsync(CancellationToken ct = default)
         => await db.TrainingSessions
             .AsNoTracking()
@@ -37,7 +41,7 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
         return new TrainingSessionDetail(session.Id, session.Date, session.Notes, attendees);
     }
 
-    public async Task<TrainingSessionDetail> SaveAttendanceAsync(
+    public async Task<Result<TrainingSessionDetail>> SaveAttendanceAsync(
         DateOnly date,
         SaveAttendanceRequest request,
         CancellationToken ct = default)
@@ -72,7 +76,7 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
 
         var newAttendances = new List<TrainingAttendance>();
 
-        foreach (var memberId in request.MemberIds)
+        foreach (var memberId in request.MemberIds.Distinct())
         {
             newAttendances.Add(new TrainingAttendance
             {
@@ -82,7 +86,7 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
             });
         }
 
-        foreach (var extId in request.ExternalParticipantIds)
+        foreach (var extId in request.ExternalParticipantIds.Distinct())
         {
             newAttendances.Add(new TrainingAttendance
             {
@@ -94,9 +98,17 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
 
         db.TrainingAttendances.AddRange(newAttendances);
 
-        await db.SaveChangesAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
+        {
+            return Result<TrainingSessionDetail>.Failure(DuplicateAttendanceError);
+        }
 
-        return await GetByDateAsync(date, ct)
+        var detail = await GetByDateAsync(date, ct)
             ?? new TrainingSessionDetail(session.Id, session.Date, session.Notes, []);
+        return Result<TrainingSessionDetail>.Success(detail);
     }
 }

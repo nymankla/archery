@@ -81,13 +81,13 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.HasOne(r => r.Member)
              .WithMany(m => m.CompetitionResults)
              .HasForeignKey(r => r.MemberId)
-             .OnDelete(DeleteBehavior.SetNull)
+             .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
             e.HasOne(r => r.ExternalParticipant)
              .WithMany(p => p.CompetitionResults)
              .HasForeignKey(r => r.ExternalParticipantId)
-             .OnDelete(DeleteBehavior.SetNull)
+             .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
             e.ToTable(t => t.HasCheckConstraint(
@@ -117,13 +117,13 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.HasOne(p => p.Member)
              .WithMany()
              .HasForeignKey(p => p.MemberId)
-             .OnDelete(DeleteBehavior.SetNull)
+             .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
             e.HasOne(p => p.ExternalParticipant)
              .WithMany()
              .HasForeignKey(p => p.ExternalParticipantId)
-             .OnDelete(DeleteBehavior.SetNull)
+             .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
             e.ToTable(t => t.HasCheckConstraint(
@@ -157,13 +157,13 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
             e.HasOne(a => a.Member)
              .WithMany()
              .HasForeignKey(a => a.MemberId)
-             .OnDelete(DeleteBehavior.SetNull)
+             .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
             e.HasOne(a => a.ExternalParticipant)
              .WithMany()
              .HasForeignKey(a => a.ExternalParticipantId)
-             .OnDelete(DeleteBehavior.SetNull)
+             .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
             e.ToTable(t => t.HasCheckConstraint(
