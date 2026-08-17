@@ -11,6 +11,7 @@ public static class MemberEndpoints
         var group = app.MapGroup("/members").WithTags("Members").RequireAuthorization();
 
         group.MapGet("/", GetAll);
+        group.MapGet("/export", Export);
         group.MapGet("/{id:guid}", GetById);
         group.MapPost("/", Create);
         group.MapPut("/{id:guid}", Update);
@@ -21,6 +22,16 @@ public static class MemberEndpoints
 
     static async Task<IResult> GetAll(IMemberService svc, CancellationToken ct)
         => Results.Ok(await svc.GetAllAsync(ct));
+
+    static async Task<IResult> Export(string format, IMemberService svc, CancellationToken ct)
+    {
+        var exportFormat = string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase)
+            ? ExportFormat.Xlsx
+            : ExportFormat.Csv;
+
+        var file = await svc.ExportAsync(exportFormat, ct);
+        return Results.File(file.Content, file.ContentType, file.FileName);
+    }
 
     static async Task<IResult> GetById(Guid id, IMemberService svc, CancellationToken ct)
         => await svc.GetByIdAsync(id, ct) is { } m ? Results.Ok(m) : Results.NotFound();

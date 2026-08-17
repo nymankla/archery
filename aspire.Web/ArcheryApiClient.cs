@@ -49,6 +49,9 @@ public class ArcheryApiClient(
     public Task<HttpResponseMessage> DeleteMemberAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/members/{id}", ct);
 
+    public Task<ExportedFile?> ExportMembersAsync(string format, CancellationToken ct = default)
+        => GetBytesAsync($"/members/export?format={format}", ct);
+
     public Task<MembershipFee[]?> GetFeesByMemberAsync(Guid memberId, CancellationToken ct = default)
         => GetFromJsonAsync<MembershipFee[]>($"/membership-fees/member/{memberId}", ct);
 

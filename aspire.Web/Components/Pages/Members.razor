@@ -1,6 +1,7 @@
 @page "/members"
 @rendermode InteractiveServer
 @inject ArcheryApiClient Api
+@inject FileDownloader FileDownloader
 
 <PageTitle>Members</PageTitle>
 
@@ -8,7 +9,11 @@
     <h1>Members</h1>
     <div>
         <button class="btn btn-primary me-2" @onclick="ShowAddForm">Add Member</button>
-        <button class="btn btn-outline-secondary" @onclick="ToggleImport">Import</button>
+        <button class="btn btn-outline-secondary me-2" @onclick="ToggleImport">Import</button>
+        <div class="btn-group">
+            <button class="btn btn-outline-secondary" disabled="@exporting" @onclick='() => ExportAsync("csv")'>Export CSV</button>
+            <button class="btn btn-outline-secondary" disabled="@exporting" @onclick='() => ExportAsync("xlsx")'>Export Excel</button>
+        </div>
     </div>
 </div>
 
@@ -325,5 +330,24 @@ else
     void ToggleImport()
     {
         showImport = !showImport;
+    }
+
+    bool exporting;
+
+    async Task ExportAsync(string format)
+    {
+        exporting = true;
+        try
+        {
+            var file = await Api.ExportMembersAsync(format);
+            if (file != null)
+            {
+                await FileDownloader.SaveAsync(file);
+            }
+        }
+        finally
+        {
+            exporting = false;
+        }
     }
 }

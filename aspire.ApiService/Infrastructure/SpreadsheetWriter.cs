@@ -13,6 +13,15 @@ public static class SpreadsheetWriter
 {
     const string CsvContentType = "text/csv";
     const string XlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    static readonly char[] FormulaTriggerChars = ['=', '+', '-', '@', '\t', '\r'];
+
+    /// <summary>
+    /// Neutralizes CSV/formula injection: a cell value starting with a spreadsheet
+    /// formula-trigger character is prefixed with an apostrophe so Excel/LibreOffice
+    /// render it as text instead of evaluating it as a formula when the export is opened.
+    /// </summary>
+    static string SanitizeCell(string value)
+        => value.Length > 0 && FormulaTriggerChars.Contains(value[0]) ? "'" + value : value;
 
     /// <summary>Writes headers/rows as CSV or .xlsx depending on <paramref name="format"/>, naming the file from <paramref name="fileNameWithoutExtension"/>.</summary>
     public static ExportFile Write(
@@ -41,7 +50,7 @@ public static class SpreadsheetWriter
             foreach (var row in rows)
             {
                 foreach (var cell in row)
-                    csv.WriteField(cell ?? string.Empty);
+                    csv.WriteField(SanitizeCell(cell ?? string.Empty));
                 csv.NextRecord();
             }
         }
@@ -61,7 +70,7 @@ public static class SpreadsheetWriter
         foreach (var row in rows)
         {
             for (var col = 0; col < row.Count; col++)
-                sheet.Cell(rowIndex, col + 1).Value = row[col] ?? string.Empty;
+                sheet.Cell(rowIndex, col + 1).Value = SanitizeCell(row[col] ?? string.Empty);
             rowIndex++;
         }
 

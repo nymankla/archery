@@ -392,7 +392,7 @@
         <div>
           <p class="eyebrow reveal">.NET 10 · Aspire distributed application</p>
           <h1 class="display reveal" style="font-size: clamp(2.6rem, 7.5vw, 4.6rem); line-height: 0.95; margin: 0 0 1rem;">Archery Club<br>Management</h1>
-          <p class="lede-body reveal">Members, membership fees, competitions, results, and the guests who compete without joining. A secured minimal-API backend and an interactive Blazor Server frontend, orchestrated with Redis, PostgreSQL, and Keycloak.</p>
+          <p class="lede-body reveal">Members, membership fees, competitions, results, training attendance, and the guests who compete without joining. A secured minimal-API backend and an interactive Blazor Server frontend, orchestrated with Redis, PostgreSQL, and Keycloak.</p>
           <div class="tag-row reveal" style="margin-top: 1.3rem;">
             <span class="chip">.NET 10</span>
             <span class="chip">Aspire 13.4</span>
@@ -419,7 +419,7 @@
       </div>
       <div class="card-grid reveal" style="margin-top: 1.1rem;">
         <div class="card"><span class="k">aspire.AppHost</span><h3>Orchestrator</h3><p>Defines the resource graph. No business logic.</p></div>
-        <div class="card"><span class="k">aspire.ApiService</span><h3>Minimal-API backend</h3><p>Domain logic, EF Core, spreadsheet import. Keycloak JWT bearer.</p></div>
+        <div class="card"><span class="k">aspire.ApiService</span><h3>Minimal-API backend</h3><p>Domain logic, EF Core, spreadsheet import/export. Keycloak JWT bearer.</p></div>
         <div class="card"><span class="k">aspire.Web</span><h3>Blazor interactive server</h3><p>Keycloak OIDC login, calls the API, caches output in Redis.</p></div>
         <div class="card"><span class="k">aspire.ServiceDefaults</span><h3>Shared library</h3><p>OpenTelemetry, service discovery, resilience, /health + /alive.</p></div>
         <div class="card"><span class="k">Tests</span><h3>xUnit integration</h3><p>Boots the full AppHost in-process, incl. Postgres checks.</p></div>
@@ -431,14 +431,16 @@
   <section class="slide" data-index="2" aria-label="Domain model">
     <div class="slide-inner">
       <p class="eyebrow reveal">02 — Domain model</p>
-      <h2 class="display reveal">Six entities,<br>five enums</h2>
+      <h2 class="display reveal">Eight entities,<br>five enums</h2>
       <p class="lede-body reveal">Persisted with EF Core through <code>ArcheryDbContext</code>; migrations apply automatically at API startup.</p>
       <div class="card-grid reveal" style="margin-top: 1.1rem;">
-        <div class="card"><h3>Member</h3><p>Contact details, date of birth, join date, active flag, preferred bow class.</p></div>
+        <div class="card"><h3>Member</h3><p>Contact details, personnummer (unique), date of birth, join date, active flag, preferred bow class.</p></div>
         <div class="card"><h3>MembershipFee</h3><p>A member's fee for a year — amount, due date, status. Unique per member + year.</p></div>
         <div class="card"><h3>Competition</h3><p>Date, location, round type, and type — Indoor / Outdoor / ThreeD / Field.</p></div>
         <div class="card"><h3>CompetitionResult</h3><p>Tied to a member or an external participant, enforced by a DB check constraint.</p></div>
         <div class="card"><h3>CompetitionParticipant</h3><p>Registration of a member or guest into a competition.</p></div>
+        <div class="card"><h3>TrainingSession</h3><p>A training date with optional notes.</p></div>
+        <div class="card"><h3>TrainingAttendance</h3><p>Member or guest at a session — same either/or check constraint, unique per session + participant.</p></div>
         <div class="card"><h3>ExternalParticipant</h3><p>A guest competitor from another club — not a member.</p></div>
       </div>
       <div class="tag-row reveal" style="margin-top: 1.1rem;">
@@ -448,6 +450,7 @@
         <span class="chip">FeeStatus</span>
         <span class="chip">CompetitionType</span>
       </div>
+      <div class="note reveal" style="margin-top: 1.1rem;">Deleting a member or external participant cascades to their competition results, registrations, and training attendance — those rows can't outlive the participant.</div>
     </div>
   </section>
 
@@ -462,6 +465,7 @@
         <div class="row"><div class="rk">Membership fees</div><div class="rv">CRUD + /overview, /member/{id}, /bulk</div></div>
         <div class="row"><div class="rk">Competitions</div><div class="rv">CRUD + POST /competitions/import</div></div>
         <div class="row"><div class="rk">Results &amp; participants</div><div class="rv">Full CRUD under their own route groups</div></div>
+        <div class="row"><div class="rk">Training attendance</div><div class="rv">/dates, GET+PUT /by-date, GET /by-date/export (CSV/xlsx)</div></div>
         <div class="row"><div class="rk">External participants</div><div class="rv">CRUD + POST /…/import</div></div>
       </div>
     </div>
@@ -484,12 +488,13 @@
 
   <section class="slide" data-index="5" aria-label="Import and bulk features">
     <div class="slide-inner">
-      <p class="eyebrow reveal">05 — Import &amp; bulk operations</p>
-      <h2 class="display reveal">Spreadsheets in,<br>conflicts out as 409</h2>
+      <p class="eyebrow reveal">05 — Import, export &amp; bulk operations</p>
+      <h2 class="display reveal">Spreadsheets in and out,<br>conflicts out as 409</h2>
       <div class="row-list reveal" style="margin-top: 0.6rem;">
         <div class="row"><div class="rk">Spreadsheet import</div><div class="rv">Members, competitions, and external participants from CSV or .xlsx — parsed by <code>SpreadsheetParser</code> using CsvHelper and ClosedXML.</div></div>
+        <div class="row"><div class="rk">Spreadsheet export</div><div class="rv">Training attendance as CSV or .xlsx via <code>SpreadsheetWriter</code> — the generic counterpart to the parser.</div></div>
         <div class="row"><div class="rk">Bulk fee creation</div><div class="rv"><code>POST /membership-fees/bulk</code> generates fees for many members at once, optionally filtered by age.</div></div>
-        <div class="row"><div class="rk">Conflict handling</div><div class="rv">Domain conflicts — a duplicate fee for a member/year — surface as HTTP 409, not a 500.</div></div>
+        <div class="row"><div class="rk">Conflict handling</div><div class="rv">Domain conflicts — a duplicate fee for a member/year, a duplicate personnummer — surface as HTTP 409/400, not a 500.</div></div>
       </div>
     </div>
   </section>
@@ -503,6 +508,8 @@
         <span class="chip">Members</span>
         <span class="chip">Competitions</span>
         <span class="chip">Fees overview</span>
+        <span class="chip">Training attendance</span>
+        <span class="chip">Training history</span>
         <span class="chip">External participants</span>
       </div>
       <div class="flow-row reveal" style="margin-top: 1.6rem;">
@@ -512,7 +519,7 @@
         <div class="flow-node"><p class="ft">Bearer attached</p><p class="fb">ArcheryApiClient via BearerTokenHandler</p></div>
         <div class="flow-node"><p class="ft">Configurable</p><p class="fb">Idle-timeout &amp; refresh via AuthSession</p></div>
       </div>
-      <p class="lede-body reveal" style="margin-top: 1.4rem;">Both services default to the <code>sv-SE</code> culture — override with the <code>Locale</code> config key.</p>
+      <p class="lede-body reveal" style="margin-top: 1.4rem;">Both services default to the <code>sv-SE</code> culture — override with the <code>Locale</code> config key. File downloads go through <code>FileDownloader</code>, a reusable JS-interop Blob helper — Blazor Server has no direct client filesystem access.</p>
     </div>
   </section>
 

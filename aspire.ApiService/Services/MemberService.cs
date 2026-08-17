@@ -159,6 +159,27 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         }
     }
 
+    public async Task<ExportFile> ExportAsync(ExportFormat format, CancellationToken ct = default)
+    {
+        var members = await GetAllAsync(ct);
+
+        string[] headers = ["First Name", "Last Name", "Personnummer", "Date of Birth", "Address", "Phone", "Email", "Join Date", "Bow Class", "Status"];
+        var rows = members.Select(m => (IReadOnlyList<string?>)[
+            m.FirstName,
+            m.LastName,
+            m.Personnummer,
+            m.DateOfBirth.ToString("yyyy-MM-dd"),
+            m.Address,
+            m.Phone,
+            m.Email,
+            m.JoinDate.ToString("yyyy-MM-dd"),
+            m.PreferredBowClass.ToString(),
+            m.IsActive ? "Active" : "Inactive"
+        ]);
+
+        return SpreadsheetWriter.Write(format, "members", "Members", headers, rows);
+    }
+
     async Task<Result<string?>> NormalizeAndValidatePersonnummerAsync(string? personnummer, Guid? memberId, CancellationToken ct)
     {
         var normalizedResult = PersonnummerParser.Normalize(personnummer);

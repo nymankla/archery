@@ -1,6 +1,6 @@
 # Archery Club Management
 
-A .NET 10 [Aspire](https://learn.microsoft.com/dotnet/aspire/) distributed application for managing an archery club — members, membership fees, competitions, results, and external (guest) participants. It exposes a secured minimal-API backend and an interactive Blazor Server frontend, orchestrated together with Redis, PostgreSQL, and Keycloak.
+A .NET 10 [Aspire](https://learn.microsoft.com/dotnet/aspire/) distributed application for managing an archery club — members, membership fees, competitions, results, training attendance, and external (guest) participants. It exposes a secured minimal-API backend and an interactive Blazor Server frontend, orchestrated together with Redis, PostgreSQL, and Keycloak.
 
 ## Architecture
 
@@ -39,12 +39,16 @@ Keycloak ──────────┴────────────�
 
 Persisted with EF Core (Npgsql) via `ArcheryDbContext` ([ArcheryDbContext.cs](aspire.ApiService/Data/ArcheryDbContext.cs)); schema is created/updated by migrations applied automatically at API startup.
 
-- **Member** — club member: contact details, date of birth, join date, active flag, preferred bow class.
+- **Member** — club member: contact details, personnummer (unique), date of birth, join date, active flag, preferred bow class.
 - **MembershipFee** — a member's fee for a given year, with amount, due date, and status (`Unpaid` / `Paid` / `Partial`). Unique per member + year.
 - **Competition** — an event with date, location, round type, and type (`Indoor` / `Outdoor` / `ThreeD` / `Field`).
 - **CompetitionResult** — a score for a competition, tied to *either* a member *or* an external participant (enforced by a DB check constraint), classified by bow class, age class, and gender.
 - **CompetitionParticipant** — registration/enrollment of a member or external participant into a competition.
+- **TrainingSession** — a training date with optional notes.
+- **TrainingAttendance** — a member's or external participant's attendance at a training session (same either/or check constraint as competition results), unique per session + participant.
 - **ExternalParticipant** — a guest competitor from another club (not a member).
+
+Deleting a member or external participant cascades to their competition results, competition registrations, and training attendance records — there's no way to keep those rows once the participant is gone.
 
 Enums used across the model: `BowClass` (Recurve, Compound, Barebow, Traditional), `AgeClass` (Cadet, Junior, Senior, Master), `Gender`, `FeeStatus`, `CompetitionType`.
 
@@ -55,11 +59,12 @@ All endpoints require authorization (Keycloak JWT bearer) and are grouped by tag
 | Group | Routes |
 | --- | --- |
 | Dashboard | `GET /dashboard` — aggregate club statistics (see below) |
-| Members | `GET/POST /members`, `GET/PUT/DELETE /members/{id}`, `POST /members/import` (CSV/xlsx) |
+| Members | `GET/POST /members`, `GET/PUT/DELETE /members/{id}`, `POST /members/import` (CSV/xlsx), `GET /members/export` (CSV/xlsx) |
 | Membership fees | `GET /membership-fees`, `GET /membership-fees/overview`, `GET /membership-fees/member/{memberId}`, `POST /membership-fees`, `POST /membership-fees/bulk`, `GET/PUT/DELETE /membership-fees/{id}` |
 | Competitions | `GET/POST /competitions`, `GET/PUT/DELETE /competitions/{id}`, `POST /competitions/import` |
 | Competition results | CRUD under `/…` result endpoints |
 | Competition participants | CRUD under `/…` participant endpoints |
+| Training attendance | `GET /training-attendance/dates`, `GET/PUT /training-attendance/by-date`, `GET /training-attendance/by-date/export` (CSV/xlsx) |
 | External participants | CRUD + `POST /…/import` |
 
 ### Dashboard
@@ -72,14 +77,17 @@ All endpoints require authorization (Keycloak JWT bearer) and are grouped by tag
 - **Top scorers** — the top 5 member results this year by total score (excluding disqualified entries), each with member name, bow class, score, and competition name.
 - **Recent competitions** — the 3 most recent past competitions with name, date, location, type, and participant count.
 
-**Bulk & import features:**
+**Bulk, import & export features:**
 - **Spreadsheet import** — members, competitions, and external participants can be imported from CSV or `.xlsx` uploads. Parsing is handled by `SpreadsheetParser` ([SpreadsheetParser.cs](aspire.ApiService/Infrastructure/SpreadsheetParser.cs)) using CsvHelper and ClosedXML.
+- **Spreadsheet export** — members and training attendance for a date can be exported as CSV or `.xlsx` via `SpreadsheetWriter` ([SpreadsheetWriter.cs](aspire.ApiService/Infrastructure/SpreadsheetWriter.cs)), the generic counterpart to the parser. Since exported values (names, addresses, notes, etc.) come from user-editable data, `SpreadsheetWriter` guards against CSV/formula injection by prefixing any cell that starts with a formula-trigger character (`=`, `+`, `-`, `@`, tab, CR) with an apostrophe, so spreadsheet apps render it as text instead of evaluating it as a formula when the file is opened.
 - **Bulk fee creation** — `POST /membership-fees/bulk` generates fees for many members at once, optionally filtered by age.
-- Conflicts (e.g. duplicate fee for a member/year) surface as HTTP `409 Conflict`.
+- Conflicts (e.g. duplicate fee for a member/year, duplicate personnummer) surface as HTTP `409`/`400` with validation errors.
 
 ## Web frontend
 
-A Blazor interactive server app ([aspire.Web](aspire.Web/)) with pages for the Dashboard, Members (list + detail), Competitions (list + detail), Fees overview, and External Participants.
+A Blazor interactive server app ([aspire.Web](aspire.Web/)) with pages for the Dashboard, Members (list + detail), Competitions (list + detail), Fees overview, Training Attendance (record) and Training History (view + export), and External Participants.
+
+File downloads (e.g. the training attendance CSV/Excel export) go through `FileDownloader` ([FileDownloader.cs](aspire.Web/FileDownloader.cs)), a small reusable JS-interop helper — Blazor Server has no direct client filesystem access, so it fetches the file server-side and hands the browser a Blob to save.
 
 Authentication uses the OpenID Connect code flow against Keycloak, backed by a cookie session:
 - Cookie + OIDC schemes, with tokens saved and refreshed via `TokenRefreshService`.

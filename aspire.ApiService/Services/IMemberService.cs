@@ -12,4 +12,5 @@ public interface IMemberService
     Task<Result<Member>> UpdateAsync(Guid id, Member input, CancellationToken ct = default);
     Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
     Task<ImportResult> ImportAsync(IFormFile file, CancellationToken ct = default);
+    Task<ExportFile> ExportAsync(ExportFormat format, CancellationToken ct = default);
 }
