@@ -11,7 +11,7 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Testing" Version="13.4.6" />
+    <PackageReference Include="Aspire.Hosting.Testing" Version="13.5.3" />
     <!-- Align EF Core with aspire.ApiService (10.0.9); Aspire's health-checks
          package otherwise pulls 10.0.8 transitively, causing CS1705 / runtime
          assembly-load failures. -->
