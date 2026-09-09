@@ -1,6 +1,6 @@
 services:
   production-dashboard:
-    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:latest"
+    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:13.5"
     ports:
       - "18888"
     expose:
@@ -43,6 +43,10 @@ services:
         target: "/var/lib/postgresql"
         source: "dbdata-pg18"
         read_only: false
+      - type: "bind"
+        target: "/docker-entrypoint-initdb.d"
+        source: "${POSTGRES_BINDMOUNT_0}"
+        read_only: true
     networks:
       - "aspire"
   keycloak:
@@ -56,6 +60,16 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: "${KEYCLOAK_PASSWORD}"
       KC_HEALTH_ENABLED: "true"
       KC_FEATURES: "opentelemetry"
+      KC_DB: "postgres"
+      KC_DB_URL_HOST: "postgres"
+      KC_DB_URL_PORT: "5432"
+      KC_DB_URL_DATABASE: "keycloak"
+      KC_DB_USERNAME: "postgres"
+      KC_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: "xforwarded"
+      KC_METRICS_ENABLED: "true"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://production-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "keycloak"
@@ -71,6 +85,9 @@ services:
         target: "/opt/keycloak/data/import"
         source: "${KEYCLOAK_BINDMOUNT_0}"
         read_only: true
+    depends_on:
+      postgres:
+        condition: "service_started"
     networks:
       - "aspire"
   apiservice:
