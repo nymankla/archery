@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.MembersPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:client="clr-namespace:Archery.Client;assembly=Archery.Client"
+    x:DataType="vm:MembersViewModel"
+    Title="{Binding Title}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Sign out" Command="{Binding SignOutCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,*" Padding="12" RowSpacing="8">
+
+        <SearchBar
+            Grid.Row="0"
+            Placeholder="Search name or email"
+            Text="{Binding SearchText}" />
+
+        <HorizontalStackLayout Grid.Row="1" Spacing="8" VerticalOptions="Center">
+            <Switch IsToggled="{Binding ActiveOnly}" />
+            <Label Text="Active only" VerticalOptions="Center" />
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                Margin="12,0,0,0" />
+        </HorizontalStackLayout>
+
+        <Border
+            Grid.Row="2"
+            IsVisible="{Binding HasError}"
+            Stroke="#C0392B"
+            StrokeThickness="1"
+            Padding="12"
+            VerticalOptions="Start"
+            BackgroundColor="#2EC0392B">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="{Binding ErrorMessage}" TextColor="#C0392B" />
+                <Button Text="Retry" Command="{Binding LoadCommand}" HorizontalOptions="Start" />
+            </VerticalStackLayout>
+        </Border>
+
+        <RefreshView
+            Grid.Row="2"
+            IsRefreshing="{Binding IsRefreshing}"
+            Command="{Binding RefreshCommand}"
+            IsVisible="{Binding HasNoError}">
+
+            <CollectionView ItemsSource="{Binding Members}">
+
+                <CollectionView.EmptyView>
+                    <Label
+                        Text="No members match the current filter."
+                        HorizontalOptions="Center"
+                        Margin="0,32,0,0"
+                        Opacity="0.7" />
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <!-- x:DataType is required: compiled bindings are on, and reflection-based
+                         bindings break under the trimming that Release Android builds apply. -->
+                    <DataTemplate x:DataType="client:Member">
+                        <Grid Padding="4,10" ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                <Label Text="{Binding FullName}" FontAttributes="Bold" />
+                                <Label Text="{Binding Email}" FontSize="12" Opacity="0.7" />
+                            </VerticalStackLayout>
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding PreferredBowClass}"
+                                FontSize="12"
+                                VerticalOptions="Center"
+                                Opacity="0.7" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

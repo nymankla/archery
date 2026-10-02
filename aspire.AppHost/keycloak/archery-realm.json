@@ -81,6 +81,7 @@
       "firstName": "Admin",
       "lastName": "User",
       "email": "admin@archery.local",
+      "realmRoles": ["default-roles-archery"],
       "credentials": [
         {
           "type": "password",

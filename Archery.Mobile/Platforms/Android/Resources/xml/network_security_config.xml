@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The ASP.NET development certificate and Keycloak's self-signed certificate are not in
+  Android's trust store, so the emulator talks to both over plain HTTP instead.
+
+  Cleartext is permitted for the emulator's host-loopback alias only, never app-wide: the
+  base-config keeps everything else HTTPS-only. Add your machine's LAN address here as well
+  to test on a physical device.
+
+  This file is currently included in every configuration, because the manifest references it
+  unconditionally and a Release build would fail without it. That is acceptable only because
+  10.0.2.2 and localhost are meaningless outside a development machine, so the exemption is
+  inert in a shipped app. Before shipping, move this to a Debug-only AndroidResource plus an
+  AndroidManifestOverlay so the exemption cannot be packaged at all.
+-->
+<network-security-config>
+  <base-config cleartextTrafficPermitted="false" />
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="false">10.0.2.2</domain>
+    <domain includeSubdomains="false">localhost</domain>
+  </domain-config>
+</network-security-config>

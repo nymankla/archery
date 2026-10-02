@@ -99,6 +99,17 @@ Keycloak serves **HTTPS** on host port 8080 (container 8443) with a self-signed 
 Port 8081 publishes the container's plain-HTTP listener for the Android emulator, which cannot
 validate that certificate; it is added only outside publish mode.
 
+Two things about the realm JSON that are easy to get wrong:
+
+- A client that lists `optionalClientScopes` **must** also list `defaultClientScopes`.
+  Supplying only the optional set leaves the client with no default scopes at all, and
+  authorization then fails with `invalid_scope` for `openid profile email`.
+- A user needs `"realmRoles": ["default-roles-archery"]`. Without it the import creates the
+  user with no realm roles whatsoever, and anything requesting `offline_access` fails the
+  token exchange with *"Offline tokens not allowed for the user or client"* — `offline_access`
+  is a realm role as well as a client scope. The web app never hit this because it does not
+  request that scope; the mobile client does, to get a refresh token.
+
 ## Conventions
 
 - Endpoints delegate to services; keep business logic out of the `Map*` methods.
