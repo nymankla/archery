@@ -34,6 +34,43 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "archerymobile",
+      "name": "Archery Mobile",
+      "description": "Public client for the Android app. Uses authorization code + PKCE; an APK cannot keep a secret.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false,
+      "redirectUris": [
+        "se.archeryclub.mobile://oauth/callback",
+        "se.archeryclub.mobile://oauth/callback/*"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "se.archeryclub.mobile://oauth/signout##se.archeryclub.mobile://oauth/signout/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "archery-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "archery.api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": ["acr", "basic", "email", "profile", "roles", "web-origins"],
+      "optionalClientScopes": ["offline_access", "address", "phone", "microprofile-jwt"]
     }
   ],
   "users": [

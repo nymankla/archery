@@ -76,11 +76,36 @@ Uses Aspire service discovery — no hardcoded URLs. The Web `ArcheryApiClient` 
 - API: `Keycloak:Realm`, `Keycloak:Audience` (both required).
 - Web: `Keycloak:Realm`, `Keycloak:ClientId`, `Keycloak:ClientSecret`.
 - `Locale` (default `sv-SE`); `AuthSession:RefreshMinutes` / `:IdleTimeoutMinutes` / `:CookieExpirationMinutes` (validated at startup).
+- API, development only: `Keycloak:AdditionalValidIssuers`. Keycloak derives the `iss` claim
+  from the Host header of the token request, so a token fetched by the Android emulator over
+  `10.0.2.2` carries a different issuer than the one in the discovery document the API reads.
+  Without this, such tokens fail validation with `IDX10205`, which surfaces as a bare 401 with
+  an empty body — set `Microsoft.AspNetCore.Authentication` to `Debug` to see the real reason.
+  These issuers are accepted *in addition to* the metadata issuer, so the web app is unaffected.
+
+### Editing the Keycloak realm
+
+`.WithRealmImport(...)` only runs against an empty Keycloak store, and the `keycloakdata`
+volume is persistent. **Editing `aspire.AppHost/keycloak/archery-realm.json` therefore has no
+effect on an existing dev environment.** Apply the change one of two ways:
+
+- Through the Keycloak admin console or admin API (`http://localhost:8081`, realm `master`,
+  user `admin`, password from the AppHost's `Parameters:keycloak-password` user secret).
+  Non-destructive; preferred.
+- Or recreate the store: `docker rm -f archery-keycloak && docker volume rm keycloakdata`,
+  then restart the AppHost. This wipes anything not reproduced by the realm JSON.
+
+Keycloak serves **HTTPS** on host port 8080 (container 8443) with a self-signed certificate.
+Port 8081 publishes the container's plain-HTTP listener for the Android emulator, which cannot
+validate that certificate; it is added only outside publish mode.
 
 ## Conventions
 
 - Endpoints delegate to services; keep business logic out of the `Map*` methods.
-- Expected domain conflicts (e.g. duplicate fee for a member/year) throw `ConflictException` and are translated to HTTP `409` in the endpoint.
+- Expected domain conflicts (e.g. duplicate fee for a member/year) surface as HTTP `400` with
+  `{"errors":[...]}`, from the services' `Result<T>` failure path. Note `ConflictException` is
+  declared in `Infrastructure/PersistenceExceptionExtensions.cs` but is never thrown — nothing
+  in the API returns `409` today.
 - Schema changes go through EF Core migrations (`dotnet ef migrations add <Name> --project aspire.ApiService`); they are applied automatically on API startup.
 
 ### Adding a new service
