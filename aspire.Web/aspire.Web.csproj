@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <ProjectReference Include="..\aspire.ServiceDefaults\aspire.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Archery.Client\Archery.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The wire models and ArcheryApiClient moved to Archery.Client so the mobile
+         head can share them. A global using keeps the .razor pages and
+         FileDownloader.cs untouched. -->
+    <Using Include="Archery.Client" />
   </ItemGroup>
 
   <ItemGroup>

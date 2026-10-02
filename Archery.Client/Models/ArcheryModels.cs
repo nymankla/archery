@@ -1,4 +1,6 @@
-namespace aspire.Web;
+using System.Text.Json.Serialization;
+
+namespace Archery.Client;
 
 public class MemberFeeOverview
 {
@@ -12,6 +14,7 @@ public class MemberFeeOverview
     public DateOnly? DueDate { get; set; }
     public DateOnly? PaidDate { get; set; }
     public DateOnly DateOfBirth { get; set; }
+    [JsonIgnore]
     public string FullName => $"{FirstName} {LastName}";
 }
 
@@ -60,6 +63,7 @@ public class Member
     public DateOnly JoinDate { get; set; }
     public bool IsActive { get; set; } = true;
     public BowClass PreferredBowClass { get; set; }
+    [JsonIgnore]
     public string FullName => $"{FirstName} {LastName}";
 }
 
@@ -93,6 +97,7 @@ public class ExternalParticipant
     public string? Phone { get; set; }
     public string? Email { get; set; }
     public string? ClubAffiliation { get; set; }
+    [JsonIgnore]
     public string FullName => $"{FirstName} {LastName}";
 }
 
@@ -107,6 +112,7 @@ public class CompetitionParticipant
     public BowClass BowClass { get; set; }
     public AgeClass AgeClass { get; set; }
     public Gender Gender { get; set; }
+    [JsonIgnore]
     public string ParticipantName => Member?.FullName ?? ExternalParticipant?.FullName ?? "Unknown";
 }
 
@@ -126,6 +132,7 @@ public class CompetitionResult
     public int? Placement { get; set; }
     public bool IsDisqualified { get; set; }
     public string? Notes { get; set; }
+    [JsonIgnore]
     public string ParticipantName => Member?.FullName ?? ExternalParticipant?.FullName ?? "Unknown";
 }
 

@@ -1,13 +1,11 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Authentication;
 
-namespace aspire.Web;
+namespace Archery.Client;
 
 public class ArcheryApiClient(
     HttpClient httpClient,
-    AccessTokenProvider tokenProvider,
-    IHttpContextAccessor httpContextAccessor)
+    IArcheryTokenProvider tokenProvider) : IArcheryApiClient
 {
     public Task<ImportResult?> ImportMembersAsync(byte[] content, string fileName, CancellationToken ct = default)
         => ImportAsync("/members/import", content, fileName, ct);
@@ -25,7 +23,7 @@ public class ArcheryApiClient(
         {
             Content = form
         };
-        AddBearerToken(request);
+        await AddBearerTokenAsync(request, ct);
         var response = await httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode) return null;
         return await response.Content.ReadFromJsonAsync<ImportResult>(ct);
@@ -136,20 +134,9 @@ public class ArcheryApiClient(
     public Task<ExportedFile?> ExportTrainingAttendanceAsync(DateOnly date, string format, CancellationToken ct = default)
         => GetBytesAsync($"/training-attendance/by-date/export?date={date:yyyy-MM-dd}&format={format}", ct);
 
-    void AddBearerToken(HttpRequestMessage request)
+    async ValueTask AddBearerTokenAsync(HttpRequestMessage request, CancellationToken ct)
     {
-        // During interactive circuit, AccessTokenProvider holds the token.
-        // During SSR prerender, Interactive Server components run in a separate DI scope where
-        // AccessTokenProvider.AccessToken is null — fall back to reading from the HTTP context
-        // (the auth middleware cached it in IAuthenticateResultFeature for this request).
-        var token = tokenProvider.AccessToken;
-
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            var feature = httpContextAccessor.HttpContext?
-                .Features.Get<IAuthenticateResultFeature>();
-            token = feature?.AuthenticateResult?.Properties?.GetTokenValue("access_token");
-        }
+        var token = await tokenProvider.GetAccessTokenAsync(ct);
 
         if (!string.IsNullOrWhiteSpace(token))
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -158,16 +145,17 @@ public class ArcheryApiClient(
     async Task<T?> GetFromJsonAsync<T>(string url, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        AddBearerToken(request);
+        await AddBearerTokenAsync(request, ct);
         using var response = await httpClient.SendAsync(request, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+            throw new ArcheryApiException(await ArcheryApiErrors.ReadAsync(response, ct));
         return await response.Content.ReadFromJsonAsync<T>(ct);
     }
 
     async Task<ExportedFile?> GetBytesAsync(string url, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        AddBearerToken(request);
+        await AddBearerTokenAsync(request, ct);
         using var response = await httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode) return null;
 
@@ -179,20 +167,20 @@ public class ArcheryApiClient(
         return new ExportedFile(fileName, contentType, content);
     }
 
-    Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, CancellationToken ct)
+    async Task<HttpResponseMessage> SendAsync(HttpMethod method, string url, CancellationToken ct)
     {
         var request = new HttpRequestMessage(method, url);
-        AddBearerToken(request);
-        return httpClient.SendAsync(request, ct);
+        await AddBearerTokenAsync(request, ct);
+        return await httpClient.SendAsync(request, ct);
     }
 
-    Task<HttpResponseMessage> SendAsJsonAsync<T>(HttpMethod method, string url, T value, CancellationToken ct)
+    async Task<HttpResponseMessage> SendAsJsonAsync<T>(HttpMethod method, string url, T value, CancellationToken ct)
     {
         var request = new HttpRequestMessage(method, url)
         {
             Content = JsonContent.Create(value)
         };
-        AddBearerToken(request);
-        return httpClient.SendAsync(request, ct);
+        await AddBearerTokenAsync(request, ct);
+        return await httpClient.SendAsync(request, ct);
     }
 }
