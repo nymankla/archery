@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.MemberEditPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:MemberEditViewModel"
+    Title="{Binding Title}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="14">
+
+            <controls:ErrorBanner
+                IsVisible="{Binding HasError}"
+                Message="{Binding ErrorMessage}" />
+
+            <Label Text="First name" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding FirstName}" Placeholder="Required" />
+
+            <Label Text="Last name" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding LastName}" Placeholder="Required" />
+
+            <Label Text="Email" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding Email}" Keyboard="Email" />
+
+            <Label Text="Phone" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding Phone}" Keyboard="Telephone" />
+
+            <Label Text="Address" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding Address}" />
+
+            <Label Text="Personnummer" FontSize="12" Opacity="0.7" />
+            <!-- Format and uniqueness are checked by the server; its message is shown above
+                 rather than reimplementing PersonnummerParser here, which would drift. -->
+            <Entry Text="{Binding Personnummer}" Placeholder="ÅÅÅÅMMDD-NNNN" />
+
+            <Label Text="Date of birth" FontSize="12" Opacity="0.7" />
+            <DatePicker Date="{Binding DateOfBirth}" Format="yyyy-MM-dd" />
+
+            <Label Text="Join date" FontSize="12" Opacity="0.7" />
+            <DatePicker Date="{Binding JoinDate}" Format="yyyy-MM-dd" />
+
+            <Label
+                Text="{Binding DateError}"
+                TextColor="#C0392B"
+                FontSize="12"
+                IsVisible="{Binding HasDateError}" />
+
+            <Label Text="Preferred bow class" FontSize="12" Opacity="0.7" />
+            <Picker ItemsSource="{Binding BowClasses}" SelectedItem="{Binding PreferredBowClass}" />
+
+            <HorizontalStackLayout Spacing="8" Margin="0,4">
+                <Switch IsToggled="{Binding IsActive}" />
+                <Label Text="Active member" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,8,0,24">
+                <Button
+                    Grid.Column="0"
+                    Text="Cancel"
+                    Command="{Binding CancelCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{AppThemeBinding Light=#512BD4, Dark=#B39DFF}" />
+                <Button
+                    Grid.Column="1"
+                    Text="Save"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding CanSave}" />
+            </Grid>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

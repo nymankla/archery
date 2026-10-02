@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="Archery.Mobile.Controls.ErrorBanner"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:Name="Root">
+
+    <Border
+        Stroke="#C0392B"
+        StrokeThickness="1"
+        BackgroundColor="#22C0392B"
+        Padding="12"
+        Margin="0,4"
+        StrokeShape="RoundRectangle 8">
+
+        <VerticalStackLayout Spacing="8" BindingContext="{x:Reference Root}" x:DataType="controls:ErrorBanner">
+            <Label Text="{Binding Message}" TextColor="#C0392B" />
+            <Button
+                Text="Try again"
+                Command="{Binding RetryCommand}"
+                IsVisible="{Binding HasRetry}"
+                HorizontalOptions="Start"
+                Padding="16,4"
+                FontSize="14" />
+        </VerticalStackLayout>
+    </Border>
+</ContentView>
