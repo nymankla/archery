@@ -23,4 +23,12 @@
         <ShellContent ContentTemplate="{DataTemplate views:MembersPage}" />
     </FlyoutItem>
 
+    <FlyoutItem Title="Training" Route="training">
+        <ShellContent ContentTemplate="{DataTemplate views:TrainingAttendancePage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Training history" Route="traininghistory">
+        <ShellContent ContentTemplate="{DataTemplate views:TrainingHistoryPage}" />
+    </FlyoutItem>
+
 </Shell>

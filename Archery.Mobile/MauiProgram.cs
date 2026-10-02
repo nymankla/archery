@@ -77,6 +77,10 @@ public static class MauiProgram
         builder.Services.AddTransient<MemberDetailViewModel>();
         builder.Services.AddTransient<MemberEditPage>();
         builder.Services.AddTransient<MemberEditViewModel>();
+        builder.Services.AddTransient<TrainingAttendancePage>();
+        builder.Services.AddTransient<TrainingAttendanceViewModel>();
+        builder.Services.AddTransient<TrainingHistoryPage>();
+        builder.Services.AddTransient<TrainingHistoryViewModel>();
 
 #if DEBUG
         builder.Logging.AddDebug();

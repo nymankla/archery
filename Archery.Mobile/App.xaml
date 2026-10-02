@@ -8,6 +8,7 @@
         <ResourceDictionary>
             <converters:InverseBoolConverter x:Key="InverseBool" />
             <converters:FeeIsUnsettledConverter x:Key="FeeIsUnsettled" />
+            <converters:StringNotEmptyConverter x:Key="IsNotEmpty" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />

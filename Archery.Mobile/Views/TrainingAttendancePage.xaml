@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.TrainingAttendancePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:TrainingAttendanceViewModel"
+    Title="{Binding Title}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Clear" Command="{Binding ClearSelectionCommand}" Order="Secondary" />
+    </ContentPage.ToolbarItems>
+
+    <!-- Rows and the save bar are fixed; only the two lists scroll. At the range this is used
+         one-handed while standing, so the running total and Save must never scroll away. -->
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="12,8" RowSpacing="6">
+
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <VerticalStackLayout Grid.Column="0">
+                <Label Text="Training date" FontSize="12" Opacity="0.7" />
+                <DatePicker Date="{Binding SelectedDate}" Format="yyyy-MM-dd" />
+            </VerticalStackLayout>
+            <Label
+                Grid.Column="1"
+                Text="Recorded"
+                FontSize="11"
+                VerticalOptions="End"
+                Margin="0,0,0,10"
+                TextColor="#1B7F4C"
+                IsVisible="{Binding HasExistingSession}" />
+        </Grid>
+
+        <Entry
+            Grid.Row="1"
+            Placeholder="Notes (optional)"
+            Text="{Binding Notes}" />
+
+        <controls:ErrorBanner
+            Grid.Row="2"
+            IsVisible="{Binding HasError}"
+            Message="{Binding ErrorMessage}"
+            RetryCommand="{Binding LoadCommand}" />
+
+        <Label
+            Grid.Row="2"
+            Text="{Binding StatusMessage}"
+            TextColor="#1B7F4C"
+            FontSize="12"
+            IsVisible="{Binding StatusMessage, Converter={StaticResource IsNotEmpty}}" />
+
+        <Grid Grid.Row="3" RowDefinitions="Auto,Auto,*,Auto,Auto,*" RowSpacing="4">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+                <Label Grid.Column="0" Text="Club members" FontAttributes="Bold" VerticalOptions="Center" />
+                <HorizontalStackLayout Grid.Column="1" Spacing="6">
+                    <Switch IsToggled="{Binding ActiveOnly}" Scale="0.8" />
+                    <Label Text="Active only" FontSize="12" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+            </Grid>
+
+            <SearchBar Grid.Row="1" Placeholder="Search members" Text="{Binding MemberSearch}" HeightRequest="44" />
+
+            <CollectionView Grid.Row="2" ItemsSource="{Binding MemberRows}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AttendeeRow">
+                        <!-- The whole row is the hit target, not just the checkbox: this is
+                             tapped repeatedly, quickly, often in gloves. -->
+                        <Grid Padding="4,10" ColumnDefinitions="Auto,*">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrainingAttendanceViewModel}}, Path=ToggleCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
+                            <CheckBox
+                                Grid.Column="0"
+                                IsChecked="{Binding IsSelected}"
+                                InputTransparent="True" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                <Label Text="{Binding Name}" />
+                                <Label Text="{Binding Subtitle}" FontSize="11" Opacity="0.6" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label Grid.Row="3" Text="Guests" FontAttributes="Bold" Margin="0,8,0,0" />
+
+            <SearchBar Grid.Row="4" Placeholder="Search guests" Text="{Binding ExternalSearch}" HeightRequest="44" />
+
+            <CollectionView Grid.Row="5" ItemsSource="{Binding ExternalRows}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AttendeeRow">
+                        <Grid Padding="4,10" ColumnDefinitions="Auto,*">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:TrainingAttendanceViewModel}}, Path=ToggleCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid.GestureRecognizers>
+                            <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" InputTransparent="True" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                <Label Text="{Binding Name}" />
+                                <Label Text="{Binding Subtitle}" FontSize="11" Opacity="0.6" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </Grid>
+
+        <Grid Grid.Row="4" ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,8,0,0">
+            <Label
+                Grid.Column="0"
+                Text="{Binding SelectedCount, StringFormat='Total selected: {0}'}"
+                FontAttributes="Bold"
+                VerticalOptions="Center" />
+            <Button
+                Grid.Column="1"
+                Text="Save attendance"
+                Command="{Binding SaveCommand}"
+                IsEnabled="{Binding IsNotBusy}"
+                HeightRequest="48" />
+        </Grid>
+
+    </Grid>
+</ContentPage>

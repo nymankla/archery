@@ -1,4 +1,4 @@
-namespace Archery.Mobile.Core;
+﻿namespace Archery.Mobile.Core;
 
 /// <summary>
 /// Shell route names. Declared here so view models can navigate without referencing MAUI, and
@@ -9,6 +9,8 @@ public static class Routes
     // Absolute routes reset the navigation stack.
     public const string Login = "//login";
     public const string Members = "//members";
+    public const string TrainingAttendance = "//training";
+    public const string TrainingHistory = "//traininghistory";
 
     // Pushed onto the stack; registered in AppShell's constructor.
     public const string MemberDetail = "memberdetail";

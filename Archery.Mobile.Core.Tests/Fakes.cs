@@ -14,6 +14,17 @@ public sealed class FakeApiClient : IArcheryApiClient
 
     public List<MembershipFee> Fees { get; set; } = [];
 
+    public List<ExternalParticipant> Externals { get; set; } = [];
+
+    public List<DateOnly> TrainingDates { get; set; } = [];
+
+    /// <summary>What GET /training-attendance/by-date returns; null means the call returned nothing.</summary>
+    public TrainingSessionDetail? Detail { get; set; }
+
+    public SaveTrainingAttendanceRequest? LastSaved { get; private set; }
+
+    public DateOnly? LastSavedDate { get; private set; }
+
     public List<string> Calls { get; } = [];
 
     /// <summary>When set, every call throws this instead of returning.</summary>
@@ -96,7 +107,8 @@ public sealed class FakeApiClient : IArcheryApiClient
     public Task<HttpResponseMessage> DeleteCompetitionAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<ImportResult?> ImportCompetitionsAsync(byte[] content, string fileName, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<ImportResult?> ImportExternalParticipantsAsync(byte[] content, string fileName, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<ExternalParticipant[]?> GetExternalParticipantsAsync(CancellationToken ct = default) => throw new NotSupportedException();
+    public Task<ExternalParticipant[]?> GetExternalParticipantsAsync(CancellationToken ct = default) =>
+        Task.FromResult<ExternalParticipant[]?>(Record("GetExternalParticipants", Externals.ToArray()));
     public Task<HttpResponseMessage> CreateExternalParticipantAsync(ExternalParticipant p, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> UpdateExternalParticipantAsync(Guid id, ExternalParticipant p, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> DeleteExternalParticipantAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
@@ -107,9 +119,16 @@ public sealed class FakeApiClient : IArcheryApiClient
     public Task<HttpResponseMessage> CreateResultAsync(CompetitionResult result, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> UpdateResultAsync(Guid id, CompetitionResult result, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> DeleteResultAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<DateOnly[]?> GetTrainingDatesAsync(CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<TrainingSessionDetail?> GetTrainingAttendanceByDateAsync(DateOnly date, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> SaveTrainingAttendanceAsync(DateOnly date, SaveTrainingAttendanceRequest request, CancellationToken ct = default) => throw new NotSupportedException();
+    public Task<DateOnly[]?> GetTrainingDatesAsync(CancellationToken ct = default) =>
+        Task.FromResult<DateOnly[]?>(Record("GetTrainingDates", TrainingDates.ToArray()));
+    public Task<TrainingSessionDetail?> GetTrainingAttendanceByDateAsync(DateOnly date, CancellationToken ct = default) =>
+        Task.FromResult(Record($"GetTrainingAttendance:{date:yyyy-MM-dd}", Detail));
+    public Task<HttpResponseMessage> SaveTrainingAttendanceAsync(DateOnly date, SaveTrainingAttendanceRequest request, CancellationToken ct = default)
+    {
+        LastSaved = request;
+        LastSavedDate = date;
+        return Mutation($"SaveTrainingAttendance:{date:yyyy-MM-dd}");
+    }
     public Task<ExportedFile?> ExportTrainingAttendanceAsync(DateOnly date, string format, CancellationToken ct = default) => throw new NotSupportedException();
 }
 
