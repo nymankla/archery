@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.CompetitionDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:client="clr-namespace:Archery.Client;assembly=Archery.Client"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:CompetitionDetailViewModel"
+    Title="{Binding Title}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Edit" Command="{Binding EditCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Padding="12,8" RowSpacing="6">
+
+        <VerticalStackLayout Grid.Row="0" Spacing="2" BindingContext="{Binding Competition}" x:DataType="client:Competition">
+            <Label Text="{Binding Date, StringFormat='{0:yyyy-MM-dd}'}" FontSize="12" Opacity="0.7" />
+            <Label FontSize="12" Opacity="0.7">
+                <Label.FormattedText>
+                    <FormattedString>
+                        <Span Text="{Binding Location}" />
+                        <Span Text="  ·  " />
+                        <Span Text="{Binding RoundType}" />
+                        <Span Text="  ·  " />
+                        <Span Text="{Binding Type}" />
+                    </FormattedString>
+                </Label.FormattedText>
+            </Label>
+        </VerticalStackLayout>
+
+        <!-- Segmented control. Two buttons rather than a TabbedPage: the tabs belong to this
+             screen's content, not to the app's top-level navigation. -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="0,6">
+            <Button
+                Grid.Column="0"
+                Text="Participants"
+                Command="{Binding ShowParticipantsTabCommand}"
+                FontSize="14"
+                CornerRadius="0"
+                BackgroundColor="{Binding ShowParticipants, Converter={StaticResource TabBackground}}"
+                TextColor="{Binding ShowParticipants, Converter={StaticResource TabForeground}}" />
+            <Button
+                Grid.Column="1"
+                Text="Results"
+                Command="{Binding ShowResultsTabCommand}"
+                FontSize="14"
+                CornerRadius="0"
+                BackgroundColor="{Binding ShowResults, Converter={StaticResource TabBackground}}"
+                TextColor="{Binding ShowResults, Converter={StaticResource TabForeground}}" />
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <SearchBar Grid.Column="0" Placeholder="Search name" Text="{Binding ResultSearch}" HeightRequest="44" />
+            <Picker
+                Grid.Column="1"
+                Title="All bows"
+                WidthRequest="150"
+                ItemsSource="{Binding BowClassOptions}"
+                SelectedItem="{Binding BowClassFilter}" />
+        </Grid>
+
+        <Label
+            Grid.Row="3"
+            FontSize="12"
+            Opacity="0.6"
+            Text="{Binding ParticipantSummary}"
+            IsVisible="{Binding ShowParticipants}" />
+        <Label
+            Grid.Row="3"
+            FontSize="12"
+            Opacity="0.6"
+            Text="{Binding ResultSummary}"
+            IsVisible="{Binding ShowResults}" />
+
+        <controls:ErrorBanner
+            Grid.Row="4"
+            VerticalOptions="Start"
+            IsVisible="{Binding HasError}"
+            Message="{Binding ErrorMessage}"
+            RetryCommand="{Binding LoadCommand}" />
+
+        <!-- Participants -->
+        <RefreshView
+            Grid.Row="4"
+            IsRefreshing="{Binding IsRefreshing}"
+            Command="{Binding RefreshCommand}"
+            IsVisible="{Binding ShowParticipants}">
+            <CollectionView ItemsSource="{Binding Participants}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="client:CompetitionParticipant">
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems Mode="Execute">
+                                    <SwipeItem
+                                        Text="Remove"
+                                        BackgroundColor="#C0392B"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CompetitionDetailViewModel}}, Path=RemoveParticipantCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+
+                            <Grid Padding="4,10" ColumnDefinitions="*,Auto">
+                                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                    <Label Text="{Binding ParticipantName}" FontAttributes="Bold" />
+                                    <Label FontSize="11" Opacity="0.65">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding BowClass}" />
+                                                <Span Text=" · " />
+                                                <Span Text="{Binding AgeClass}" />
+                                                <Span Text=" · " />
+                                                <Span Text="{Binding Gender}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </VerticalStackLayout>
+                                <Button
+                                    Grid.Column="1"
+                                    Text="Score"
+                                    FontSize="12"
+                                    Padding="14,2"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CompetitionDetailViewModel}}, Path=AddResultForCommand}"
+                                    CommandParameter="{Binding .}" />
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Results -->
+        <RefreshView
+            Grid.Row="4"
+            IsRefreshing="{Binding IsRefreshing}"
+            Command="{Binding RefreshCommand}"
+            IsVisible="{Binding ShowResults}">
+            <CollectionView ItemsSource="{Binding Results}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="client:CompetitionResult">
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems Mode="Execute">
+                                    <SwipeItem
+                                        Text="Delete"
+                                        BackgroundColor="#C0392B"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CompetitionDetailViewModel}}, Path=DeleteResultCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+
+                            <Grid Padding="4,10" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CompetitionDetailViewModel}}, Path=EditResultCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Grid.GestureRecognizers>
+
+                                <Label
+                                    Grid.Column="0"
+                                    Text="{Binding Placement}"
+                                    FontAttributes="Bold"
+                                    WidthRequest="26"
+                                    VerticalOptions="Center"
+                                    HorizontalTextAlignment="Center"
+                                    Opacity="0.7" />
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="2">
+                                    <Label Text="{Binding ParticipantName}" FontAttributes="Bold" />
+                                    <Label FontSize="11" Opacity="0.65">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding BowClass}" />
+                                                <Span Text=" · " />
+                                                <Span Text="{Binding AgeClass}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label
+                                        Text="Disqualified"
+                                        FontSize="11"
+                                        TextColor="#C0392B"
+                                        IsVisible="{Binding IsDisqualified}" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="2" Spacing="2" HorizontalOptions="End">
+                                    <Label Text="{Binding TotalScore}" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                                    <Label Text="{Binding XCount, StringFormat='{0} X'}" FontSize="11"
+                                           Opacity="0.65" HorizontalTextAlignment="End" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,6,0,0">
+            <Button
+                Grid.Column="0"
+                Text="Register"
+                Command="{Binding RegisterParticipantCommand}"
+                IsVisible="{Binding ShowParticipants}" />
+            <Button
+                Grid.Column="1"
+                Text="Add result"
+                Command="{Binding AddResultCommand}" />
+        </Grid>
+
+    </Grid>
+</ContentPage>

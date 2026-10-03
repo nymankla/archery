@@ -81,6 +81,16 @@ public static class MauiProgram
         builder.Services.AddTransient<TrainingAttendanceViewModel>();
         builder.Services.AddTransient<TrainingHistoryPage>();
         builder.Services.AddTransient<TrainingHistoryViewModel>();
+        builder.Services.AddTransient<CompetitionsPage>();
+        builder.Services.AddTransient<CompetitionsViewModel>();
+        builder.Services.AddTransient<CompetitionDetailPage>();
+        builder.Services.AddTransient<CompetitionDetailViewModel>();
+        builder.Services.AddTransient<CompetitionEditPage>();
+        builder.Services.AddTransient<CompetitionEditViewModel>();
+        builder.Services.AddTransient<ParticipantRegisterPage>();
+        builder.Services.AddTransient<ParticipantRegisterViewModel>();
+        builder.Services.AddTransient<ResultEditPage>();
+        builder.Services.AddTransient<ResultEditViewModel>();
 
 #if DEBUG
         builder.Logging.AddDebug();

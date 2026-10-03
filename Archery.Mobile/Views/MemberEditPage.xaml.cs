@@ -3,14 +3,11 @@ using Archery.Mobile.Core.ViewModels;
 
 namespace Archery.Mobile.Views;
 
-/// <summary>
-/// Add or edit a member. The member id arrives as a Shell query parameter; its absence means
-/// "new member".
-/// </summary>
-[QueryProperty(nameof(MemberId), Routes.MemberIdKey)]
-public partial class MemberEditPage : ContentPage
+/// <summary>Add or edit a member; no id means a new one.</summary>
+public partial class MemberEditPage : ContentPage, IQueryAttributable
 {
     readonly MemberEditViewModel _vm;
+    Guid? _memberId;
     bool _initialised;
 
     public MemberEditPage(MemberEditViewModel vm)
@@ -19,19 +16,19 @@ public partial class MemberEditPage : ContentPage
         BindingContext = _vm = vm;
     }
 
-    public Guid? MemberId { get; set; }
+    public void ApplyQueryAttributes(IDictionary<string, object> query) =>
+        _memberId = query.GetGuid(Routes.MemberIdKey);
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
 
-        // Shell sets the query property after construction but before appearing, so load here.
-        // Guarded because OnAppearing also fires when returning from a pushed page, and
-        // reloading then would discard whatever the user had typed.
+        // Guarded: OnAppearing also fires on the way back from a pushed page, and reloading
+        // would discard whatever the user had typed.
         if (_initialised)
             return;
 
         _initialised = true;
-        await _vm.InitialiseAsync(MemberId);
+        await _vm.InitialiseAsync(_memberId);
     }
 }

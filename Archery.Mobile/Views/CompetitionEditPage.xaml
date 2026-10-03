@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.CompetitionEditPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:CompetitionEditViewModel"
+    Title="{Binding Title}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="14">
+
+            <controls:ErrorBanner IsVisible="{Binding HasError}" Message="{Binding ErrorMessage}" />
+
+            <Label Text="Name" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding Name}" Placeholder="Required" />
+
+            <Label Text="Date" FontSize="12" Opacity="0.7" />
+            <DatePicker Date="{Binding Date}" Format="yyyy-MM-dd" />
+
+            <Label Text="Location" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding Location}" Placeholder="Required" />
+
+            <Label Text="Round" FontSize="12" Opacity="0.7" />
+            <Entry Text="{Binding RoundType}" Placeholder="e.g. WA 18m" />
+
+            <Label Text="Type" FontSize="12" Opacity="0.7" />
+            <Picker ItemsSource="{Binding Types}" SelectedItem="{Binding Type}" />
+
+            <Label Text="Description" FontSize="12" Opacity="0.7" />
+            <Editor Text="{Binding Description}" HeightRequest="90" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,8,0,24">
+                <Button Grid.Column="0" Text="Cancel" Command="{Binding CancelCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#512BD4, Dark=#B39DFF}" />
+                <Button Grid.Column="1" Text="Save" Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding CanSave}" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

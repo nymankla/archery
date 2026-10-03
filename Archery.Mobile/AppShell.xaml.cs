@@ -1,4 +1,4 @@
-using Archery.Mobile.Core;
+﻿using Archery.Mobile.Core;
 using Archery.Mobile.Views;
 
 namespace Archery.Mobile;
@@ -13,6 +13,10 @@ public partial class AppShell : Shell
         // destinations, so they have to be registered by route.
         Routing.RegisterRoute(Routes.MemberDetail, typeof(MemberDetailPage));
         Routing.RegisterRoute(Routes.MemberEdit, typeof(MemberEditPage));
+        Routing.RegisterRoute(Routes.CompetitionDetail, typeof(CompetitionDetailPage));
+        Routing.RegisterRoute(Routes.CompetitionEdit, typeof(CompetitionEditPage));
+        Routing.RegisterRoute(Routes.ParticipantRegister, typeof(ParticipantRegisterPage));
+        Routing.RegisterRoute(Routes.ResultEdit, typeof(ResultEditPage));
 
         // Raised when a refresh fails and the session cannot be recovered — a refresh token
         // that expired or was revoked server-side. Without this the user is left on a screen

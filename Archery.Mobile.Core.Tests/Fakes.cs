@@ -18,6 +18,18 @@ public sealed class FakeApiClient : IArcheryApiClient
 
     public List<DateOnly> TrainingDates { get; set; } = [];
 
+    public List<Competition> Competitions { get; set; } = [];
+
+    public List<CompetitionParticipant> Participants { get; set; } = [];
+
+    public List<CompetitionResult> Results { get; set; } = [];
+
+    public CompetitionParticipant? LastRegistered { get; private set; }
+
+    public CompetitionResult? LastResult { get; private set; }
+
+    public Competition? LastCompetition { get; private set; }
+
     /// <summary>What GET /training-attendance/by-date returns; null means the call returned nothing.</summary>
     public TrainingSessionDetail? Detail { get; set; }
 
@@ -100,11 +112,22 @@ public sealed class FakeApiClient : IArcheryApiClient
     public Task<HttpResponseMessage> BulkCreateFeesAsync(BulkFeeRequest req, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> CreateFeeAsync(MembershipFee fee, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> DeleteFeeAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<Competition[]?> GetCompetitionsAsync(CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<Competition?> GetCompetitionAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> CreateCompetitionAsync(Competition competition, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> UpdateCompetitionAsync(Guid id, Competition competition, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> DeleteCompetitionAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
+    public Task<Competition[]?> GetCompetitionsAsync(CancellationToken ct = default) =>
+        Task.FromResult<Competition[]?>(Record("GetCompetitions", Competitions.ToArray()));
+    public Task<Competition?> GetCompetitionAsync(Guid id, CancellationToken ct = default) =>
+        Task.FromResult(Record($"GetCompetition:{id}", Competitions.FirstOrDefault(c => c.Id == id)));
+    public Task<HttpResponseMessage> CreateCompetitionAsync(Competition competition, CancellationToken ct = default)
+    {
+        LastCompetition = competition;
+        return Mutation("CreateCompetition");
+    }
+    public Task<HttpResponseMessage> UpdateCompetitionAsync(Guid id, Competition competition, CancellationToken ct = default)
+    {
+        LastCompetition = competition;
+        return Mutation($"UpdateCompetition:{id}");
+    }
+    public Task<HttpResponseMessage> DeleteCompetitionAsync(Guid id, CancellationToken ct = default) =>
+        Mutation($"DeleteCompetition:{id}");
     public Task<ImportResult?> ImportCompetitionsAsync(byte[] content, string fileName, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<ImportResult?> ImportExternalParticipantsAsync(byte[] content, string fileName, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<ExternalParticipant[]?> GetExternalParticipantsAsync(CancellationToken ct = default) =>
@@ -112,13 +135,31 @@ public sealed class FakeApiClient : IArcheryApiClient
     public Task<HttpResponseMessage> CreateExternalParticipantAsync(ExternalParticipant p, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> UpdateExternalParticipantAsync(Guid id, ExternalParticipant p, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> DeleteExternalParticipantAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<CompetitionParticipant[]?> GetParticipantsByCompetitionAsync(Guid competitionId, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> RegisterParticipantAsync(CompetitionParticipant participant, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> RemoveParticipantAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<CompetitionResult[]?> GetResultsByCompetitionAsync(Guid competitionId, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> CreateResultAsync(CompetitionResult result, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> UpdateResultAsync(Guid id, CompetitionResult result, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> DeleteResultAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
+    public Task<CompetitionParticipant[]?> GetParticipantsByCompetitionAsync(Guid competitionId, CancellationToken ct = default) =>
+        Task.FromResult<CompetitionParticipant[]?>(Record($"GetParticipants:{competitionId}",
+            Participants.Where(p => p.CompetitionId == competitionId).ToArray()));
+    public Task<HttpResponseMessage> RegisterParticipantAsync(CompetitionParticipant participant, CancellationToken ct = default)
+    {
+        LastRegistered = participant;
+        return Mutation("RegisterParticipant");
+    }
+    public Task<HttpResponseMessage> RemoveParticipantAsync(Guid id, CancellationToken ct = default) =>
+        Mutation($"RemoveParticipant:{id}");
+    public Task<CompetitionResult[]?> GetResultsByCompetitionAsync(Guid competitionId, CancellationToken ct = default) =>
+        Task.FromResult<CompetitionResult[]?>(Record($"GetResults:{competitionId}",
+            Results.Where(r => r.CompetitionId == competitionId).ToArray()));
+    public Task<HttpResponseMessage> CreateResultAsync(CompetitionResult result, CancellationToken ct = default)
+    {
+        LastResult = result;
+        return Mutation("CreateResult");
+    }
+    public Task<HttpResponseMessage> UpdateResultAsync(Guid id, CompetitionResult result, CancellationToken ct = default)
+    {
+        LastResult = result;
+        return Mutation($"UpdateResult:{id}");
+    }
+    public Task<HttpResponseMessage> DeleteResultAsync(Guid id, CancellationToken ct = default) =>
+        Mutation($"DeleteResult:{id}");
     public Task<DateOnly[]?> GetTrainingDatesAsync(CancellationToken ct = default) =>
         Task.FromResult<DateOnly[]?>(Record("GetTrainingDates", TrainingDates.ToArray()));
     public Task<TrainingSessionDetail?> GetTrainingAttendanceByDateAsync(DateOnly date, CancellationToken ct = default) =>

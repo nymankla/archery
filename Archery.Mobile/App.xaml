@@ -9,6 +9,10 @@
             <converters:InverseBoolConverter x:Key="InverseBool" />
             <converters:FeeIsUnsettledConverter x:Key="FeeIsUnsettled" />
             <converters:StringNotEmptyConverter x:Key="IsNotEmpty" />
+            <converters:TabBackgroundConverter x:Key="TabBackground" />
+            <converters:TabForegroundConverter x:Key="TabForeground" />
+            <converters:InverseTabBackgroundConverter x:Key="InverseTabBackground" />
+            <converters:InverseTabForegroundConverter x:Key="InverseTabForeground" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />

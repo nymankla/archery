@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.ResultEditPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:ResultEditViewModel"
+    Title="{Binding Title}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <controls:ErrorBanner IsVisible="{Binding HasError}" Message="{Binding ErrorMessage}" />
+
+            <VerticalStackLayout Spacing="8" IsVisible="{Binding CanChooseParticipant}">
+                <Grid ColumnDefinitions="*,*">
+                    <Button Grid.Column="0" Text="Club member" FontSize="14" CornerRadius="0"
+                            BackgroundColor="{Binding IsMember, Converter={StaticResource TabBackground}}"
+                            TextColor="{Binding IsMember, Converter={StaticResource TabForeground}}"
+                            Clicked="OnMemberClicked" />
+                    <Button Grid.Column="1" Text="Guest" FontSize="14" CornerRadius="0"
+                            BackgroundColor="{Binding IsMember, Converter={StaticResource InverseTabBackground}}"
+                            TextColor="{Binding IsMember, Converter={StaticResource InverseTabForeground}}"
+                            Clicked="OnGuestClicked" />
+                </Grid>
+
+                <SearchBar Placeholder="Search" Text="{Binding SearchText}" />
+
+                <CollectionView
+                    ItemsSource="{Binding Options}"
+                    SelectedItem="{Binding Selected}"
+                    SelectionMode="Single"
+                    HeightRequest="190">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ParticipantOption">
+                            <Label Text="{Binding Name}" Padding="6,10" />
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+
+            <!-- When editing an existing result the archer is fixed; reassigning a recorded
+                 score is a different operation and could collide with their own result. -->
+            <VerticalStackLayout Spacing="2" IsVisible="{Binding CanChooseParticipant, Converter={StaticResource InverseBool}}">
+                <Label Text="Archer" FontSize="12" Opacity="0.7" />
+                <Label Text="{Binding Selected.Name}" FontAttributes="Bold" />
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Picker Grid.Column="0" Title="Bow" ItemsSource="{Binding BowClasses}" SelectedItem="{Binding BowClass}" />
+                <Picker Grid.Column="1" Title="Age" ItemsSource="{Binding AgeClasses}" SelectedItem="{Binding AgeClass}" />
+                <Picker Grid.Column="2" Title="Gender" ItemsSource="{Binding Genders}" SelectedItem="{Binding Gender}" />
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <VerticalStackLayout Grid.Column="0">
+                    <Label Text="Total score" FontSize="12" Opacity="0.7" />
+                    <Entry Text="{Binding TotalScore}" Keyboard="Numeric" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="1">
+                    <Label Text="X count" FontSize="12" Opacity="0.7" />
+                    <Entry Text="{Binding XCount}" Keyboard="Numeric" />
+                </VerticalStackLayout>
+                <VerticalStackLayout Grid.Column="2">
+                    <Label Text="Placement" FontSize="12" Opacity="0.7" />
+                    <Entry Text="{Binding Placement}" Keyboard="Numeric" Placeholder="optional" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <Label Text="{Binding ScoreError}" TextColor="#C0392B" FontSize="12"
+                   IsVisible="{Binding HasScoreError}" />
+
+            <HorizontalStackLayout Spacing="8">
+                <Switch IsToggled="{Binding IsDisqualified}" />
+                <Label Text="Disqualified" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+
+            <Label Text="Notes" FontSize="12" Opacity="0.7" />
+            <Editor Text="{Binding Notes}" HeightRequest="80" />
+
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,8,0,24">
+                <Button Grid.Column="0" Text="Cancel" Command="{Binding CancelCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#512BD4, Dark=#B39DFF}" />
+                <Button Grid.Column="1" Text="Save" Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding CanSave}" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

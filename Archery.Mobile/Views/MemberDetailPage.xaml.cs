@@ -3,10 +3,10 @@ using Archery.Mobile.Core.ViewModels;
 
 namespace Archery.Mobile.Views;
 
-[QueryProperty(nameof(MemberId), Routes.MemberIdKey)]
-public partial class MemberDetailPage : ContentPage
+public partial class MemberDetailPage : ContentPage, IQueryAttributable
 {
     readonly MemberDetailViewModel _vm;
+    Guid _memberId;
 
     public MemberDetailPage(MemberDetailViewModel vm)
     {
@@ -14,14 +14,15 @@ public partial class MemberDetailPage : ContentPage
         BindingContext = _vm = vm;
     }
 
-    public Guid MemberId { get; set; }
+    public void ApplyQueryAttributes(IDictionary<string, object> query) =>
+        _memberId = query.GetGuid(Routes.MemberIdKey) ?? Guid.Empty;
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
 
         // Unguarded on purpose: coming back from the edit page should show the new values.
-        if (MemberId != Guid.Empty)
-            await _vm.InitialiseAsync(MemberId);
+        if (_memberId != Guid.Empty)
+            await _vm.InitialiseAsync(_memberId);
     }
 }
