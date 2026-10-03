@@ -71,6 +71,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<AppShell>();
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<DashboardPage>();
+        builder.Services.AddTransient<DashboardViewModel>();
         builder.Services.AddTransient<MembersPage>();
         builder.Services.AddTransient<MembersViewModel>();
         builder.Services.AddTransient<MemberDetailPage>();

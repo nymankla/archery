@@ -1,4 +1,4 @@
-using Archery.Mobile.Core.Abstractions;
+﻿using Archery.Mobile.Core.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
@@ -24,7 +24,7 @@ public sealed partial class LoginViewModel(
         try
         {
             if (await auth.TryRestoreSessionAsync(ct))
-                await navigation.GoToRootAsync(Routes.Members);
+                await navigation.GoToRootAsync(Routes.Dashboard);
         }
         catch (Exception ex)
         {
@@ -45,7 +45,7 @@ public sealed partial class LoginViewModel(
         try
         {
             if (await auth.SignInAsync(ct))
-                await navigation.GoToRootAsync(Routes.Members);
+                await navigation.GoToRootAsync(Routes.Dashboard);
             else
                 ErrorMessage = "Sign-in was cancelled.";
         }

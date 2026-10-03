@@ -19,6 +19,10 @@
         Shell.FlyoutBehavior="Disabled"
         Shell.NavBarIsVisible="False" />
 
+    <FlyoutItem Title="Dashboard" Route="dashboard">
+        <ShellContent ContentTemplate="{DataTemplate views:DashboardPage}" />
+    </FlyoutItem>
+
     <FlyoutItem Title="Members" Route="members">
         <ShellContent ContentTemplate="{DataTemplate views:MembersPage}" />
     </FlyoutItem>

@@ -8,6 +8,7 @@ public static class Routes
 {
     // Absolute routes reset the navigation stack.
     public const string Login = "//login";
+    public const string Dashboard = "//dashboard";
     public const string Members = "//members";
     public const string TrainingAttendance = "//training";
     public const string TrainingHistory = "//traininghistory";

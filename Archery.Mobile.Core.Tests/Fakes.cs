@@ -32,6 +32,8 @@ public sealed class FakeApiClient : IArcheryApiClient
 
     public ExternalParticipant? LastExternal { get; private set; }
 
+    public DashboardData? Dashboard { get; set; }
+
     /// <summary>What GET /training-attendance/by-date returns; null means the call returned nothing.</summary>
     public TrainingSessionDetail? Detail { get; set; }
 
@@ -108,7 +110,8 @@ public sealed class FakeApiClient : IArcheryApiClient
 
     // --- not exercised by these tests ---
     public Task<ImportResult?> ImportMembersAsync(byte[] content, string fileName, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<DashboardData?> GetDashboardAsync(CancellationToken ct = default) => throw new NotSupportedException();
+    public Task<DashboardData?> GetDashboardAsync(CancellationToken ct = default) =>
+        Task.FromResult(Record("GetDashboard", Dashboard));
     public Task<ExportedFile?> ExportMembersAsync(string format, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<MemberFeeOverview[]?> GetFeeOverviewAsync(int year, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<HttpResponseMessage> BulkCreateFeesAsync(BulkFeeRequest req, CancellationToken ct = default) => throw new NotSupportedException();
