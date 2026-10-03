@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Archery.Client;
 
@@ -26,23 +27,23 @@ public class ArcheryApiClient(
         await AddBearerTokenAsync(request, ct);
         var response = await httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode) return null;
-        return await response.Content.ReadFromJsonAsync<ImportResult>(ct);
+        return await response.Content.ReadFromJsonAsync(ArcheryJsonContext.Default.ImportResult, ct);
     }
 
     public Task<DashboardData?> GetDashboardAsync(CancellationToken ct = default)
-        => GetFromJsonAsync<DashboardData>("/dashboard", ct);
+        => GetFromJsonAsync("/dashboard", ArcheryJsonContext.Default.DashboardData, ct);
 
     public Task<Member[]?> GetMembersAsync(CancellationToken ct = default)
-        => GetFromJsonAsync<Member[]>("/members", ct);
+        => GetFromJsonAsync("/members", ArcheryJsonContext.Default.MemberArray, ct);
 
     public Task<Member?> GetMemberAsync(Guid id, CancellationToken ct = default)
-        => GetFromJsonAsync<Member>($"/members/{id}", ct);
+        => GetFromJsonAsync($"/members/{id}", ArcheryJsonContext.Default.Member, ct);
 
     public Task<HttpResponseMessage> CreateMemberAsync(Member member, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Post, "/members", member, ct);
+        => SendAsJsonAsync(HttpMethod.Post, "/members", member, ArcheryJsonContext.Default.Member, ct);
 
     public Task<HttpResponseMessage> UpdateMemberAsync(Guid id, Member member, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Put, $"/members/{id}", member, ct);
+        => SendAsJsonAsync(HttpMethod.Put, $"/members/{id}", member, ArcheryJsonContext.Default.Member, ct);
 
     public Task<HttpResponseMessage> DeleteMemberAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/members/{id}", ct);
@@ -51,34 +52,34 @@ public class ArcheryApiClient(
         => GetBytesAsync($"/members/export?format={format}", ct);
 
     public Task<MembershipFee[]?> GetFeesByMemberAsync(Guid memberId, CancellationToken ct = default)
-        => GetFromJsonAsync<MembershipFee[]>($"/membership-fees/member/{memberId}", ct);
+        => GetFromJsonAsync($"/membership-fees/member/{memberId}", ArcheryJsonContext.Default.MembershipFeeArray, ct);
 
     public Task<MemberFeeOverview[]?> GetFeeOverviewAsync(int year, CancellationToken ct = default)
-        => GetFromJsonAsync<MemberFeeOverview[]>($"/membership-fees/overview?year={year}", ct);
+        => GetFromJsonAsync($"/membership-fees/overview?year={year}", ArcheryJsonContext.Default.MemberFeeOverviewArray, ct);
 
     public Task<HttpResponseMessage> BulkCreateFeesAsync(BulkFeeRequest req, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Post, "/membership-fees/bulk", req, ct);
+        => SendAsJsonAsync(HttpMethod.Post, "/membership-fees/bulk", req, ArcheryJsonContext.Default.BulkFeeRequest, ct);
 
     public Task<HttpResponseMessage> CreateFeeAsync(MembershipFee fee, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Post, "/membership-fees", fee, ct);
+        => SendAsJsonAsync(HttpMethod.Post, "/membership-fees", fee, ArcheryJsonContext.Default.MembershipFee, ct);
 
     public Task<HttpResponseMessage> UpdateFeeAsync(Guid id, MembershipFee fee, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Put, $"/membership-fees/{id}", fee, ct);
+        => SendAsJsonAsync(HttpMethod.Put, $"/membership-fees/{id}", fee, ArcheryJsonContext.Default.MembershipFee, ct);
 
     public Task<HttpResponseMessage> DeleteFeeAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/membership-fees/{id}", ct);
 
     public Task<Competition[]?> GetCompetitionsAsync(CancellationToken ct = default)
-        => GetFromJsonAsync<Competition[]>("/competitions", ct);
+        => GetFromJsonAsync("/competitions", ArcheryJsonContext.Default.CompetitionArray, ct);
 
     public Task<Competition?> GetCompetitionAsync(Guid id, CancellationToken ct = default)
-        => GetFromJsonAsync<Competition>($"/competitions/{id}", ct);
+        => GetFromJsonAsync($"/competitions/{id}", ArcheryJsonContext.Default.Competition, ct);
 
     public Task<HttpResponseMessage> CreateCompetitionAsync(Competition competition, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Post, "/competitions", competition, ct);
+        => SendAsJsonAsync(HttpMethod.Post, "/competitions", competition, ArcheryJsonContext.Default.Competition, ct);
 
     public Task<HttpResponseMessage> UpdateCompetitionAsync(Guid id, Competition competition, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Put, $"/competitions/{id}", competition, ct);
+        => SendAsJsonAsync(HttpMethod.Put, $"/competitions/{id}", competition, ArcheryJsonContext.Default.Competition, ct);
 
     public Task<HttpResponseMessage> DeleteCompetitionAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/competitions/{id}", ct);
@@ -90,46 +91,46 @@ public class ArcheryApiClient(
         => ImportAsync("/external-participants/import", content, fileName, ct);
 
     public Task<ExternalParticipant[]?> GetExternalParticipantsAsync(CancellationToken ct = default)
-        => GetFromJsonAsync<ExternalParticipant[]>("/external-participants", ct);
+        => GetFromJsonAsync("/external-participants", ArcheryJsonContext.Default.ExternalParticipantArray, ct);
 
     public Task<HttpResponseMessage> CreateExternalParticipantAsync(ExternalParticipant p, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Post, "/external-participants", p, ct);
+        => SendAsJsonAsync(HttpMethod.Post, "/external-participants", p, ArcheryJsonContext.Default.ExternalParticipant, ct);
 
     public Task<HttpResponseMessage> UpdateExternalParticipantAsync(Guid id, ExternalParticipant p, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Put, $"/external-participants/{id}", p, ct);
+        => SendAsJsonAsync(HttpMethod.Put, $"/external-participants/{id}", p, ArcheryJsonContext.Default.ExternalParticipant, ct);
 
     public Task<HttpResponseMessage> DeleteExternalParticipantAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/external-participants/{id}", ct);
 
     public Task<CompetitionParticipant[]?> GetParticipantsByCompetitionAsync(Guid competitionId, CancellationToken ct = default)
-        => GetFromJsonAsync<CompetitionParticipant[]>($"/competition-participants/competition/{competitionId}", ct);
+        => GetFromJsonAsync($"/competition-participants/competition/{competitionId}", ArcheryJsonContext.Default.CompetitionParticipantArray, ct);
 
     public Task<HttpResponseMessage> RegisterParticipantAsync(CompetitionParticipant participant, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Post, "/competition-participants", participant, ct);
+        => SendAsJsonAsync(HttpMethod.Post, "/competition-participants", participant, ArcheryJsonContext.Default.CompetitionParticipant, ct);
 
     public Task<HttpResponseMessage> RemoveParticipantAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/competition-participants/{id}", ct);
 
     public Task<CompetitionResult[]?> GetResultsByCompetitionAsync(Guid competitionId, CancellationToken ct = default)
-        => GetFromJsonAsync<CompetitionResult[]>($"/competition-results/competition/{competitionId}", ct);
+        => GetFromJsonAsync($"/competition-results/competition/{competitionId}", ArcheryJsonContext.Default.CompetitionResultArray, ct);
 
     public Task<HttpResponseMessage> CreateResultAsync(CompetitionResult result, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Post, "/competition-results", result, ct);
+        => SendAsJsonAsync(HttpMethod.Post, "/competition-results", result, ArcheryJsonContext.Default.CompetitionResult, ct);
 
     public Task<HttpResponseMessage> UpdateResultAsync(Guid id, CompetitionResult result, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Put, $"/competition-results/{id}", result, ct);
+        => SendAsJsonAsync(HttpMethod.Put, $"/competition-results/{id}", result, ArcheryJsonContext.Default.CompetitionResult, ct);
 
     public Task<HttpResponseMessage> DeleteResultAsync(Guid id, CancellationToken ct = default)
         => SendAsync(HttpMethod.Delete, $"/competition-results/{id}", ct);
 
     public Task<DateOnly[]?> GetTrainingDatesAsync(CancellationToken ct = default)
-        => GetFromJsonAsync<DateOnly[]>("/training-attendance/dates", ct);
+        => GetFromJsonAsync("/training-attendance/dates", ArcheryJsonContext.Default.DateOnlyArray, ct);
 
     public Task<TrainingSessionDetail?> GetTrainingAttendanceByDateAsync(DateOnly date, CancellationToken ct = default)
-        => GetFromJsonAsync<TrainingSessionDetail>($"/training-attendance/by-date?date={date:yyyy-MM-dd}", ct);
+        => GetFromJsonAsync($"/training-attendance/by-date?date={date:yyyy-MM-dd}", ArcheryJsonContext.Default.TrainingSessionDetail, ct);
 
     public Task<HttpResponseMessage> SaveTrainingAttendanceAsync(DateOnly date, SaveTrainingAttendanceRequest request, CancellationToken ct = default)
-        => SendAsJsonAsync(HttpMethod.Put, $"/training-attendance/by-date?date={date:yyyy-MM-dd}", request, ct);
+        => SendAsJsonAsync(HttpMethod.Put, $"/training-attendance/by-date?date={date:yyyy-MM-dd}", request, ArcheryJsonContext.Default.SaveTrainingAttendanceRequest, ct);
 
     public Task<ExportedFile?> ExportTrainingAttendanceAsync(DateOnly date, string format, CancellationToken ct = default)
         => GetBytesAsync($"/training-attendance/by-date/export?date={date:yyyy-MM-dd}&format={format}", ct);
@@ -142,14 +143,14 @@ public class ArcheryApiClient(
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    async Task<T?> GetFromJsonAsync<T>(string url, CancellationToken ct)
+    async Task<T?> GetFromJsonAsync<T>(string url, JsonTypeInfo<T> typeInfo, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         await AddBearerTokenAsync(request, ct);
         using var response = await httpClient.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
             throw new ArcheryApiException(await ArcheryApiErrors.ReadAsync(response, ct));
-        return await response.Content.ReadFromJsonAsync<T>(ct);
+        return await response.Content.ReadFromJsonAsync(typeInfo, ct);
     }
 
     async Task<ExportedFile?> GetBytesAsync(string url, CancellationToken ct)
@@ -174,11 +175,12 @@ public class ArcheryApiClient(
         return await httpClient.SendAsync(request, ct);
     }
 
-    async Task<HttpResponseMessage> SendAsJsonAsync<T>(HttpMethod method, string url, T value, CancellationToken ct)
+    async Task<HttpResponseMessage> SendAsJsonAsync<T>(
+        HttpMethod method, string url, T value, JsonTypeInfo<T> typeInfo, CancellationToken ct)
     {
         var request = new HttpRequestMessage(method, url)
         {
-            Content = JsonContent.Create(value)
+            Content = JsonContent.Create(value, typeInfo)
         };
         await AddBearerTokenAsync(request, ct);
         return await httpClient.SendAsync(request, ct);

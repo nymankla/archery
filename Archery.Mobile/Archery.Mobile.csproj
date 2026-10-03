@@ -50,6 +50,27 @@
     <EmbeddedResource Include="appsettings.json" LogicalName="Archery.Mobile.appsettings.json" />
   </ItemGroup>
 
+  <!-- The cleartext exemption the emulator needs exists only in Debug: the manifest attribute
+       comes from an overlay merged here, and the config it points at is dropped from every
+       other configuration. A Release package therefore cannot ship an HTTP exemption even by
+       accident.
+
+       ArcheryReleaseSmokeTest=true re-adds it to a Release build. Trimming and AOT failures
+       appear only in Release and only at runtime, so that build has to be exercised against a
+       real API — and the local development stack speaks plain HTTP. This is a test harness
+       switch: never set it for a package that leaves this machine. -->
+  <PropertyGroup>
+    <ArcheryAllowCleartext Condition="'$(Configuration)' == 'Debug' or '$(ArcheryReleaseSmokeTest)' == 'true'">true</ArcheryAllowCleartext>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ArcheryAllowCleartext)' == 'true'">
+    <AndroidManifestOverlay Include="Platforms\Android\AndroidManifestOverlay.Debug.xml" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ArcheryAllowCleartext)' != 'true'">
+    <AndroidResource Remove="Platforms\Android\Resources\xml\network_security_config.xml" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.11" />

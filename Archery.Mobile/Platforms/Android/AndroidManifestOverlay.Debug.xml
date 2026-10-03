@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Merged into Debug builds only (see the csproj).
+
+  Points the app at the network security config that permits cleartext to the emulator's
+  host-loopback alias, which is needed because neither the ASP.NET development certificate nor
+  Keycloak's self-signed certificate is in Android's trust store. Keeping this out of the base
+  manifest means a Release package has no reference to it and no exemption to carry.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application android:networkSecurityConfig="@xml/network_security_config" />
+</manifest>

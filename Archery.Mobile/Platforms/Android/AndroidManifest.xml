@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 	<!--
 	  allowBackup is false deliberately. Android auto-backup can restore the
@@ -6,14 +6,14 @@
 	  holds the matching key, after which every read throws and the app cannot sign in. There
 	  is nothing here worth backing up: the session is re-established by signing in again.
 
-	  networkSecurityConfig scopes cleartext to the emulator host only; see that file for why
-	  it is still packaged in Release and what to do before shipping.
+	  Note there is no networkSecurityConfig here. The cleartext exemption the emulator needs
+	  is applied by AndroidManifestOverlay.Debug.xml, which is only merged into Debug builds,
+	  so a Release package cannot carry it.
 	-->
 	<application android:allowBackup="false"
 	             android:icon="@mipmap/appicon"
 	             android:roundIcon="@mipmap/appicon_round"
-	             android:supportsRtl="true"
-	             android:networkSecurityConfig="@xml/network_security_config"></application>
+	             android:supportsRtl="true"></application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
 </manifest>

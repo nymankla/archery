@@ -20,14 +20,24 @@ public sealed partial class ExternalParticipantsViewModel(
 
     public ObservableCollection<ExternalParticipant> Participants { get; } = [];
 
-    /// <summary>Clubs actually present in the data, with a null entry meaning "all".</summary>
-    public ObservableCollection<string?> Clubs { get; } = [];
+    /// <summary>The picker entry that means "do not filter by club".</summary>
+    public const string AllClubs = "All clubs";
+
+    /// <summary>
+    /// Clubs actually present in the data, led by <see cref="AllClubs"/>.
+    /// </summary>
+    /// <remarks>
+    /// A real sentinel rather than a null element: null renders as a blank row in the picker,
+    /// and a nullable element type also puts the collection at odds with what compiled XAML
+    /// bindings expect.
+    /// </remarks>
+    public ObservableCollection<string> Clubs { get; } = [];
 
     [ObservableProperty]
     public partial string SearchText { get; set; } = string.Empty;
 
     [ObservableProperty]
-    public partial string? ClubFilter { get; set; }
+    public partial string ClubFilter { get; set; } = AllClubs;
 
     [ObservableProperty]
     public partial string CountSummary { get; set; } = string.Empty;
@@ -51,9 +61,12 @@ public sealed partial class ExternalParticipantsViewModel(
             // and there is no club entity to enumerate.
             var previous = ClubFilter;
             Clubs.Clear();
-            Clubs.Add(null);
+            Clubs.Add(AllClubs);
+            // OfType<string>() rather than a null check, because a Where on IsNullOrWhiteSpace
+            // does not narrow the element type for the compiler.
             foreach (var club in _all
                          .Select(p => p.ClubAffiliation)
+                         .OfType<string>()
                          .Where(c => !string.IsNullOrWhiteSpace(c))
                          .Distinct(StringComparer.OrdinalIgnoreCase)
                          .OrderBy(c => c, StringComparer.CurrentCultureIgnoreCase))
@@ -63,7 +76,7 @@ public sealed partial class ExternalParticipantsViewModel(
 
             // Keep the chosen club if it still exists, otherwise fall back to "all" rather
             // than leaving the picker pointing at something that is no longer there.
-            ClubFilter = previous is not null && Clubs.Contains(previous) ? previous : null;
+            ClubFilter = Clubs.Contains(previous) ? previous : AllClubs;
 
             ApplyFilter();
         }, ct);
@@ -109,13 +122,13 @@ public sealed partial class ExternalParticipantsViewModel(
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
 
-    partial void OnClubFilterChanged(string? value) => ApplyFilter();
+    partial void OnClubFilterChanged(string value) => ApplyFilter();
 
     void ApplyFilter()
     {
         IEnumerable<ExternalParticipant> query = _all;
 
-        if (ClubFilter is not null)
+        if (ClubFilter != AllClubs)
             query = query.Where(p => string.Equals(p.ClubAffiliation, ClubFilter, StringComparison.OrdinalIgnoreCase));
 
         if (!string.IsNullOrWhiteSpace(SearchText))

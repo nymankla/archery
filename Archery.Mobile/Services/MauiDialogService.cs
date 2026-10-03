@@ -9,8 +9,8 @@ public sealed class MauiDialogService : IDialogService
         ?? throw new InvalidOperationException("No active page to show a dialog on.");
 
     public Task AlertAsync(string title, string message, string cancel = "OK") =>
-        MainThread.InvokeOnMainThreadAsync(() => Page.DisplayAlert(title, message, cancel));
+        MainThread.InvokeOnMainThreadAsync(() => Page.DisplayAlertAsync(title, message, cancel));
 
     public Task<bool> ConfirmAsync(string title, string message, string accept = "Yes", string cancel = "No") =>
-        MainThread.InvokeOnMainThreadAsync(() => Page.DisplayAlert(title, message, accept, cancel));
+        MainThread.InvokeOnMainThreadAsync(() => Page.DisplayAlertAsync(title, message, accept, cancel));
 }

@@ -28,6 +28,12 @@ public static class MauiProgram
 
         // Endpoints are embedded in the assembly: there is no appsettings.json on disk inside
         // an APK, and MAUI has no Aspire service discovery to resolve "https://apiservice".
+        //
+        // NOT READY TO SHIP: this is the only settings file, so a Release build still points at
+        // the development stack on 10.0.2.2. Before any package leaves this machine, add an
+        // appsettings.Production.json with the real HTTPS endpoints and select between the two
+        // here with #if DEBUG. Release also drops the cleartext exemption, so a Release build
+        // aimed at an http endpoint will simply fail to connect rather than silently misbehave.
         using var settings = Assembly.GetExecutingAssembly()
             .GetManifestResourceStream("Archery.Mobile.appsettings.json")
             ?? throw new InvalidOperationException(

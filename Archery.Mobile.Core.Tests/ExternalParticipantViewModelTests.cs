@@ -47,8 +47,8 @@ public class ExternalParticipantsViewModelTests
 
         await vm.OnAppearingAsync();
 
-        // null is the "all clubs" entry; duplicates and blanks are dropped.
-        Assert.Equal([null, "Göteborgs BK", "Stockholms BK"], vm.Clubs);
+        // The sentinel leads; duplicates and blanks are dropped.
+        Assert.Equal([ExternalParticipantsViewModel.AllClubs, "Göteborgs BK", "Stockholms BK"], vm.Clubs);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class ExternalParticipantsViewModelTests
         Assert.Single(vm.Participants);
         Assert.Equal("1 of 2 guests", vm.CountSummary);
 
-        vm.ClubFilter = null;
+        vm.ClubFilter = ExternalParticipantsViewModel.AllClubs;
         Assert.Equal(2, vm.Participants.Count);
     }
 
@@ -83,7 +83,7 @@ public class ExternalParticipantsViewModelTests
         api.Externals.Remove(onlyGuestInClub);
         await vm.LoadCommand.ExecuteAsync(null);
 
-        Assert.Null(vm.ClubFilter);
+        Assert.Equal(ExternalParticipantsViewModel.AllClubs, vm.ClubFilter);
         Assert.Single(vm.Participants);
     }
 

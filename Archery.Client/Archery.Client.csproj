@@ -6,25 +6,14 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
 
-    <!-- Deliberately NOT IsTrimmable/IsAotCompatible yet.
-
-         This library will be consumed by a MAUI Android head whose Release builds trim and
-         AOT-compile, and ArcheryApiClient currently serializes through the reflection-based
-         System.Net.Http.Json overloads. Enabling the trim analyzer reports IL2026/IL3050 at
-         exactly three call sites:
-
-           ArcheryApiClient.ImportAsync        -> ReadFromJsonAsync<ImportResult>
-           ArcheryApiClient.GetFromJsonAsync   -> ReadFromJsonAsync<T>
-           ArcheryApiClient.SendAsJsonAsync    -> JsonContent.Create<T>
-
-         Clearing them means switching to the JsonTypeInfo<T> overloads, which has to thread
-         generated metadata through all 36 public members. That belongs with the
-         JsonSerializerContext work in the release-hardening milestone, not here — and the
-         wire-format tests in Archery.Client.Tests are what will prove that change is safe.
-         Re-enable these three properties at the same time. -->
-    <!-- <IsAotCompatible>true</IsAotCompatible> -->
-    <!-- <IsTrimmable>true</IsTrimmable> -->
-    <!-- <EnableTrimAnalyzer>true</EnableTrimAnalyzer> -->
+    <!-- Consumed by a MAUI Android head whose Release builds trim and AOT-compile.
+         ArcheryApiClient passes a source-generated JsonTypeInfo on every call (see
+         ArcheryJsonContext), so no serialization path needs reflection. The analyzer is on to
+         keep it that way: a new call that reaches for a reflection-based overload becomes a
+         build warning here, on the desktop, rather than a Release-only failure on a device. -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
   </PropertyGroup>
 
 </Project>

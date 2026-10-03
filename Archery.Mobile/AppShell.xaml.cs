@@ -32,7 +32,7 @@ public partial class AppShell : Shell
             // Absolute route, so the whole navigation stack is discarded along with any
             // half-filled form belonging to the signed-out session.
             await GoToAsync(Routes.Login);
-            await DisplayAlert("Signed out",
+            await DisplayAlertAsync("Signed out",
                 "Your session has expired. Please sign in again.", "OK");
         });
     }
