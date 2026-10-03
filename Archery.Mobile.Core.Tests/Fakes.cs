@@ -30,6 +30,8 @@ public sealed class FakeApiClient : IArcheryApiClient
 
     public Competition? LastCompetition { get; private set; }
 
+    public ExternalParticipant? LastExternal { get; private set; }
+
     /// <summary>What GET /training-attendance/by-date returns; null means the call returned nothing.</summary>
     public TrainingSessionDetail? Detail { get; set; }
 
@@ -132,9 +134,18 @@ public sealed class FakeApiClient : IArcheryApiClient
     public Task<ImportResult?> ImportExternalParticipantsAsync(byte[] content, string fileName, CancellationToken ct = default) => throw new NotSupportedException();
     public Task<ExternalParticipant[]?> GetExternalParticipantsAsync(CancellationToken ct = default) =>
         Task.FromResult<ExternalParticipant[]?>(Record("GetExternalParticipants", Externals.ToArray()));
-    public Task<HttpResponseMessage> CreateExternalParticipantAsync(ExternalParticipant p, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> UpdateExternalParticipantAsync(Guid id, ExternalParticipant p, CancellationToken ct = default) => throw new NotSupportedException();
-    public Task<HttpResponseMessage> DeleteExternalParticipantAsync(Guid id, CancellationToken ct = default) => throw new NotSupportedException();
+    public Task<HttpResponseMessage> CreateExternalParticipantAsync(ExternalParticipant p, CancellationToken ct = default)
+    {
+        LastExternal = p;
+        return Mutation("CreateExternalParticipant");
+    }
+    public Task<HttpResponseMessage> UpdateExternalParticipantAsync(Guid id, ExternalParticipant p, CancellationToken ct = default)
+    {
+        LastExternal = p;
+        return Mutation($"UpdateExternalParticipant:{id}");
+    }
+    public Task<HttpResponseMessage> DeleteExternalParticipantAsync(Guid id, CancellationToken ct = default) =>
+        Mutation($"DeleteExternalParticipant:{id}");
     public Task<CompetitionParticipant[]?> GetParticipantsByCompetitionAsync(Guid competitionId, CancellationToken ct = default) =>
         Task.FromResult<CompetitionParticipant[]?>(Record($"GetParticipants:{competitionId}",
             Participants.Where(p => p.CompetitionId == competitionId).ToArray()));

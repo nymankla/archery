@@ -35,4 +35,8 @@
         <ShellContent ContentTemplate="{DataTemplate views:TrainingHistoryPage}" />
     </FlyoutItem>
 
+    <FlyoutItem Title="Guests" Route="externals">
+        <ShellContent ContentTemplate="{DataTemplate views:ExternalParticipantsPage}" />
+    </FlyoutItem>
+
 </Shell>

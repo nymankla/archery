@@ -12,6 +12,7 @@ public static class Routes
     public const string TrainingAttendance = "//training";
     public const string TrainingHistory = "//traininghistory";
     public const string Competitions = "//competitions";
+    public const string ExternalParticipants = "//externals";
 
     // Pushed onto the stack; registered in AppShell's constructor.
     public const string MemberDetail = "memberdetail";
@@ -21,11 +22,14 @@ public static class Routes
     public const string CompetitionEdit = "competitionedit";
     public const string ParticipantRegister = "participantregister";
     public const string ResultEdit = "resultedit";
+    public const string ExternalParticipantEdit = "externaledit";
 
     /// <summary>Query key for the member id passed to detail and edit.</summary>
     public const string MemberIdKey = "memberId";
 
     public const string CompetitionIdKey = "competitionId";
+
+    public const string ExternalParticipantIdKey = "externalId";
 
     public const string ResultIdKey = "resultId";
 

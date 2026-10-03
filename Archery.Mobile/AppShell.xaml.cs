@@ -17,6 +17,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.CompetitionEdit, typeof(CompetitionEditPage));
         Routing.RegisterRoute(Routes.ParticipantRegister, typeof(ParticipantRegisterPage));
         Routing.RegisterRoute(Routes.ResultEdit, typeof(ResultEditPage));
+        Routing.RegisterRoute(Routes.ExternalParticipantEdit, typeof(ExternalParticipantEditPage));
 
         // Raised when a refresh fails and the session cannot be recovered — a refresh token
         // that expired or was revoked server-side. Without this the user is left on a screen

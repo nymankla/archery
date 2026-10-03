@@ -91,6 +91,10 @@ public static class MauiProgram
         builder.Services.AddTransient<ParticipantRegisterViewModel>();
         builder.Services.AddTransient<ResultEditPage>();
         builder.Services.AddTransient<ResultEditViewModel>();
+        builder.Services.AddTransient<ExternalParticipantsPage>();
+        builder.Services.AddTransient<ExternalParticipantsViewModel>();
+        builder.Services.AddTransient<ExternalParticipantEditPage>();
+        builder.Services.AddTransient<ExternalParticipantEditViewModel>();
 
 #if DEBUG
         builder.Logging.AddDebug();
