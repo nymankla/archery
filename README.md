@@ -2,9 +2,14 @@
 
 A .NET 10 [Aspire](https://learn.microsoft.com/dotnet/aspire/) distributed application for managing an archery club — members, membership fees, competitions, results, training attendance, and external (guest) participants. It exposes a secured minimal-API backend and an interactive Blazor Server frontend, orchestrated together with Redis, PostgreSQL, and Keycloak.
 
+A **.NET MAUI Android app** covers the work done at the range — adding members, recording
+training attendance, registering competitors and entering scores — against the same API. Desk
+work (spreadsheet import/export, the year-wide fee matrix and bulk fee runs) stays on the web.
+
 ## Architecture
 
-The solution is an Aspire app model that wires four runtime pieces plus shared defaults:
+The solution is an Aspire app model that wires four runtime pieces plus shared defaults, with a
+mobile head and its shared client alongside:
 
 | Project | Type | Responsibility |
 | --- | --- | --- |
@@ -12,8 +17,16 @@ The solution is an Aspire app model that wires four runtime pieces plus shared d
 | **aspire.ApiService** | ASP.NET Core Web API | Domain logic, EF Core persistence, minimal-API endpoints, spreadsheet import. Secured with Keycloak JWT bearer. |
 | **aspire.Web** | Blazor interactive server | UI for the club. Authenticates users via Keycloak OIDC, calls the API with a bearer token, caches output in Redis. |
 | **aspire.ServiceDefaults** | Shared library | Cross-cutting wiring applied in every service: OpenTelemetry (OTLP), service discovery, HTTP resilience, `/health` + `/alive` endpoints. |
+| **Archery.Client** | Shared library (`net10.0`) | Wire models, the typed `ArcheryApiClient`, error normalisation, source-generated JSON. Used by both the web frontend and the Android app; no ASP.NET dependency. |
+| **Archery.Mobile.Core** | Shared library (`net10.0`) | All mobile ViewModels and platform abstractions. No MAUI reference, so they are testable on a build agent. |
+| **Archery.Mobile** | .NET MAUI (`net10.0-android`) | Android app: XAML views, Shell navigation, Keycloak OIDC, Android platform code. |
 | **Tests** | xUnit | Integration tests spinning up the full AppHost in-process (`Aspire.Hosting.Testing`), including Postgres persistence checks. |
 | **UnitTests** | xUnit | Fast unit tests for services (dashboard stats, membership fee logic). |
+| **Archery.Client.Tests** | xUnit | Contract tests for the shared client against a stubbed handler — URLs, date formats, error envelopes, exact wire JSON. |
+| **Archery.Mobile.Core.Tests** | xUnit | ViewModel tests; no emulator required. |
+
+The Android app is a **client of** the system, not a resource in it, so it is deliberately not
+registered in the AppHost.
 
 ### Resource graph
 
@@ -34,6 +47,11 @@ Keycloak ──────────┴────────────�
 ```
 
 `WithReference(...)` + `WaitFor(...)` ensure each service starts only once its dependencies are healthy. Inter-service calls use Aspire service discovery (e.g. the Web client targets `https://apiservice`, Keycloak is resolved by service name) — no hardcoded URLs.
+
+Service discovery does not reach off the host, so the mobile app uses real URLs: the API is
+published with `WithExternalHttpEndpoints()`, and Keycloak additionally exposes its plain-HTTP
+listener on port 8081 in development (host port 8080 maps to the container's **HTTPS** port,
+whose self-signed certificate an emulator will not accept).
 
 ## Domain model
 
@@ -81,7 +99,7 @@ All endpoints require authorization (Keycloak JWT bearer) and are grouped by tag
 - **Spreadsheet import** — members, competitions, and external participants can be imported from CSV or `.xlsx` uploads. Parsing is handled by `SpreadsheetParser` ([SpreadsheetParser.cs](aspire.ApiService/Infrastructure/SpreadsheetParser.cs)) using CsvHelper and ClosedXML.
 - **Spreadsheet export** — members and training attendance for a date can be exported as CSV or `.xlsx` via `SpreadsheetWriter` ([SpreadsheetWriter.cs](aspire.ApiService/Infrastructure/SpreadsheetWriter.cs)), the generic counterpart to the parser. Since exported values (names, addresses, notes, etc.) come from user-editable data, `SpreadsheetWriter` guards against CSV/formula injection by prefixing any cell that starts with a formula-trigger character (`=`, `+`, `-`, `@`, tab, CR) with an apostrophe, so spreadsheet apps render it as text instead of evaluating it as a formula when the file is opened.
 - **Bulk fee creation** — `POST /membership-fees/bulk` generates fees for many members at once, optionally filtered by age.
-- Conflicts (e.g. duplicate fee for a member/year, duplicate personnummer) surface as HTTP `409`/`400` with validation errors.
+- Conflicts (e.g. duplicate fee for a member/year, duplicate personnummer) surface as HTTP `400` with validation errors. There is no `409` path in the API today.
 
 ## Web frontend
 
@@ -98,6 +116,52 @@ Authentication uses the OpenID Connect code flow against Keycloak, backed by a c
 
 Both services default to the `sv-SE` culture (override with the `Locale` config key).
 
+## Android app
+
+A .NET MAUI app ([Archery.Mobile](Archery.Mobile/)) in native XAML with MVVM, sharing
+`ArcheryApiClient` and the whole wire model with the web frontend via
+[Archery.Client](Archery.Client/).
+
+| Screen | What it does |
+| --- | --- |
+| **Dashboard** | Landing screen after sign-in — the same statistics as the web home page. |
+| **Members** | Search, active-only and bow-class filters, sort, pull-to-refresh, add/edit, swipe-to-delete. |
+| **Member detail** | Profile plus that member's fees, with one-tap *mark paid*. |
+| **Training attendance** | The key at-the-range screen: pick a date, tick members and guests, add notes, save. |
+| **Training history** | Past dates with their attendees, split member/guest. |
+| **Competitions** | List, add/edit, and a detail view with Participants and Results tabs — register a member or a guest, enter scores. |
+| **External participants** | Guest competitors: search, club filter, add/edit/delete. |
+
+Not included, by design: spreadsheet import and export, and the year-wide fee matrix and bulk
+fee creation. Those remain web-only.
+
+Authentication is the authorization-code flow with PKCE against a **public** Keycloak client
+(`archerymobile`), run in a Chrome Custom Tab via `Duende.IdentityModel.OidcClient`; tokens are
+kept in Keystore-backed `SecureStorage` and refreshed ahead of expiry. The app is online-only.
+
+### Building and running it
+
+```bash
+# One-time setup
+dotnet workload install maui-android     # and a JAVA_HOME pointing at JDK 21
+
+# With the AppHost running and an emulator started
+dotnet build Archery.Mobile -f net10.0-android -t:Run
+```
+
+`Archery.Mobile` is **excluded from the solution build configurations**, so
+`dotnet build Archery.sln` still works without the MAUI workload installed — build the app with
+the explicit command above.
+
+In development the app talks to `10.0.2.2` (the emulator's alias for the host loopback) over
+plain HTTP. That cleartext exemption is scoped to that one address and is physically absent from
+a Release package: the base manifest does not reference the network-security config, a
+Debug-only manifest overlay adds it, and the resource is dropped from every other configuration.
+
+> **Before shipping:** Release still points at the development endpoints (add an
+> `appsettings.Production.json` and select it with `#if DEBUG`), and no signing keystore is
+> configured.
+
 ## Getting started
 
 ### Prerequisites
@@ -105,6 +169,8 @@ Both services default to the `sv-SE` culture (override with the `Locale` config 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
 - A container runtime (Docker Desktop or Podman) — required for the Redis, PostgreSQL, and Keycloak containers.
 - The [Aspire CLI / workload](https://learn.microsoft.com/dotnet/aspire/fundamentals/setup-tooling) (optional but convenient).
+- For the Android app only: the `maui-android` workload, a JDK 21 on `JAVA_HOME`, and an
+  Android emulator or device (API 24+).
 
 ### Run
 
@@ -149,9 +215,12 @@ dotnet test UnitTests
 
 # A single integration test class
 dotnet test Tests --filter "FullyQualifiedName~WebTests"
+
+# Build and deploy the Android app to a running emulator or device
+dotnet build Archery.Mobile -f net10.0-android -t:Run
 ```
 
-> The integration tests in `Tests` start the full AppHost in-process and therefore require a running container runtime.
+> The integration tests in `Tests` start the full AppHost in-process and therefore require a running container runtime. They also write fixed-identity rows into the persistent `db` database and do not clean up, so they only pass against a fresh volume.
 
 ## Configuration
 
@@ -164,4 +233,4 @@ Key settings (via `appsettings*.json`, user secrets, or environment variables):
 
 ## Tech stack
 
-.NET 10 · Aspire 13.4 · ASP.NET Core Minimal APIs · Blazor (interactive server) · Entity Framework Core + Npgsql (PostgreSQL) · Redis output caching · Keycloak (OIDC / JWT) · OpenTelemetry · Scalar/OpenAPI · CsvHelper + ClosedXML · xUnit.
+.NET 10 · Aspire 13.6 · ASP.NET Core Minimal APIs · Blazor (interactive server) · .NET MAUI (Android) · CommunityToolkit.Mvvm · Duende.IdentityModel.OidcClient · Entity Framework Core + Npgsql (PostgreSQL) · Redis output caching · Keycloak (OIDC / JWT) · OpenTelemetry · Scalar/OpenAPI · CsvHelper + ClosedXML · xUnit.

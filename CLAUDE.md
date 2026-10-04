@@ -25,24 +25,49 @@ dotnet test UnitTests
 
 # A single integration test class
 dotnet test Tests --filter "FullyQualifiedName~WebTests"
+
+# Build and deploy the Android app to a running emulator or device
+dotnet build Archery.Mobile -f net10.0-android -t:Run
 ```
 
 The AppHost launches the Aspire dashboard at the URL shown in terminal output (typically `https://localhost:17034`). A container runtime (Docker/Podman) is required — the integration tests in `Tests` boot the full AppHost in-process and also need it.
+
+`Archery.Mobile` is **excluded from the solution build configurations** (no `Build.0` entries
+in `Archery.sln`), so `dotnet build Archery.sln` works on a machine without the MAUI workload —
+including CI. Build the app with the explicit command above; it needs
+`dotnet workload install maui-android` and a `JAVA_HOME` pointing at JDK 21.
 
 ## Overview
 
 .NET 10 Aspire distributed application: an **archery club management system** covering members, membership fees, competitions, results, and external (guest) participants. Secured minimal-API backend + interactive Blazor Server frontend, orchestrated with Redis, PostgreSQL, and Keycloak.
 
+A **.NET MAUI Android client** covers the subset of that done at the range — members, training
+attendance, competitions and guests. It is a client of the system, not a resource in the Aspire
+graph.
+
 ## Architecture
 
-Four runtime pieces, one shared library, two test projects:
+Four runtime pieces, two shared libraries, an Android head, and four test projects:
 
 - **aspire.AppHost** — Orchestrator only. Defines the resource graph. No business logic.
 - **aspire.ApiService** — ASP.NET Core minimal-API backend. EF Core (Npgsql/PostgreSQL) persistence, domain services, spreadsheet import. Secured with Keycloak JWT bearer.
 - **aspire.Web** — Blazor interactive server frontend. Keycloak OIDC login, calls the API with a bearer token, Redis output caching.
 - **aspire.ServiceDefaults** — Shared extension methods applied in every service's `Program.cs`: OpenTelemetry (OTLP), service discovery, HTTP resilience (retry + circuit breaker), default `/health` + `/alive` endpoints.
+- **Archery.Client** (`net10.0`) — wire models, the typed `ArcheryApiClient`, error normalisation
+  and source-generated JSON. Shared by `aspire.Web` and the Android app. **No ASP.NET
+  dependency** — it must never reference `aspire.ServiceDefaults`, which carries
+  `<FrameworkReference Include="Microsoft.AspNetCore.App" />` and cannot load under MAUI.
+- **Archery.Mobile.Core** (`net10.0`) — every mobile ViewModel plus the platform abstractions
+  (`IAuthService`, `INavigationService`, `IDialogService`, …). **No MAUI reference**, which is
+  what makes the ViewModels testable.
+- **Archery.Mobile** (`net10.0-android`) — MAUI head: XAML views, Shell, `MauiProgram`, the
+  Keycloak OIDC implementation and Android platform code.
 - **Tests** — xUnit integration tests using `Aspire.Hosting.Testing` to spin up the full AppHost in-process (incl. Postgres persistence).
 - **UnitTests** — fast xUnit unit tests for services (dashboard stats, membership fee logic).
+- **Archery.Client.Tests** — contract tests over `ArcheryApiClient` against a stubbed
+  `HttpMessageHandler`: URL construction, date formatting, bearer attachment, the error
+  envelopes, and the exact JSON shape on the wire.
+- **Archery.Mobile.Core.Tests** — ViewModel tests, no emulator required.
 
 ### Resource graph (AppHost.cs)
 
@@ -55,6 +80,9 @@ All three are persistent containers with data volumes. Flow: Redis + PostgreSQL 
 ### Inter-service communication
 
 Uses Aspire service discovery — no hardcoded URLs. The Web `ArcheryApiClient` targets `https://apiservice` (matching the AppHost resource name); Keycloak is resolved by service name in both projects.
+
+Service discovery does not work off-box, so the Android app uses real URLs from its embedded
+`appsettings.json` instead. `apiservice` therefore carries `.WithExternalHttpEndpoints()`.
 
 ## ApiService
 
@@ -70,6 +98,60 @@ Uses Aspire service discovery — no hardcoded URLs. The Web `ArcheryApiClient` 
 - Blazor interactive server components under `Components/` (pages: Home/Dashboard, Members, MemberDetail, Competitions, CompetitionDetail, FeeOverview, ExternalParticipants).
 - **Auth** (`Auth/`): OIDC code flow against Keycloak backed by a cookie session. `TokenRefreshService` refreshes access tokens; `MemoryCacheTicketStore` keeps cookies small; data-protection keys persisted to disk so sessions survive restarts. `BearerTokenHandler` attaches the current token to `ArcheryApiClient` calls.
 - Both services default to `sv-SE` culture (override with the `Locale` config key).
+
+## Mobile (Archery.Mobile)
+
+Android-only MAUI app, native XAML with MVVM (CommunityToolkit.Mvvm source generators).
+Structured so iOS is one extra TFM plus `Platforms/iOS/`, with no ViewModel rework.
+
+- **Screens**: Dashboard (landing), Members (list/detail/edit, plus view + mark-paid on that
+  member's fees), Training attendance, Training history, Competitions (list/detail/edit) with
+  participant registration and result entry, and External participants.
+- **Deliberately absent**: all import and export flows, and the year-wide fee matrix and bulk
+  fee run. Those stay on the web. This is a UI choice, not a security boundary — see the note
+  on realm roles below.
+- **Auth** (`Auth/`): `Duende.IdentityModel.OidcClient` over MAUI `WebAuthenticator` (Chrome
+  Custom Tabs; an embedded WebView is blocked by Google). Authorization code + PKCE S256
+  against the public `archerymobile` Keycloak client — a mobile app cannot keep a secret, so it
+  must not reuse the confidential `archeryweb` client. Tokens live in `SecureStorage`
+  (Keystore-backed), never `Preferences`, and refresh proactively with a 5-minute skew.
+  `ArcheryAuthService` implements both `IAuthService` and `Archery.Client`'s
+  `IArcheryTokenProvider`.
+- **Config**: `appsettings.json` is an `EmbeddedResource` so it travels inside the APK
+  (`Api:BaseUrl`, `Keycloak:Authority`, `ClientId`, `RedirectUri`). Both the API and Keycloak
+  are reached over `10.0.2.2`, the emulator's alias for the host loopback.
+- Culture is forced to `sv-SE` in `MauiProgram` to match the two services.
+
+### Mobile conventions worth knowing before editing
+
+- **Use `IQueryAttributable`, never `[QueryProperty]`, for navigation parameters.** Shell
+  applies `[QueryProperty]` via `Convert.ChangeType`, and **`Guid` does not implement
+  `IConvertible`** — passing one throws *"Object must implement IConvertible"* and kills the
+  process. Every parameterised page reads the dictionary directly instead.
+- **An `[ObservableProperty]` handler that calls `RunAsync` is a no-op when the property is
+  assigned from inside another `RunAsync`** — the outer call already set `IsBusy`, and
+  `RunAsync` refuses to re-enter. Await the work directly in that case.
+- **Bind numeric `Entry` fields as strings and parse explicitly** against current *and*
+  invariant culture. Under `sv-SE` an `Entry` bound straight to an `int` silently drops input
+  the culture cannot parse.
+- `Archery.Client` is `IsTrimmable` + `IsAotCompatible` with the trim analyzer on. Serialization
+  goes through `ArcheryJsonContext`, so **every new wire type needs a `[JsonSerializable]`
+  entry** and every client call passes a `JsonTypeInfo`. Reflection-based JSON builds clean on
+  the desktop and fails at runtime in a trimmed Release APK.
+- Every `DataTemplate` needs an `x:DataType`: compiled bindings are enforced, because
+  reflection-based bindings break silently under trimming.
+- **Enums cross the wire as integers** — the API registers no `JsonStringEnumConverter`, so the
+  declaration order in `Models/Enums.cs` is load-bearing. Do not reorder them.
+
+### Cleartext HTTP is Debug-only
+
+The dev stack speaks plain HTTP and Android forbids that by default. The exemption is scoped to
+`10.0.2.2` in `Platforms/Android/Resources/xml/network_security_config.xml`, and it **cannot
+reach a Release package**: the base manifest does not declare `networkSecurityConfig`, a
+Debug-only `AndroidManifestOverlay` adds it, and the config resource is removed from every other
+configuration. `ArcheryReleaseSmokeTest=true` re-adds it so a trimmed build can be exercised
+against the local stack — a test harness switch only, never for a package that leaves the
+machine.
 
 ## Configuration
 
