@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -11,12 +11,12 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Testing" Version="13.5.3" />
-    <!-- Align EF Core with aspire.ApiService (10.0.9); Aspire's health-checks
-         package otherwise pulls 10.0.8 transitively, causing CS1705 / runtime
-         assembly-load failures. -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
+    <PackageReference Include="Aspire.Hosting.Testing" Version="13.6.0" />
+    <!-- Pinned to match what Aspire's health-checks package pulls in transitively through
+         aspire.ApiService. Too low and NuGet reports a downgrade (NU1605, an error here); the
+         version has to move whenever the Aspire packages do. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageReference Include="coverlet.collector" Version="10.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">

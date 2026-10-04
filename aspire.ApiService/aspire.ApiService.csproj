@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.5.3-preview.1.26425.3" />
-    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.5.3" />
+    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.6.0-preview.1.26479.8" />
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.6.0" />
     <PackageReference Include="ClosedXML" Version="0.105.1" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="System.IO.Packaging" Version="10.0.11" />
