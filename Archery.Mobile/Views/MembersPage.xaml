@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.MembersPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:client="clr-namespace:Archery.Client;assembly=Archery.Client"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:MembersViewModel"
+    Title="{Binding Title}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Add" Command="{Binding AddCommand}" />
+        <ToolbarItem Text="Sign out" Command="{Binding SignOutCommand}" Order="Secondary" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="12,8" RowSpacing="6">
+
+        <SearchBar
+            Grid.Row="0"
+            Placeholder="Search name or email"
+            Text="{Binding SearchText}" />
+
+        <!-- Filters. Kept on one scrollable row so the list keeps most of the screen. -->
+        <ScrollView Grid.Row="1" Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+            <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+
+                <HorizontalStackLayout Spacing="6" VerticalOptions="Center">
+                    <Switch IsToggled="{Binding ActiveOnly}" />
+                    <Label Text="Active only" VerticalOptions="Center" />
+                </HorizontalStackLayout>
+
+                <Picker
+                    Title="All bow classes"
+                    WidthRequest="170"
+                    ItemsSource="{Binding BowClassOptions}"
+                    SelectedItem="{Binding BowClassFilter}" />
+
+                <Picker
+                    Title="Sort"
+                    WidthRequest="200"
+                    ItemsSource="{Binding SortOptions}"
+                    SelectedItem="{Binding Sort}" />
+
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <Label
+            Grid.Row="2"
+            Text="{Binding CountSummary}"
+            FontSize="12"
+            Opacity="0.6" />
+
+        <controls:ErrorBanner
+            Grid.Row="3"
+            VerticalOptions="Start"
+            IsVisible="{Binding HasError}"
+            Message="{Binding ErrorMessage}"
+            RetryCommand="{Binding LoadCommand}" />
+
+        <RefreshView
+            Grid.Row="3"
+            IsRefreshing="{Binding IsRefreshing}"
+            Command="{Binding RefreshCommand}"
+            IsVisible="{Binding HasNoError}">
+
+            <CollectionView ItemsSource="{Binding Members}" SelectionMode="None">
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="24" Spacing="8">
+                        <Label
+                            Text="No members match the current filter."
+                            HorizontalTextAlignment="Center"
+                            Opacity="0.7" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <!-- x:DataType is required here: compiled bindings are on, and reflection
+                         bindings break under the trimming applied to Release Android builds. -->
+                    <DataTemplate x:DataType="client:Member">
+                        <SwipeView>
+                            <SwipeView.RightItems>
+                                <SwipeItems Mode="Execute">
+                                    <SwipeItem
+                                        Text="Delete"
+                                        BackgroundColor="#C0392B"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MembersViewModel}}, Path=DeleteCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </SwipeItems>
+                            </SwipeView.RightItems>
+
+                            <Grid Padding="4,12" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MembersViewModel}}, Path=OpenCommand}"
+                                        CommandParameter="{Binding .}" />
+                                </Grid.GestureRecognizers>
+
+                                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                    <Label Text="{Binding FullName}" FontAttributes="Bold" />
+                                    <Label Text="{Binding Email}" FontSize="12" Opacity="0.7" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="End">
+                                    <Label
+                                        Text="{Binding PreferredBowClass}"
+                                        FontSize="12"
+                                        HorizontalTextAlignment="End"
+                                        Opacity="0.7" />
+                                    <Label
+                                        Text="Inactive"
+                                        FontSize="11"
+                                        TextColor="#C0392B"
+                                        HorizontalTextAlignment="End"
+                                        IsVisible="{Binding IsActive, Converter={StaticResource InverseBool}}" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </SwipeView>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

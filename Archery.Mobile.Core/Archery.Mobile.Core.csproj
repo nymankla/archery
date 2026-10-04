@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!--
+    Deliberately a plain net10.0 library with no MAUI reference.
+
+    View models live here rather than in the Archery.Mobile head so they can be unit tested:
+    `dotnet test` cannot run a net10.0-android assembly, and a net10.0 test project cannot
+    reference one. Everything platform-specific is reached through the interfaces in
+    Abstractions/, which the MAUI head implements. That split is also what makes adding an
+    iOS head later a matter of one extra target framework rather than a rewrite.
+  -->
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Archery.Client\Archery.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Archery.Client" />
+  </ItemGroup>
+
+</Project>

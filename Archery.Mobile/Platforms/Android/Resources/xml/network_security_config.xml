@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Development only; this file is excluded from non-Debug builds by the csproj, and the manifest
+  attribute that points at it is applied by a Debug-only manifest overlay.
+
+  The ASP.NET development certificate and Keycloak's self-signed certificate are not in
+  Android's trust store, so the emulator talks to both over plain HTTP instead. Cleartext is
+  permitted for the emulator's host-loopback alias only, never app-wide: base-config keeps
+  everything else HTTPS. Add your machine's LAN address here as well to test on a physical
+  device.
+-->
+<network-security-config>
+  <base-config cleartextTrafficPermitted="false" />
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="false">10.0.2.2</domain>
+    <domain includeSubdomains="false">localhost</domain>
+  </domain-config>
+</network-security-config>

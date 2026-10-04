@@ -1,0 +1,172 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.DashboardPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:client="clr-namespace:Archery.Client;assembly=Archery.Client"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:DashboardViewModel"
+    Title="{Binding Title}">
+
+    <!--
+        No charts here on purpose. These are a handful of headline numbers, which is a row of
+        stat tiles rather than a bar chart, and the collection rate is a single ratio against a
+        limit, which is a meter rather than a two-slice pie. Values wear ink colours; the accent
+        is carried by the marks (tile rules, the meter) so a number never depends on its colour
+        to be read.
+    -->
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16" Spacing="14">
+
+                <controls:ErrorBanner
+                    IsVisible="{Binding HasError}"
+                    Message="{Binding ErrorMessage}"
+                    RetryCommand="{Binding LoadCommand}" />
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+
+                <VerticalStackLayout Spacing="14" IsVisible="{Binding HasData}">
+
+                    <!-- Hero: the number the club leads with. -->
+                    <Border
+                        AutomationId="TileActiveMembers"
+                        Padding="16"
+                        StrokeThickness="0"
+                        BackgroundColor="#512BD4"
+                        StrokeShape="RoundRectangle 12">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding OpenMembersCommand}" />
+                        </Border.GestureRecognizers>
+                        <VerticalStackLayout Spacing="2" BindingContext="{Binding Data.Members}" x:DataType="client:DashboardMemberStats">
+                            <Label Text="{Binding TotalActive}" FontSize="48" FontAttributes="Bold" TextColor="White" />
+                            <Label Text="Active members" TextColor="White" Opacity="0.85" />
+                            <Label Text="{Binding NewThisYear, StringFormat='+{0} new this year'}"
+                                   FontSize="12" TextColor="White" Opacity="0.75" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- KPI row. -->
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" RowSpacing="12" RowDefinitions="Auto,Auto">
+
+                        <Border Grid.Row="0" Grid.Column="0" AutomationId="TileFeesCollected"
+                                Padding="14" StrokeThickness="1" Stroke="#22000000" StrokeShape="RoundRectangle 12">
+                            <VerticalStackLayout Spacing="2" BindingContext="{Binding Data.Fees}" x:DataType="client:DashboardFeeStats">
+                                <Label Text="{Binding TotalCollected, StringFormat='{0:C0}'}"
+                                       FontSize="22" FontAttributes="Bold" />
+                                <Label Text="Fees collected" FontSize="12" Opacity="0.65" />
+                                <Label Text="{Binding Paid, StringFormat='{0} paid'}" FontSize="11" Opacity="0.55" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="1" AutomationId="TileCompetitions"
+                                Padding="14" StrokeThickness="1" Stroke="#22000000" StrokeShape="RoundRectangle 12">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding OpenCompetitionsCommand}" />
+                            </Border.GestureRecognizers>
+                            <VerticalStackLayout Spacing="2" BindingContext="{Binding Data.Competitions}" x:DataType="client:DashboardCompetitionStats">
+                                <Label Text="{Binding TotalThisYear}" FontSize="22" FontAttributes="Bold" />
+                                <Label Text="Competitions this year" FontSize="12" Opacity="0.65" />
+                                <Label Text="{Binding UpcomingCount, StringFormat='{0} upcoming'}" FontSize="11" Opacity="0.55" />
+                            </VerticalStackLayout>
+                        </Border>
+
+                        <!-- Meter: one ratio against a limit, on a same-hue track. -->
+                        <Border Grid.Row="1" Grid.ColumnSpan="2" AutomationId="TileCollectionRate"
+                                Padding="14" StrokeThickness="1" Stroke="#22000000" StrokeShape="RoundRectangle 12">
+                            <VerticalStackLayout Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Grid.Column="0" Text="Fee collection rate" FontSize="12" Opacity="0.65"
+                                           VerticalOptions="Center" />
+                                    <Label Grid.Column="1" FontSize="22" FontAttributes="Bold"
+                                           BindingContext="{Binding Data.Fees}" x:DataType="client:DashboardFeeStats"
+                                           Text="{Binding CollectionRatePct, StringFormat='{0}%'}" />
+                                </Grid>
+                                <ProgressBar Progress="{Binding CollectionRate}"
+                                             ProgressColor="#512BD4"
+                                             BackgroundColor="#22512BD4"
+                                             HeightRequest="8" />
+                                <Label FontSize="11" Opacity="0.55"
+                                       BindingContext="{Binding Data.Fees}" x:DataType="client:DashboardFeeStats"
+                                       Text="{Binding TotalOutstanding, StringFormat='{0:C0} outstanding'}" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </Grid>
+
+                    <Border
+                        AutomationId="NextCompetition"
+                        IsVisible="{Binding HasNextCompetition}"
+                        Padding="14"
+                        StrokeThickness="1"
+                        Stroke="#22512BD4"
+                        BackgroundColor="#11512BD4"
+                        StrokeShape="RoundRectangle 12">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Next competition" FontSize="12" Opacity="0.65" />
+                            <Label Text="{Binding NextCompetitionSummary}" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <VerticalStackLayout Spacing="6" IsVisible="{Binding HasTopScorers}">
+                        <Label Text="Top scorers" FontSize="18" FontAttributes="Bold" Margin="0,6,0,0" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding TopScorers}" Spacing="2">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="client:DashboardTopScorer">
+                                    <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="8">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding MemberName}" FontAttributes="Bold" />
+                                            <Label FontSize="11" Opacity="0.6">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="{Binding BowClass}" />
+                                                        <Span Text=" · " />
+                                                        <Span Text="{Binding CompetitionName}" />
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" Text="{Binding Score}" FontAttributes="Bold"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="6" IsVisible="{Binding HasRecentCompetitions}">
+                        <Label Text="Recent competitions" FontSize="18" FontAttributes="Bold" Margin="0,6,0,0" />
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding RecentCompetitions}" Spacing="2">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="client:DashboardRecentCompetition">
+                                    <Grid ColumnDefinitions="*,Auto" Padding="0,8" ColumnSpacing="8">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                            <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                            <Label FontSize="11" Opacity="0.6">
+                                                <Label.FormattedText>
+                                                    <FormattedString>
+                                                        <Span Text="{Binding Date, StringFormat='{0:yyyy-MM-dd}'}" />
+                                                        <Span Text=" · " />
+                                                        <Span Text="{Binding Location}" />
+                                                    </FormattedString>
+                                                </Label.FormattedText>
+                                            </Label>
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1" FontSize="11" Opacity="0.6" VerticalOptions="Center"
+                                               Text="{Binding ParticipantCount, StringFormat='{0} entries'}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <Button Text="Record training attendance"
+                            AutomationId="GoToTraining"
+                            Command="{Binding OpenTrainingCommand}"
+                            Margin="0,10,0,24" />
+
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

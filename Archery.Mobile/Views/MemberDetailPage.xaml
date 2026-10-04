@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.MemberDetailPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:client="clr-namespace:Archery.Client;assembly=Archery.Client"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:MemberDetailViewModel"
+    Title="{Binding Title}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Edit" Command="{Binding EditCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16" Spacing="12">
+
+                <controls:ErrorBanner
+                    IsVisible="{Binding HasError}"
+                    Message="{Binding ErrorMessage}"
+                    RetryCommand="{Binding LoadCommand}" />
+
+                <VerticalStackLayout Spacing="10" IsVisible="{Binding HasMember}" BindingContext="{Binding Member}" x:DataType="client:Member">
+
+                    <Label Text="{Binding FullName}" FontSize="24" FontAttributes="Bold" />
+
+                    <Grid ColumnDefinitions="130,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Email" Opacity="0.6" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding Email}" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="Phone" Opacity="0.6" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Phone}" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Address" Opacity="0.6" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding Address}" />
+
+                        <Label Grid.Row="3" Grid.Column="0" Text="Personnummer" Opacity="0.6" />
+                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding Personnummer}" />
+
+                        <Label Grid.Row="4" Grid.Column="0" Text="Date of birth" Opacity="0.6" />
+                        <Label Grid.Row="4" Grid.Column="1" Text="{Binding DateOfBirth, StringFormat='{0:yyyy-MM-dd}'}" />
+
+                        <Label Grid.Row="5" Grid.Column="0" Text="Joined" Opacity="0.6" />
+                        <Label Grid.Row="5" Grid.Column="1" Text="{Binding JoinDate, StringFormat='{0:yyyy-MM-dd}'}" />
+
+                        <Label Grid.Row="6" Grid.Column="0" Text="Bow class" Opacity="0.6" />
+                        <Label Grid.Row="6" Grid.Column="1" Text="{Binding PreferredBowClass}" />
+                    </Grid>
+
+                </VerticalStackLayout>
+
+                <BoxView HeightRequest="1" Color="#22000000" Margin="0,8" />
+
+                <Label Text="Membership fees" FontSize="18" FontAttributes="Bold" />
+
+                <Label
+                    Text="No fees recorded for this member."
+                    Opacity="0.6"
+                    IsVisible="{Binding HasFees, Converter={StaticResource InverseBool}}" />
+
+                <!-- BindableLayout rather than a nested CollectionView: the page already
+                     scrolls, and nesting scrollable lists on Android breaks the outer scroll. -->
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Fees}" Spacing="8">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="client:MembershipFee">
+                            <Border Padding="12" StrokeThickness="1" Stroke="#22000000" StrokeShape="RoundRectangle 8">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                        <Label Text="{Binding Year}" FontAttributes="Bold" />
+                                        <Label Text="{Binding Amount, StringFormat='{0:C}'}" FontSize="12" Opacity="0.7" />
+                                        <Label Text="{Binding DueDate, StringFormat='Due {0:yyyy-MM-dd}'}" FontSize="12" Opacity="0.7" />
+                                    </VerticalStackLayout>
+
+                                    <VerticalStackLayout Grid.Column="1" Spacing="4" HorizontalOptions="End">
+                                        <Label Text="{Binding Status}" FontSize="12" HorizontalTextAlignment="End" />
+                                        <Button
+                                            Text="Mark paid"
+                                            FontSize="12"
+                                            Padding="12,2"
+                                            IsVisible="{Binding Status, Converter={StaticResource FeeIsUnsettled}}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MemberDetailViewModel}}, Path=MarkPaidCommand}"
+                                            CommandParameter="{Binding .}" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

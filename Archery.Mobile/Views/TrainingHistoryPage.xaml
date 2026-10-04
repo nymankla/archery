@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.TrainingHistoryPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:TrainingHistoryViewModel"
+    Title="{Binding Title}">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+        <ScrollView>
+            <VerticalStackLayout Padding="16" Spacing="12">
+
+                <controls:ErrorBanner
+                    IsVisible="{Binding HasError}"
+                    Message="{Binding ErrorMessage}"
+                    RetryCommand="{Binding LoadDatesCommand}" />
+
+                <Label
+                    Text="No training sessions have been recorded yet."
+                    Opacity="0.7"
+                    IsVisible="{Binding HasDates, Converter={StaticResource InverseBool}}" />
+
+                <VerticalStackLayout Spacing="4" IsVisible="{Binding HasDates}">
+                    <Label Text="Session date" FontSize="12" Opacity="0.7" />
+                    <Picker
+                        ItemsSource="{Binding Dates}"
+                        SelectedItem="{Binding SelectedDate}"
+                        ItemDisplayBinding="{Binding ., StringFormat='{0:yyyy-MM-dd}'}" />
+                </VerticalStackLayout>
+
+                <Label Text="{Binding Summary}" FontAttributes="Bold" />
+
+                <Label
+                    Text="{Binding Notes}"
+                    FontSize="13"
+                    Opacity="0.75"
+                    IsVisible="{Binding Notes, Converter={StaticResource IsNotEmpty}}" />
+
+                <Label Text="Members" FontAttributes="Bold" Margin="0,8,0,0" />
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding MemberAttendees}" Spacing="2">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:HistoryAttendee">
+                            <Grid ColumnDefinitions="*,Auto" Padding="0,6">
+                                <Label Grid.Column="0" Text="{Binding Name}" />
+                                <Label Grid.Column="1" Text="{Binding Detail}" FontSize="11" Opacity="0.6" />
+                            </Grid>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <Label Text="Guests" FontAttributes="Bold" Margin="0,8,0,0" IsVisible="{Binding HasExternals}" />
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding ExternalAttendees}" Spacing="2">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:HistoryAttendee">
+                            <Label Text="{Binding Name}" Padding="0,6" />
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+</ContentPage>

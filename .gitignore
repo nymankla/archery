@@ -480,3 +480,8 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# ASP.NET Core data-protection keys.
+# These sign and encrypt the auth cookies; aspire.Web persists them to disk so sessions
+# survive a restart. They are per-machine and must never be shared through the repo.
+.dp-keys/

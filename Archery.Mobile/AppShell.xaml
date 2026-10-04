@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="Archery.Mobile.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:Archery.Mobile.Views"
+    Shell.FlyoutBehavior="Flyout"
+    Title="Archery Club">
+
+    <!--
+        Login sits outside the flyout and hides the nav bar: there is nothing to navigate to
+        until a session exists. The remaining destinations are added as the app grows; a
+        flyout is used rather than a tab bar because the finished app has seven top-level
+        screens, which is past the point where a bottom bar stays usable on a phone.
+    -->
+    <ShellContent
+        Route="login"
+        ContentTemplate="{DataTemplate views:LoginPage}"
+        Shell.FlyoutBehavior="Disabled"
+        Shell.NavBarIsVisible="False" />
+
+    <FlyoutItem Title="Dashboard" Route="dashboard">
+        <ShellContent ContentTemplate="{DataTemplate views:DashboardPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Members" Route="members">
+        <ShellContent ContentTemplate="{DataTemplate views:MembersPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Competitions" Route="competitions">
+        <ShellContent ContentTemplate="{DataTemplate views:CompetitionsPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Training" Route="training">
+        <ShellContent ContentTemplate="{DataTemplate views:TrainingAttendancePage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Training history" Route="traininghistory">
+        <ShellContent ContentTemplate="{DataTemplate views:TrainingHistoryPage}" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Guests" Route="externals">
+        <ShellContent ContentTemplate="{DataTemplate views:ExternalParticipantsPage}" />
+    </FlyoutItem>
+
+</Shell>

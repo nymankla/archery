@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.ParticipantRegisterPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    xmlns:core="clr-namespace:Archery.Mobile.Core;assembly=Archery.Mobile.Core"
+    xmlns:controls="clr-namespace:Archery.Mobile.Controls"
+    x:DataType="vm:ParticipantRegisterViewModel"
+    Title="{Binding Title}">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="12,8" RowSpacing="8">
+
+        <controls:ErrorBanner Grid.Row="0" IsVisible="{Binding HasError}" Message="{Binding ErrorMessage}" />
+
+        <!-- Member or guest is a single choice, so an entry belonging to both - which the
+             database forbids - cannot be expressed here at all. -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*">
+            <Button Grid.Column="0" Text="Club member" FontSize="14" CornerRadius="0"
+                    BackgroundColor="{Binding IsMember, Converter={StaticResource TabBackground}}"
+                    TextColor="{Binding IsMember, Converter={StaticResource TabForeground}}"
+                    Clicked="OnMemberClicked" />
+            <Button Grid.Column="1" Text="Guest" FontSize="14" CornerRadius="0"
+                    BackgroundColor="{Binding IsMember, Converter={StaticResource InverseTabBackground}}"
+                    TextColor="{Binding IsMember, Converter={StaticResource InverseTabForeground}}"
+                    Clicked="OnGuestClicked" />
+        </Grid>
+
+        <SearchBar Grid.Row="2" Placeholder="Search" Text="{Binding SearchText}" />
+
+        <CollectionView
+            Grid.Row="3"
+            ItemsSource="{Binding Options}"
+            SelectedItem="{Binding Selected}"
+            SelectionMode="Single">
+            <CollectionView.EmptyView>
+                <Label Text="Nobody left to register." HorizontalTextAlignment="Center"
+                       Margin="0,24" Opacity="0.7" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:ParticipantOption">
+                    <VerticalStackLayout Padding="6,10" Spacing="2">
+                        <Label Text="{Binding Name}" />
+                        <Label Text="{Binding Detail}" FontSize="11" Opacity="0.6" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <VerticalStackLayout Grid.Row="4" Spacing="8">
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                <Picker Grid.Column="0" Title="Bow" ItemsSource="{Binding BowClasses}" SelectedItem="{Binding BowClass}" />
+                <Picker Grid.Column="1" Title="Age" ItemsSource="{Binding AgeClasses}" SelectedItem="{Binding AgeClass}" />
+                <Picker Grid.Column="2" Title="Gender" ItemsSource="{Binding Genders}" SelectedItem="{Binding Gender}" />
+            </Grid>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12" Margin="0,0,0,8">
+                <Button Grid.Column="0" Text="Cancel" Command="{Binding CancelCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{AppThemeBinding Light=#512BD4, Dark=#B39DFF}" />
+                <Button Grid.Column="1" Text="Register" Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding CanSave}" />
+            </Grid>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

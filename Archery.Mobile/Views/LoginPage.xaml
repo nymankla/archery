@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="Archery.Mobile.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:Archery.Mobile.Core.ViewModels;assembly=Archery.Mobile.Core"
+    x:DataType="vm:LoginViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="*,Auto,*" Padding="32">
+
+        <VerticalStackLayout Grid.Row="1" Spacing="24">
+
+            <Label
+                Text="Archery Club"
+                FontSize="32"
+                FontAttributes="Bold"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Sign in to manage members, training and competitions."
+                HorizontalTextAlignment="Center"
+                Opacity="0.7" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsRestoring}"
+                IsVisible="{Binding IsRestoring}"
+                HorizontalOptions="Center" />
+
+            <Button
+                Text="Sign in"
+                Command="{Binding SignInCommand}"
+                IsEnabled="{Binding IsNotBusy}"
+                IsVisible="{Binding IsNotRestoring}"
+                HeightRequest="52" />
+
+            <Border
+                IsVisible="{Binding HasError}"
+                Stroke="#C0392B"
+                StrokeThickness="1"
+                Padding="12"
+                BackgroundColor="#2EC0392B">
+                <Label Text="{Binding ErrorMessage}" TextColor="#C0392B" />
+            </Border>
+
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

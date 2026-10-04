@@ -8,11 +8,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\aspire.ServiceDefaults\aspire.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Archery.Client\Archery.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.5.3" />
-    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.5.3-preview.1.26425.3" />
+    <!-- The wire models and ArcheryApiClient moved to Archery.Client so the mobile
+         head can share them. A global using keeps the .razor pages and
+         FileDownloader.cs untouched. -->
+    <Using Include="Archery.Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.6.0" />
+    <PackageReference Include="Aspire.Keycloak.Authentication" Version="13.6.0-preview.1.26479.8" />
   </ItemGroup>
 
 </Project>

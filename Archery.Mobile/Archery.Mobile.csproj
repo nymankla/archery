@@ -1,0 +1,99 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Android only for now. The Platforms/iOS and Platforms/MacCatalyst folders from the
+         template are kept but not compiled, so adding iOS later is one entry here plus an
+         Info.plist URL scheme; no view model or client code has to change. -->
+    <TargetFrameworks>net10.0-android</TargetFrameworks>
+
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Archery.Mobile</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+
+    <MauiXamlInflator>SourceGen</MauiXamlInflator>
+
+    <!-- Compiled bindings. Reflection-based bindings resolve at runtime and break silently
+         under the trimming that Release Android builds apply; these turn that into a build
+         error instead. Every DataTemplate therefore needs an x:DataType. -->
+    <MauiEnableXamlCBindingWithSourceCompiled>true</MauiEnableXamlCBindingWithSourceCompiled>
+
+    <!-- sv-SE date and currency formatting needs real ICU data; never turn this on. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+
+    <ApplicationTitle>Archery Club</ApplicationTitle>
+
+    <!-- Must match the scheme of the redirect URIs registered on the archerymobile
+         Keycloak client (se.archeryclub.mobile://oauth/callback). -->
+    <ApplicationId>se.archeryclub.mobile</ApplicationId>
+
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#1B4D3E" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#1B4D3E" BaseSize="128,128" />
+    <MauiImage Include="Resources\Images\*" />
+    <MauiFont Include="Resources\Fonts\*" />
+    <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Endpoint configuration is embedded rather than shipped as a loose file so it travels
+         inside the APK. Debug and Release carry different hosts. -->
+    <EmbeddedResource Include="appsettings.json" LogicalName="Archery.Mobile.appsettings.json" />
+  </ItemGroup>
+
+  <!-- The cleartext exemption the emulator needs exists only in Debug: the manifest attribute
+       comes from an overlay merged here, and the config it points at is dropped from every
+       other configuration. A Release package therefore cannot ship an HTTP exemption even by
+       accident.
+
+       ArcheryReleaseSmokeTest=true re-adds it to a Release build. Trimming and AOT failures
+       appear only in Release and only at runtime, so that build has to be exercised against a
+       real API — and the local development stack speaks plain HTTP. This is a test harness
+       switch: never set it for a package that leaves this machine. -->
+  <PropertyGroup>
+    <ArcheryAllowCleartext Condition="'$(Configuration)' == 'Debug' or '$(ArcheryReleaseSmokeTest)' == 'true'">true</ArcheryAllowCleartext>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(ArcheryAllowCleartext)' == 'true'">
+    <AndroidManifestOverlay Include="Platforms\Android\AndroidManifestOverlay.Debug.xml" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(ArcheryAllowCleartext)' != 'true'">
+    <AndroidResource Remove="Platforms\Android\Resources\xml\network_security_config.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.12" />
+
+    <!-- MAUI does not ship IHttpClientFactory or the JSON configuration provider. -->
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.12" />
+
+    <!-- OpenID Connect relying party: discovery, PKCE S256, state/nonce validation and
+         refresh. Hand-rolling this on top of WebAuthenticator would mean writing the
+         security-critical parts of the protocol by hand. -->
+    <PackageReference Include="Duende.IdentityModel.OidcClient" Version="7.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Archery.Mobile.Core\Archery.Mobile.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Archery.Client" />
+    <Using Include="Archery.Mobile.Core" />
+    <Using Include="Archery.Mobile.Core.Abstractions" />
+  </ItemGroup>
+
+</Project>
