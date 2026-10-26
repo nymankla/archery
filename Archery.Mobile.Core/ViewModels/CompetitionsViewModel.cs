@@ -70,7 +70,7 @@ public sealed partial class CompetitionsViewModel(
         }
 
         var deleted = await RunAsync(
-            token => api.DeleteCompetitionAsync(competition.Id, token).EnsureArcherySuccessAsync(token), ct);
+            token => api.DeleteCompetitionAsync(competition.Id, token), ct);
 
         if (deleted)
         {

@@ -87,7 +87,7 @@ public sealed partial class MembersViewModel(
             return;
 
         var deleted = await RunAsync(
-            token => api.DeleteMemberAsync(member.Id, token).EnsureArcherySuccessAsync(token), ct);
+            token => api.DeleteMemberAsync(member.Id, token), ct);
 
         if (deleted)
         {

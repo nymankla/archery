@@ -42,15 +42,13 @@ public abstract partial class BaseViewModel(ILogger logger) : ObservableObject
     /// </summary>
     protected async Task<bool> RunAsync(
         Func<CancellationToken, Task> operation,
-        CancellationToken ct = default,
-        bool showBusy = true)
+        CancellationToken ct = default)
     {
         if (IsBusy)
             return false;
 
         ErrorMessage = null;
-        if (showBusy)
-            IsBusy = true;
+        IsBusy = true;
 
         try
         {
@@ -82,13 +80,13 @@ public abstract partial class BaseViewModel(ILogger logger) : ObservableObject
         }
         catch (HttpRequestException ex)
         {
-            Logger.LogWarning(ex, "Network failure calling the API");
+            LogNetworkFailure(Logger, ex);
             ErrorMessage = "Cannot reach the server. Check your connection and try again.";
             return false;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Unexpected failure");
+            LogUnexpectedFailure(Logger, ex);
             ErrorMessage = "Something went wrong.";
             return false;
         }
@@ -98,4 +96,10 @@ public abstract partial class BaseViewModel(ILogger logger) : ObservableObject
             IsRefreshing = false;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Network failure calling the API")]
+    static partial void LogNetworkFailure(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Unexpected failure")]
+    static partial void LogUnexpectedFailure(ILogger logger, Exception exception);
 }

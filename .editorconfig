@@ -1,0 +1,36 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,razor,xaml}]
+indent_size = 4
+
+[*.{csproj,props,targets,json,xml,yml,yaml}]
+indent_size = 2
+
+[*.cs]
+# --- code style, enforced at build (EnforceCodeStyleInBuild in Directory.Build.props) ---
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_diagnostic.IDE0161.severity = warning   # use file-scoped namespaces
+dotnet_diagnostic.IDE0051.severity = warning   # unused private member
+dotnet_diagnostic.IDE0052.severity = warning   # private member assigned but never read
+
+# --- code-quality rules from AnalysisLevel=latest-recommended, tuned for this repo ---
+# Parameter names like "date" clash only with VB keywords; nothing here is consumed from VB.
+dotnet_diagnostic.CA1716.severity = none
+
+# EF Core migrations are generated: no analyzers, no style rules.
+[**/Migrations/*.cs]
+generated_code = true
+
+# Result<T>.Success/Failure/NotFound are the type's factory methods; that is the intended API.
+[**/Infrastructure/Result.cs]
+dotnet_diagnostic.CA1000.severity = none
+
+# Test names use Method_Scenario underscores by convention.
+[{UnitTests,Tests,Archery.Client.Tests,Archery.Mobile.Core.Tests}/**.cs]
+dotnet_diagnostic.CA1707.severity = none

@@ -87,7 +87,7 @@ public sealed partial class MemberDetailViewModel(
         };
 
         var ok = await RunAsync(
-            token => api.UpdateFeeAsync(fee.Id, updated, token).EnsureArcherySuccessAsync(token), ct);
+            token => api.UpdateFeeAsync(fee.Id, updated, token), ct);
 
         if (ok)
             await LoadAsync(ct);

@@ -111,7 +111,7 @@ public sealed partial class ExternalParticipantsViewModel(
         }
 
         var deleted = await RunAsync(
-            token => api.DeleteExternalParticipantAsync(participant.Id, token).EnsureArcherySuccessAsync(token), ct);
+            token => api.DeleteExternalParticipantAsync(participant.Id, token), ct);
 
         if (deleted)
         {

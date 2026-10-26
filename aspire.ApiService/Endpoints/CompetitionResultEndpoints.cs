@@ -1,6 +1,6 @@
-using aspire.ApiService.Models;
+using aspire.ApiService.Contracts;
 using aspire.ApiService.Services;
-using aspire.ApiService.Infrastructure;
+using Wire = Archery.Client;
 
 namespace aspire.ApiService.Endpoints;
 
@@ -21,36 +21,19 @@ public static class CompetitionResultEndpoints
 
     static async Task<IResult> GetByCompetition(
         Guid competitionId, ICompetitionResultService svc, CancellationToken ct)
-        => Results.Ok(await svc.GetByCompetitionAsync(competitionId, ct));
+        => Results.Ok((await svc.GetByCompetitionAsync(competitionId, ct)).Select(r => r.ToContract()));
 
     static async Task<IResult> GetById(Guid id, ICompetitionResultService svc, CancellationToken ct)
-        => await svc.GetByIdAsync(id, ct) is { } r ? Results.Ok(r) : Results.NotFound();
+        => EndpointResults.OkOrNotFound((await svc.GetByIdAsync(id, ct))?.ToContract());
 
-    static async Task<IResult> Create(CompetitionResult input, ICompetitionResultService svc, CancellationToken ct)
-    {
-        var result = await svc.CreateAsync(input, ct);
-        if (result.IsSuccess)
-        {
-            var created = result.Value!;
-            return Results.Created($"/competition-results/{created.Id}", created);
-        }
+    static async Task<IResult> Create(Wire.CompetitionResult input, ICompetitionResultService svc, CancellationToken ct)
+        => (await svc.CreateAsync(input.ToEntity(), ct))
+            .ToHttpResult(created => Results.Created($"/competition-results/{created.Id}", created.ToContract()));
 
-        return Results.BadRequest(new { errors = result.Errors });
-    }
-
-    static async Task<IResult> Update(Guid id, CompetitionResult input, ICompetitionResultService svc, CancellationToken ct)
-    {
-        var result = await svc.UpdateAsync(id, input, ct);
-        if (result.IsSuccess)
-        {
-            return Results.Ok(result.Value!);
-        }
-
-        return result.Errors.Contains("Competition result not found.")
-            ? Results.NotFound()
-            : Results.BadRequest(new { errors = result.Errors });
-    }
+    static async Task<IResult> Update(Guid id, Wire.CompetitionResult input, ICompetitionResultService svc, CancellationToken ct)
+        => (await svc.UpdateAsync(id, input.ToEntity(), ct))
+            .ToHttpResult(updated => Results.Ok(updated.ToContract()));
 
     static async Task<IResult> Delete(Guid id, ICompetitionResultService svc, CancellationToken ct)
-        => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();
+        => EndpointResults.NoContentOrNotFound(await svc.DeleteAsync(id, ct));
 }

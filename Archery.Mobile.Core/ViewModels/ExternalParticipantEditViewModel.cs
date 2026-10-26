@@ -75,8 +75,8 @@ public sealed partial class ExternalParticipantEditViewModel(
         };
 
         var saved = await RunAsync(token => _participantId is { } id
-            ? api.UpdateExternalParticipantAsync(id, participant, token).EnsureArcherySuccessAsync(token)
-            : api.CreateExternalParticipantAsync(participant, token).EnsureArcherySuccessAsync(token), ct);
+            ? api.UpdateExternalParticipantAsync(id, participant, token)
+            : api.CreateExternalParticipantAsync(participant, token), ct);
 
         if (saved)
             await navigation.GoBackAsync();

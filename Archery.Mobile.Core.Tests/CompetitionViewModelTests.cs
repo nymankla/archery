@@ -58,7 +58,7 @@ public class CompetitionsViewModelTests
         await vm.DeleteCommand.ExecuteAsync(vm.Competitions[0]);
 
         Assert.Single(dialogs.Confirmations);
-        Assert.Contains(api.Calls, c => c.StartsWith("DeleteCompetition"));
+        Assert.Contains(api.Calls, c => c.StartsWith("DeleteCompetition", StringComparison.Ordinal));
         Assert.Empty(vm.Competitions);
     }
 
@@ -318,7 +318,7 @@ public class CompetitionDetailViewModelTests
         await vm.RemoveParticipantCommand.ExecuteAsync(vm.Participants[0]);
 
         Assert.Single(dialogs.Confirmations);
-        Assert.Contains(api.Calls, c => c.StartsWith("RemoveParticipant"));
+        Assert.Contains(api.Calls, c => c.StartsWith("RemoveParticipant", StringComparison.Ordinal));
         Assert.Empty(vm.Participants);
     }
 

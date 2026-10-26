@@ -133,8 +133,7 @@ public sealed partial class TrainingAttendanceViewModel(
         };
 
         var saved = await RunAsync(token => api
-            .SaveTrainingAttendanceAsync(DateOnly.FromDateTime(SelectedDate), request, token)
-            .EnsureArcherySuccessAsync(token), ct);
+            .SaveTrainingAttendanceAsync(DateOnly.FromDateTime(SelectedDate), request, token), ct);
 
         if (!saved)
             return;

@@ -25,7 +25,7 @@ public sealed class MauiOidcBrowser : IOidcBrowser
                     // Avoids silently reusing a stale Keycloak SSO cookie, which otherwise makes
                     // "sign in as someone else" impossible without clearing browser data.
                     PrefersEphemeralWebBrowserSession = true
-                });
+                }, cancellationToken);
 
             // WebAuthenticator hands back the parsed callback parameters; OidcClient wants the
             // original redirect URL, so reassemble it.

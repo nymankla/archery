@@ -1,4 +1,3 @@
-using System.Globalization;
 using aspire.Web;
 using aspire.Web.Auth;
 using aspire.Web.Components;
@@ -22,9 +21,7 @@ builder.Services.AddDataProtection()
         Path.Combine(builder.Environment.ContentRootPath, ".dp-keys")));
 
 
-var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
-CultureInfo.DefaultThreadCurrentCulture = culture;
-CultureInfo.DefaultThreadCurrentUICulture = culture;
+var culture = builder.UseConfiguredCulture();
 
 var keycloakRealm = builder.Configuration["Keycloak:Realm"]
     ?? throw new InvalidOperationException("Keycloak:Realm is required.");

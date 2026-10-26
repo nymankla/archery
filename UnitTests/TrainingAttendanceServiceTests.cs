@@ -89,6 +89,29 @@ public class TrainingAttendanceServiceTests
     }
 
     [Fact]
+    public async Task SaveAttendance_KeepsTheRowOfAnAttendeeWhoStays()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = CreateDb();
+        var stays = ActiveMember("Anna", "Archer");
+        var leaves = ActiveMember("Bertil", "Bow");
+        db.Members.AddRange(stays, leaves);
+        await db.SaveChangesAsync(ct);
+
+        var svc = new TrainingAttendanceService(db);
+        var date = new DateOnly(2026, 7, 21);
+
+        var first = await svc.SaveAttendanceAsync(date, new SaveAttendanceRequest(null, [stays.Id, leaves.Id], []), ct);
+        var originalRowId = first.Value!.Attendees.Single(a => a.MemberId == stays.Id).AttendanceId;
+
+        var second = await svc.SaveAttendanceAsync(date, new SaveAttendanceRequest(null, [stays.Id], []), ct);
+
+        Assert.True(second.IsSuccess);
+        var attendee = Assert.Single(second.Value!.Attendees);
+        Assert.Equal(originalRowId, attendee.AttendanceId);
+    }
+
+    [Fact]
     public async Task GetByDate_ReturnsNullWhenNoSessionExists()
     {
         var ct = TestContext.Current.CancellationToken;

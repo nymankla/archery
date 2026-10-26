@@ -26,7 +26,7 @@ public static partial class PersonnummerParser
         birthDate = default;
         serial = string.Empty;
 
-        var match = PersonnummerRegex.Match(input);
+        var match = PersonnummerPattern().Match(input);
         if (!match.Success)
             return false;
 
@@ -84,10 +84,7 @@ public static partial class PersonnummerParser
         return sum % 10 == 0;
     }
 
-    private static readonly Regex PersonnummerRegex = MyRegex();
-
-    [GeneratedRegex("^(\\d{2}|\\d{4})(\\d{2})(\\d{2})([-+]?)?(\\d{4})$", RegexOptions.Compiled)]
-    private static partial Regex MyRegex();
-
-
+    // Source-generated, so RegexOptions.Compiled would add nothing.
+    [GeneratedRegex("^(\\d{2}|\\d{4})(\\d{2})(\\d{2})([-+]?)?(\\d{4})$")]
+    private static partial Regex PersonnummerPattern();
 }

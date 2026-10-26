@@ -5,6 +5,9 @@ using System.Globalization;
 
 namespace aspire.ApiService.Infrastructure;
 
+/// <summary>The upload is not a readable CSV or .xlsx file.</summary>
+public sealed class SpreadsheetFormatException(string message, Exception inner) : Exception(message, inner);
+
 public static class SpreadsheetParser
 {
     /// <summary>Parses a CSV or .xlsx upload into rows. Each row is a case-insensitive column→value map.</summary>
@@ -12,7 +15,14 @@ public static class SpreadsheetParser
     {
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         using var stream = file.OpenReadStream();
-        return ext == ".xlsx" ? ParseXlsx(stream) : ParseCsv(stream);
+        try
+        {
+            return ext == ".xlsx" ? ParseXlsx(stream) : ParseCsv(stream);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new SpreadsheetFormatException($"Could not parse '{file.FileName}' as {(ext == ".xlsx" ? "xlsx" : "CSV")}.", ex);
+        }
     }
 
     static List<Dictionary<string, string>> ParseCsv(Stream stream)

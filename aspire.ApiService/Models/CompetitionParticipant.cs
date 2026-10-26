@@ -1,6 +1,6 @@
 namespace aspire.ApiService.Models;
 
-public class CompetitionParticipant
+public class CompetitionParticipant : IHasParticipant
 {
     public Guid Id { get; set; }
     public Guid CompetitionId { get; set; }

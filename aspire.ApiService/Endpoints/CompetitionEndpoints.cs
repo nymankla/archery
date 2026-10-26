@@ -1,5 +1,6 @@
-using aspire.ApiService.Models;
+using aspire.ApiService.Contracts;
 using aspire.ApiService.Services;
+using Wire = Archery.Client;
 
 namespace aspire.ApiService.Endpoints;
 
@@ -19,20 +20,20 @@ public static class CompetitionEndpoints
     }
 
     static async Task<IResult> GetAll(ICompetitionService svc, CancellationToken ct)
-        => Results.Ok(await svc.GetAllAsync(ct));
+        => Results.Ok((await svc.GetAllAsync(ct)).Select(c => c.ToContract()));
 
     static async Task<IResult> GetById(Guid id, ICompetitionService svc, CancellationToken ct)
-        => await svc.GetByIdAsync(id, ct) is { } c ? Results.Ok(c) : Results.NotFound();
+        => EndpointResults.OkOrNotFound((await svc.GetByIdAsync(id, ct))?.ToContract());
 
-    static async Task<IResult> Create(Competition competition, ICompetitionService svc, CancellationToken ct)
+    static async Task<IResult> Create(Wire.Competition competition, ICompetitionService svc, CancellationToken ct)
     {
-        var created = await svc.CreateAsync(competition, ct);
-        return Results.Created($"/competitions/{created.Id}", created);
+        var created = await svc.CreateAsync(competition.ToEntity(), ct);
+        return Results.Created($"/competitions/{created.Id}", created.ToContract());
     }
 
-    static async Task<IResult> Update(Guid id, Competition input, ICompetitionService svc, CancellationToken ct)
-        => await svc.UpdateAsync(id, input, ct) is { } c ? Results.Ok(c) : Results.NotFound();
+    static async Task<IResult> Update(Guid id, Wire.Competition input, ICompetitionService svc, CancellationToken ct)
+        => EndpointResults.OkOrNotFound((await svc.UpdateAsync(id, input.ToEntity(), ct))?.ToContract());
 
     static async Task<IResult> Delete(Guid id, ICompetitionService svc, CancellationToken ct)
-        => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();
+        => EndpointResults.NoContentOrNotFound(await svc.DeleteAsync(id, ct));
 }

@@ -1,0 +1,9 @@
+<Project>
+  <!-- Applies to every project under this folder. Per-project settings (TFM, SDK) stay in each csproj. -->
+  <PropertyGroup>
+    <!-- .NET code-quality analyzers at the "recommended" set, plus IDE code-style rules from
+         .editorconfig enforced at build time so CI sees the same diagnostics as the IDE. -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>

@@ -124,6 +124,8 @@ else
 	{
 		<div class="alert alert-success mt-3">@saveMessage</div>
 	}
+
+	<ErrorAlert @bind-Error="saveError" />
 }
 
 @code {
@@ -142,6 +144,7 @@ else
 
 	bool saving;
 	string? saveMessage;
+	ApiError? saveError;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -214,8 +217,8 @@ else
 				ExternalParticipantIds = selectedExternalIds.ToList()
 			};
 
-			var response = await Api.SaveTrainingAttendanceAsync(selectedDate, request);
-			if (response.IsSuccessStatusCode)
+			saveError = await Api.SaveTrainingAttendanceAsync(selectedDate, request).TryAsync();
+			if (saveError is null)
 			{
 				var total = selectedMemberIds.Count + selectedExternalIds.Count;
 				saveMessage = $"Saved attendance for {selectedDate:yyyy-MM-dd} with {total} participant(s).";

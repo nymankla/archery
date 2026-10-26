@@ -2,6 +2,8 @@ using aspire.ApiService.Data;
 using aspire.ApiService.Infrastructure;
 using aspire.ApiService.Models;
 using aspire.ApiService.Services;
+using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace UnitTests;
@@ -105,5 +107,47 @@ public class MemberPersonnummerTests
         Assert.True(updated.IsSuccess);
         Assert.Equal("199001010017", updated.Value!.Personnummer);
         Assert.Equal("123", updated.Value.Phone);
+    }
+
+    static FormFile Csv(string content)
+    {
+        var bytes = Encoding.UTF8.GetBytes(content);
+        return new FormFile(new MemoryStream(bytes), 0, bytes.Length, "file", "members.csv");
+    }
+
+    [Fact]
+    public async Task ImportAsync_RejectsAPersonnummerRepeatedWithinTheFile()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = CreateDb();
+        var svc = new MemberService(db);
+
+        var result = await svc.ImportAsync(Csv("""
+            FirstName,LastName,DateOfBirth,Email,Personnummer
+            Anna,First,1990-01-01,anna@example.com,900101-0017
+            Bertil,Second,1990-01-01,bertil@example.com,19900101-0017
+            """), ct);
+
+        Assert.Equal(1, result.Imported);
+        Assert.Equal(["Row 3: A member with this personnummer already exists."], result.Errors);
+        Assert.Equal(1, await db.Members.CountAsync(ct));
+    }
+
+    [Fact]
+    public async Task ImportAsync_RejectsAPersonnummerOwnedByAnotherMember()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var db = CreateDb();
+        db.Members.Add(NewMember("Existing", "Owner", "199001010017"));
+        await db.SaveChangesAsync(ct);
+        var svc = new MemberService(db);
+
+        var result = await svc.ImportAsync(Csv("""
+            FirstName,LastName,DateOfBirth,Email,Personnummer
+            Anna,New,1985-05-05,anna@example.com,900101-0017
+            """), ct);
+
+        Assert.Equal(0, result.Imported);
+        Assert.Equal(["Row 2: A member with this personnummer already exists."], result.Errors);
     }
 }

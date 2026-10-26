@@ -3,8 +3,6 @@ using Npgsql;
 
 namespace aspire.ApiService.Infrastructure;
 
-public sealed class ConflictException(string message) : Exception(message);
-
 public static class PersistenceExceptionExtensions
 {
     public static bool IsUniqueConstraintViolation(this DbUpdateException ex, string? constraintName = null)

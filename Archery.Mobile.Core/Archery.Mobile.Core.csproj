@@ -17,7 +17,7 @@
     iOS head later a matter of one extra target framework rather than a rewrite.
   -->
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
   </ItemGroup>
 
   <ItemGroup>

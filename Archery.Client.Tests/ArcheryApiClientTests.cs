@@ -316,11 +316,34 @@ public class ArcheryApiClientTests
     // ---------- export passthrough (used by the web host, not mobile) ----------
 
     [Fact]
-    public async Task ExportMembers_ReturnsNullOnFailureRatherThanThrowing()
+    public async Task ExportMembers_ThrowsOnFailure()
     {
         var (client, _) = Build(StubHttpMessageHandler.Status(HttpStatusCode.BadRequest));
 
-        Assert.Null(await client.ExportMembersAsync("csv"));
+        await Assert.ThrowsAsync<ArcheryApiException>(() => client.ExportMembersAsync("csv"));
+    }
+
+    [Fact]
+    public async Task Mutation_ThrowsWithTheServersValidationMessages()
+    {
+        var (client, _) = Build(StubHttpMessageHandler.Json(
+            """{"errors":["A member with this personnummer already exists."]}""", HttpStatusCode.BadRequest));
+
+        var ex = await Assert.ThrowsAsync<ArcheryApiException>(() => client.CreateMemberAsync(new Member()));
+
+        Assert.Equal(400, ex.Error.StatusCode);
+        Assert.Equal(["A member with this personnummer already exists."], ex.Error.Messages);
+    }
+
+    [Fact]
+    public async Task Import_ThrowsOnFailure()
+    {
+        var (client, _) = Build(StubHttpMessageHandler.Json("""{"errors":["The file could not be read."]}""", HttpStatusCode.BadRequest));
+
+        var ex = await Assert.ThrowsAsync<ArcheryApiException>(
+            () => client.ImportMembersAsync([1, 2, 3], "members.csv"));
+
+        Assert.Equal("The file could not be read.", ex.Error.Summary);
     }
 
     [Fact]

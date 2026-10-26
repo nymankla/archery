@@ -140,7 +140,7 @@ public class MembersViewModelTests
 
         await vm.DeleteCommand.ExecuteAsync(vm.Members[0]);
 
-        Assert.DoesNotContain(api.Calls, c => c.StartsWith("DeleteMember"));
+        Assert.DoesNotContain(api.Calls, c => c.StartsWith("DeleteMember", StringComparison.Ordinal));
         Assert.Single(vm.Members);
     }
 

@@ -18,7 +18,7 @@ namespace Archery.Mobile.Auth;
 /// the HttpRequestMessage — a subtle thing to get wrong in the auth path. Checking expiry before
 /// each call, with a skew window, covers it without that risk.
 /// </remarks>
-public sealed class ArcheryAuthService : IAuthService, IArcheryTokenProvider, IDisposable
+public sealed partial class ArcheryAuthService : IAuthService, IArcheryTokenProvider, IDisposable
 {
     // Matches the web app's AuthSession:RefreshMinutes, so both ends renew on the same cadence.
     static readonly TimeSpan RefreshSkew = TimeSpan.FromMinutes(5);
@@ -52,8 +52,7 @@ public sealed class ArcheryAuthService : IAuthService, IArcheryTokenProvider, ID
             && authorityUri.Scheme == Uri.UriSchemeHttp;
 
         if (isPlainHttp)
-            logger.LogWarning("Keycloak authority {Authority} is plain HTTP; discovery HTTPS "
-                + "enforcement is disabled. This is only valid for local development.", keycloak.Authority);
+            LogPlainHttpAuthority(logger, keycloak.Authority);
 
         _oidc = new OidcClient(new OidcClientOptions
         {
@@ -88,7 +87,7 @@ public sealed class ArcheryAuthService : IAuthService, IArcheryTokenProvider, ID
             if (string.Equals(result.Error, "UserCancel", StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            _logger.LogError("Sign-in failed: {Error} {Description}", result.Error, result.ErrorDescription);
+            LogSignInFailed(_logger, result.Error, result.ErrorDescription);
             throw new InvalidOperationException(result.ErrorDescription ?? result.Error);
         }
 
@@ -139,7 +138,7 @@ public sealed class ArcheryAuthService : IAuthService, IArcheryTokenProvider, ID
             var refreshed = await _oidc.RefreshTokenAsync(_refreshToken, cancellationToken: ct);
             if (refreshed.IsError)
             {
-                _logger.LogWarning("Token refresh failed: {Error}", refreshed.Error);
+                LogRefreshRejected(_logger, refreshed.Error);
                 await EndSessionAsync(ct);
                 return null;
             }
@@ -156,7 +155,7 @@ public sealed class ArcheryAuthService : IAuthService, IArcheryTokenProvider, ID
         catch (Exception ex)
         {
             // Offline, most likely. Hand back what we have and let the API call report the failure.
-            _logger.LogWarning(ex, "Could not refresh the access token");
+            LogRefreshFailed(_logger, ex);
             return _accessToken;
         }
         finally
@@ -179,7 +178,7 @@ public sealed class ArcheryAuthService : IAuthService, IArcheryTokenProvider, ID
         catch (Exception ex)
         {
             // Local sign-out must succeed even if the browser round trip does not.
-            _logger.LogWarning(ex, "Remote sign-out failed; clearing the local session anyway");
+            LogRemoteSignOutFailed(_logger, ex);
         }
         finally
         {
@@ -249,10 +248,28 @@ public sealed class ArcheryAuthService : IAuthService, IArcheryTokenProvider, ID
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Could not read the name claim");
+            LogNameClaimUnreadable(_logger, ex);
             return null;
         }
     }
 
     public void Dispose() => _gate.Dispose();
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Keycloak authority {Authority} is plain HTTP; discovery HTTPS enforcement is disabled. This is only valid for local development.")]
+    static partial void LogPlainHttpAuthority(ILogger logger, string authority);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Sign-in failed: {Error} {Description}")]
+    static partial void LogSignInFailed(ILogger logger, string? error, string? description);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Token refresh failed: {Error}")]
+    static partial void LogRefreshRejected(ILogger logger, string? error);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not refresh the access token")]
+    static partial void LogRefreshFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Remote sign-out failed; clearing the local session anyway")]
+    static partial void LogRemoteSignOutFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Could not read the name claim")]
+    static partial void LogNameClaimUnreadable(ILogger logger, Exception exception);
 }

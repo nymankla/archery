@@ -1,6 +1,6 @@
-using aspire.ApiService.Models;
+using aspire.ApiService.Contracts;
 using aspire.ApiService.Services;
-using aspire.ApiService.Infrastructure;
+using Wire = Archery.Client;
 
 namespace aspire.ApiService.Endpoints;
 
@@ -19,21 +19,13 @@ public static class CompetitionParticipantEndpoints
 
     static async Task<IResult> GetByCompetition(
         Guid competitionId, ICompetitionParticipantService svc, CancellationToken ct)
-        => Results.Ok(await svc.GetByCompetitionAsync(competitionId, ct));
+        => Results.Ok((await svc.GetByCompetitionAsync(competitionId, ct)).Select(p => p.ToContract()));
 
     static async Task<IResult> Register(
-        CompetitionParticipant input, ICompetitionParticipantService svc, CancellationToken ct)
-    {
-        var result = await svc.RegisterAsync(input, ct);
-        if (result.IsSuccess)
-        {
-            var created = result.Value!;
-            return Results.Created($"/competition-participants/{created.Id}", created);
-        }
-
-        return Results.BadRequest(new { errors = result.Errors });
-    }
+        Wire.CompetitionParticipant input, ICompetitionParticipantService svc, CancellationToken ct)
+        => (await svc.RegisterAsync(input.ToEntity(), ct))
+            .ToHttpResult(created => Results.Created($"/competition-participants/{created.Id}", created.ToContract()));
 
     static async Task<IResult> Remove(Guid id, ICompetitionParticipantService svc, CancellationToken ct)
-        => await svc.RemoveAsync(id, ct) ? Results.NoContent() : Results.NotFound();
+        => EndpointResults.NoContentOrNotFound(await svc.RemoveAsync(id, ct));
 }

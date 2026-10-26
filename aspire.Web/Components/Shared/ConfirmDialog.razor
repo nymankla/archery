@@ -1,4 +1,8 @@
-@if (Visible)
+@* Self-contained confirm dialog. A page renders <ConfirmDialog @ref="confirm" Owner="this" /> and calls
+   confirm.Show(message, action). The action runs as an EventCallback on Owner, so the page re-renders
+   once it completes, exactly as if the page had handled the click itself. *@
+
+@if (visible)
 {
     <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog">
@@ -7,11 +11,11 @@
                     <h5 class="modal-title">@Title</h5>
                 </div>
                 <div class="modal-body">
-                    <p>@Message</p>
+                    <p>@message</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="OnCancelled">Cancel</button>
-                    <button type="button" class="btn btn-danger" @onclick="OnConfirmed">@ConfirmLabel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmAsync">@confirmLabel</button>
                 </div>
             </div>
         </div>
@@ -19,10 +23,37 @@
 }
 
 @code {
-    [Parameter] public bool Visible { get; set; }
-    [Parameter] public string Message { get; set; } = string.Empty;
+    /// <summary>The page that should re-render after a confirmed action.</summary>
+    [Parameter, EditorRequired] public IHandleEvent Owner { get; set; } = default!;
+
     [Parameter] public string Title { get; set; } = "Confirm Delete";
-    [Parameter] public string ConfirmLabel { get; set; } = "Delete";
-    [Parameter] public EventCallback OnConfirmed { get; set; }
-    [Parameter] public EventCallback OnCancelled { get; set; }
+
+    bool visible;
+    string message = string.Empty;
+    string confirmLabel = "Delete";
+    EventCallback onConfirmed;
+
+    /// <summary>Opens the dialog; <paramref name="action"/> runs only if the user confirms.</summary>
+    public void Show(string msg, Func<Task> action, string label = "Delete")
+    {
+        message = msg;
+        confirmLabel = label;
+        onConfirmed = EventCallback.Factory.Create(Owner, action);
+        visible = true;
+        StateHasChanged();
+    }
+
+    async Task ConfirmAsync()
+    {
+        visible = false;
+        var callback = onConfirmed;
+        onConfirmed = default;
+        await callback.InvokeAsync();
+    }
+
+    void Cancel()
+    {
+        visible = false;
+        onConfirmed = default;
+    }
 }

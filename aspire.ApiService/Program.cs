@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.Json.Serialization;
 using aspire.ApiService.Data;
 using aspire.ApiService.Endpoints;
 using aspire.ApiService.Services;
@@ -8,9 +6,7 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
-CultureInfo.DefaultThreadCurrentCulture = culture;
-CultureInfo.DefaultThreadCurrentUICulture = culture;
+builder.UseConfiguredCulture();
 
 var keycloakRealm = builder.Configuration["Keycloak:Realm"]
     ?? throw new InvalidOperationException("Keycloak:Realm is required.");
@@ -20,8 +16,6 @@ var keycloakAudience = builder.Configuration["Keycloak:Audience"]
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
-builder.Services.ConfigureHttpJsonOptions(o =>
-    o.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer(
         serviceName: "keycloak",
@@ -96,12 +90,10 @@ app.MapGet("/", (IHostEnvironment env) => env.IsDevelopment()
 
 app.MapDashboardEndpoints();
 app.MapMemberEndpoints();
-app.MapMemberImportEndpoints();
 app.MapMembershipFeeEndpoints();
 app.MapCompetitionEndpoints();
-app.MapCompetitionImportEndpoints();
 app.MapExternalParticipantEndpoints();
-app.MapExternalParticipantImportEndpoints();
+app.MapImportEndpoints();
 app.MapCompetitionResultEndpoints();
 app.MapCompetitionParticipantEndpoints();
 app.MapTrainingAttendanceEndpoints();

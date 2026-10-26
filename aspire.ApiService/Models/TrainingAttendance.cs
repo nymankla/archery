@@ -1,6 +1,6 @@
 namespace aspire.ApiService.Models;
 
-public class TrainingAttendance
+public class TrainingAttendance : IHasParticipant
 {
     public Guid Id { get; set; }
     public Guid TrainingSessionId { get; set; }

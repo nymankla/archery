@@ -72,18 +72,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="11.0.0-rc.2.26504.105" />
+    <PackageReference Include="Microsoft.Maui.Controls" VersionOverride="$(MauiVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" />
 
     <!-- MAUI does not ship IHttpClientFactory or the JSON configuration provider. -->
-    <PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0-rc.2.26504.105" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="11.0.0-rc.2.26504.105" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="11.0.0-rc.2.26504.105" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
 
     <!-- OpenID Connect relying party: discovery, PKCE S256, state/nonce validation and
          refresh. Hand-rolling this on top of WebAuthenticator would mean writing the
          security-critical parts of the protocol by hand. -->
-    <PackageReference Include="Duende.IdentityModel.OidcClient" Version="7.1.0" />
+    <PackageReference Include="Duende.IdentityModel.OidcClient" />
   </ItemGroup>
 
   <ItemGroup>

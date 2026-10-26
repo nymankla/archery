@@ -26,20 +26,11 @@ public static class TrainingAttendanceEndpoints
             : Results.Ok(new { sessionId = (Guid?)null, date, notes = (string?)null, attendees = new List<object>() });
 
     static async Task<IResult> SaveAttendance(DateOnly date, SaveAttendanceRequest request, ITrainingAttendanceService svc, CancellationToken ct)
-    {
-        var result = await svc.SaveAttendanceAsync(date, request, ct);
-        return result.IsSuccess
-            ? Results.Ok(result.Value)
-            : Results.BadRequest(new { errors = result.Errors });
-    }
+        => (await svc.SaveAttendanceAsync(date, request, ct)).ToHttpResult(detail => Results.Ok(detail));
 
     static async Task<IResult> ExportAttendance(DateOnly date, string format, ITrainingAttendanceService svc, CancellationToken ct)
     {
-        var exportFormat = string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase)
-            ? ExportFormat.Xlsx
-            : ExportFormat.Csv;
-
-        var file = await svc.ExportAsync(date, exportFormat, ct);
+        var file = await svc.ExportAsync(date, ExportFormats.Parse(format), ct);
         return file is null
             ? Results.NotFound()
             : Results.File(file.Content, file.ContentType, file.FileName);

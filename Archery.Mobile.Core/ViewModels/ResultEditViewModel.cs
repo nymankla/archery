@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Globalization;
 using Archery.Mobile.Core.Abstractions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -11,7 +10,7 @@ namespace Archery.Mobile.Core.ViewModels;
 /// Records or edits one archer's score.
 /// </summary>
 /// <remarks>
-/// Like registration, the result belongs to exactly one of a member or an external participant
+/// The participant picker comes from <see cref="ParticipantFormViewModel"/>
 /// (CK_CompetitionResult_SingleParticipant). Opened from a registration it is pre-filled with
 /// that archer's bow class, age class and gender, so the scorer confirms rather than retypes
 /// what was already entered at sign-on.
@@ -22,42 +21,10 @@ namespace Archery.Mobile.Core.ViewModels;
 public sealed partial class ResultEditViewModel(
     IArcheryApiClient api,
     INavigationService navigation,
-    ILogger<ResultEditViewModel> logger) : BaseViewModel(logger)
+    ILogger<ResultEditViewModel> logger) : ParticipantFormViewModel(logger)
 {
     Guid _competitionId;
     Guid? _resultId;
-    Guid? _memberId;
-    Guid? _externalId;
-
-    readonly List<ParticipantOption> _allMembers = [];
-    readonly List<ParticipantOption> _allExternals = [];
-
-    public ObservableCollection<ParticipantOption> Options { get; } = [];
-
-    public IReadOnlyList<BowClass> BowClasses { get; } = Enum.GetValues<BowClass>();
-
-    public IReadOnlyList<AgeClass> AgeClasses { get; } = Enum.GetValues<AgeClass>();
-
-    public IReadOnlyList<Gender> Genders { get; } = Enum.GetValues<Gender>();
-
-    [ObservableProperty]
-    public partial ParticipantKind Kind { get; set; } = ParticipantKind.Member;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(CanSave))]
-    public partial ParticipantOption? Selected { get; set; }
-
-    [ObservableProperty]
-    public partial string SearchText { get; set; } = string.Empty;
-
-    [ObservableProperty]
-    public partial BowClass BowClass { get; set; } = BowClass.Recurve;
-
-    [ObservableProperty]
-    public partial AgeClass AgeClass { get; set; } = AgeClass.Senior;
-
-    [ObservableProperty]
-    public partial Gender Gender { get; set; } = Gender.Unknown;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
@@ -87,7 +54,7 @@ public sealed partial class ResultEditViewModel(
     [ObservableProperty]
     public partial bool CanChooseParticipant { get; set; } = true;
 
-    public bool IsMember => Kind == ParticipantKind.Member;
+    protected override bool AllowsParticipantChange => CanChooseParticipant;
 
     public string? ScoreError
     {
@@ -114,7 +81,7 @@ public sealed partial class ResultEditViewModel(
 
     public bool HasScoreError => ScoreError is not null;
 
-    public bool CanSave => Selected is not null && ScoreError is null;
+    public override bool CanSave => Selected is not null && ScoreError is null;
 
     public async Task InitialiseAsync(
         Guid competitionId, Guid? resultId, Guid? fromParticipantId, CancellationToken ct = default)
@@ -128,22 +95,12 @@ public sealed partial class ResultEditViewModel(
             var members = await api.GetMembersAsync(token) ?? [];
             var externals = await api.GetExternalParticipantsAsync(token) ?? [];
 
-            _allMembers.Clear();
-            _allMembers.AddRange(members
-                .OrderBy(m => m.FirstName).ThenBy(m => m.LastName)
-                .Select(m => new ParticipantOption(m.Id, m.FullName, m.Email)));
-
-            _allExternals.Clear();
-            _allExternals.AddRange(externals
-                .OrderBy(e => e.FirstName).ThenBy(e => e.LastName)
-                .Select(e => new ParticipantOption(e.Id, e.FullName, e.ClubAffiliation)));
+            SetOptions(members, externals);
 
             if (resultId is { } id)
                 await LoadExistingAsync(id, token);
             else if (fromParticipantId is { } participantId)
                 await PrefillFromParticipantAsync(participantId, token);
-
-            ApplyFilter();
         }, ct);
     }
 
@@ -181,16 +138,10 @@ public sealed partial class ResultEditViewModel(
 
     void Apply(Guid? memberId, Guid? externalId, BowClass bow, AgeClass age, Gender gender)
     {
-        _memberId = memberId;
-        _externalId = externalId;
-        Kind = memberId.HasValue ? ParticipantKind.Member : ParticipantKind.External;
+        SelectParticipant(memberId, externalId);
         BowClass = bow;
         AgeClass = age;
         Gender = gender;
-
-        var id = memberId ?? externalId;
-        var source = memberId.HasValue ? _allMembers : _allExternals;
-        Selected = source.FirstOrDefault(o => o.Id == id);
     }
 
     [RelayCommand]
@@ -199,17 +150,17 @@ public sealed partial class ResultEditViewModel(
         if (!CanSave || Selected is null)
             return;
 
-        TryParseInt(TotalScore, out var score);
-        TryParseInt(XCount, out var xCount);
+        // CanSave already required both to parse (ScoreError is null).
+        _ = TryParseInt(TotalScore, out var score);
+        _ = TryParseInt(XCount, out var xCount);
         int? placement = TryParseInt(Placement, out var parsedPlacement) ? parsedPlacement : null;
 
         var result = new CompetitionResult
         {
             Id = _resultId ?? Guid.Empty,
             CompetitionId = _competitionId,
-            // Exactly one, never both — the same rule the database enforces.
-            MemberId = IsMember ? Selected.Id : null,
-            ExternalParticipantId = IsMember ? null : Selected.Id,
+            MemberId = SelectedMemberId,
+            ExternalParticipantId = SelectedExternalParticipantId,
             BowClass = BowClass,
             AgeClass = AgeClass,
             Gender = Gender,
@@ -221,8 +172,8 @@ public sealed partial class ResultEditViewModel(
         };
 
         var saved = await RunAsync(token => _resultId is { } id
-            ? api.UpdateResultAsync(id, result, token).EnsureArcherySuccessAsync(token)
-            : api.CreateResultAsync(result, token).EnsureArcherySuccessAsync(token), ct);
+            ? api.UpdateResultAsync(id, result, token)
+            : api.CreateResultAsync(result, token), ct);
 
         if (saved)
             await navigation.GoBackAsync();
@@ -230,33 +181,6 @@ public sealed partial class ResultEditViewModel(
 
     [RelayCommand]
     Task CancelAsync() => navigation.GoBackAsync();
-
-    partial void OnKindChanged(ParticipantKind value)
-    {
-        if (!CanChooseParticipant)
-            return;
-
-        Selected = null;
-        OnPropertyChanged(nameof(IsMember));
-        ApplyFilter();
-    }
-
-    partial void OnSearchTextChanged(string value) => ApplyFilter();
-
-    void ApplyFilter()
-    {
-        IEnumerable<ParticipantOption> source = IsMember ? _allMembers : _allExternals;
-
-        if (!string.IsNullOrWhiteSpace(SearchText))
-        {
-            var term = SearchText.Trim();
-            source = source.Where(o => o.Name.Contains(term, StringComparison.OrdinalIgnoreCase));
-        }
-
-        Options.Clear();
-        foreach (var option in source)
-            Options.Add(option);
-    }
 
     /// <summary>
     /// Accepts the current culture and, failing that, the invariant one. Android keyboards vary

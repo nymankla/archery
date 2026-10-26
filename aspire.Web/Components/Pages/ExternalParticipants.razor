@@ -12,6 +12,8 @@
     </div>
 </div>
 
+<ErrorAlert @bind-Error="pageError" />
+
 @if (showImport)
 {
     <ImportPanel Title="Import External Participants"
@@ -134,12 +136,11 @@ else
     }
 }
 
-<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+<ConfirmDialog @ref="confirm" Owner="this" />
 
 @code {
-    bool confirmVisible; string confirmMessage = string.Empty; Func<Task>? confirmAction;
-    void Confirm(string msg, Func<Task> action) { confirmMessage = msg; confirmAction = action; confirmVisible = true; }
-    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
+    ConfirmDialog confirm = default!;
+    ApiError? pageError;
 
     ExternalParticipant[]? participants;
     ExternalParticipant? editing;
@@ -207,18 +208,20 @@ else
 
     async Task Save()
     {
-        if (editing!.Id == Guid.Empty)
-            await Api.CreateExternalParticipantAsync(editing);
-        else
-            await Api.UpdateExternalParticipantAsync(editing.Id, editing);
+        pageError = await (editing!.Id == Guid.Empty
+            ? Api.CreateExternalParticipantAsync(editing)
+            : Api.UpdateExternalParticipantAsync(editing.Id, editing)).TryAsync();
+        if (pageError is not null)
+            return;
+
         showForm = false;
         await Reload();
     }
 
     void Delete(ExternalParticipant p) =>
-        Confirm($"Delete {p.FullName}?", async () =>
+        confirm.Show($"Delete {p.FullName}?", async () =>
         {
-            await Api.DeleteExternalParticipantAsync(p.Id);
+            pageError = await Api.DeleteExternalParticipantAsync(p.Id).TryAsync();
             await Reload();
         });
 
