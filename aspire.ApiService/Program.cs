@@ -1,4 +1,3 @@
-using System.Globalization;
 using aspire.ApiService.Data;
 using aspire.ApiService.Endpoints;
 using aspire.ApiService.Services;
@@ -7,9 +6,7 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
-CultureInfo.DefaultThreadCurrentCulture = culture;
-CultureInfo.DefaultThreadCurrentUICulture = culture;
+builder.UseConfiguredCulture();
 
 var keycloakRealm = builder.Configuration["Keycloak:Realm"]
     ?? throw new InvalidOperationException("Keycloak:Realm is required.");

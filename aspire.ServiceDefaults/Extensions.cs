@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,18 @@ public static class Extensions
 {
     private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
+
+    /// <summary>
+    /// Makes the configured <c>Locale</c> (default <c>sv-SE</c>) the default culture for every thread
+    /// and returns it, so all services format dates and amounts the same way.
+    /// </summary>
+    public static CultureInfo UseConfiguredCulture(this IHostApplicationBuilder builder)
+    {
+        var culture = new CultureInfo(builder.Configuration["Locale"] ?? "sv-SE");
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        return culture;
+    }
 
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {

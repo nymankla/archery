@@ -1,5 +1,6 @@
 using aspire.ApiService.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace aspire.ApiService.Data;
 
@@ -90,15 +91,7 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
              .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
-            e.ToTable(t => t.HasCheckConstraint(
-                "CK_CompetitionResult_SingleParticipant",
-                "(\"MemberId\" IS NOT NULL AND \"ExternalParticipantId\" IS NULL) OR " +
-                "(\"MemberId\" IS NULL AND \"ExternalParticipantId\" IS NOT NULL)"));
-
-            e.HasIndex(r => new { r.CompetitionId, r.MemberId }).IsUnique()
-             .HasFilter("\"MemberId\" IS NOT NULL");
-            e.HasIndex(r => new { r.CompetitionId, r.ExternalParticipantId }).IsUnique()
-             .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
+            e.ConfigureSingleParticipant("CK_CompetitionResult_SingleParticipant", nameof(CompetitionResult.CompetitionId));
         });
 
         modelBuilder.Entity<CompetitionParticipant>(e =>
@@ -126,15 +119,7 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
              .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
-            e.ToTable(t => t.HasCheckConstraint(
-                "CK_CompetitionParticipant_SingleParticipant",
-                "(\"MemberId\" IS NOT NULL AND \"ExternalParticipantId\" IS NULL) OR " +
-                "(\"MemberId\" IS NULL AND \"ExternalParticipantId\" IS NOT NULL)"));
-
-            e.HasIndex(p => new { p.CompetitionId, p.MemberId }).IsUnique()
-             .HasFilter("\"MemberId\" IS NOT NULL");
-            e.HasIndex(p => new { p.CompetitionId, p.ExternalParticipantId }).IsUnique()
-             .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
+            e.ConfigureSingleParticipant("CK_CompetitionParticipant_SingleParticipant", nameof(CompetitionParticipant.CompetitionId));
         });
 
         modelBuilder.Entity<TrainingSession>(e =>
@@ -167,15 +152,29 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
              .OnDelete(DeleteBehavior.Cascade)
              .IsRequired(false);
 
-            e.ToTable(t => t.HasCheckConstraint(
-                "CK_TrainingAttendance_SingleParticipant",
-                "(\"MemberId\" IS NOT NULL AND \"ExternalParticipantId\" IS NULL) OR " +
-                "(\"MemberId\" IS NULL AND \"ExternalParticipantId\" IS NOT NULL)"));
-
-            e.HasIndex(a => new { a.TrainingSessionId, a.MemberId }).IsUnique()
-             .HasFilter("\"MemberId\" IS NOT NULL");
-            e.HasIndex(a => new { a.TrainingSessionId, a.ExternalParticipantId }).IsUnique()
-             .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
+            e.ConfigureSingleParticipant("CK_TrainingAttendance_SingleParticipant", nameof(TrainingAttendance.TrainingSessionId));
         });
+    }
+}
+
+static class SingleParticipantConfiguration
+{
+    const string Rule =
+        "(\"MemberId\" IS NOT NULL AND \"ExternalParticipantId\" IS NULL) OR " +
+        "(\"MemberId\" IS NULL AND \"ExternalParticipantId\" IS NOT NULL)";
+
+    /// <summary>
+    /// Enforces <see cref="IHasParticipant"/> in the database: exactly one of the two participant
+    /// keys is set, and each participant appears at most once per <paramref name="parentKey"/>.
+    /// </summary>
+    public static void ConfigureSingleParticipant<T>(this EntityTypeBuilder<T> e, string checkName, string parentKey)
+        where T : class, IHasParticipant
+    {
+        e.ToTable(t => t.HasCheckConstraint(checkName, Rule));
+
+        e.HasIndex(parentKey, nameof(IHasParticipant.MemberId)).IsUnique()
+         .HasFilter("\"MemberId\" IS NOT NULL");
+        e.HasIndex(parentKey, nameof(IHasParticipant.ExternalParticipantId)).IsUnique()
+         .HasFilter("\"ExternalParticipantId\" IS NOT NULL");
     }
 }

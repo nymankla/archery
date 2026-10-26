@@ -7,7 +7,6 @@ namespace aspire.ApiService.Services;
 
 public class CompetitionParticipantService(ArcheryDbContext db) : ICompetitionParticipantService
 {
-    const string InvalidParticipantSelectionError = "Exactly one of MemberId or ExternalParticipantId must be provided.";
     const string DuplicateRegistrationError = "This participant is already registered for the competition.";
 
     public async Task<IReadOnlyList<CompetitionParticipant>> GetByCompetitionAsync(
@@ -22,8 +21,8 @@ public class CompetitionParticipantService(ArcheryDbContext db) : ICompetitionPa
     public async Task<Result<CompetitionParticipant>> RegisterAsync(
         CompetitionParticipant input, CancellationToken ct = default)
     {
-        if ((input.MemberId is null) == (input.ExternalParticipantId is null))
-            return Result<CompetitionParticipant>.Failure(InvalidParticipantSelectionError);
+        if (!input.HasExactlyOneParticipant())
+            return Result<CompetitionParticipant>.Failure(Participants.InvalidSelectionError);
 
         input.Id = Guid.NewGuid();
         db.CompetitionParticipants.Add(input);
@@ -37,7 +36,7 @@ public class CompetitionParticipantService(ArcheryDbContext db) : ICompetitionPa
         }
         catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionParticipant_SingleParticipant"))
         {
-            return Result<CompetitionParticipant>.Failure(InvalidParticipantSelectionError);
+            return Result<CompetitionParticipant>.Failure(Participants.InvalidSelectionError);
         }
 
         return Result<CompetitionParticipant>.Success(input);

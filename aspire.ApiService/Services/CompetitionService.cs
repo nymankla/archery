@@ -59,7 +59,7 @@ public class CompetitionService(ArcheryDbContext db) : ICompetitionService
         for (var i = 0; i < rows.Count; i++)
         {
             var row = rows[i];
-            var rowNum = i + 1;
+            var rowNum = i + 2; // spreadsheet row: 1 is the header
 
             var name = row.Col("Name");
             var dateStr = row.Col("Date");

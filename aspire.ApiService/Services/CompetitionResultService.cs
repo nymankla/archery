@@ -7,7 +7,6 @@ namespace aspire.ApiService.Services;
 
 public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultService
 {
-    const string InvalidParticipantSelectionError = "Exactly one of MemberId or ExternalParticipantId must be provided.";
     const string DuplicateResultError = "A result already exists for this participant in the competition.";
     const string NotFoundError = "Competition result not found.";
 
@@ -30,8 +29,8 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
 
     public async Task<Result<CompetitionResult>> CreateAsync(CompetitionResult input, CancellationToken ct = default)
     {
-        if ((input.MemberId is null) == (input.ExternalParticipantId is null))
-            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
+        if (!input.HasExactlyOneParticipant())
+            return Result<CompetitionResult>.Failure(Participants.InvalidSelectionError);
 
         input.Id = Guid.NewGuid();
         db.CompetitionResults.Add(input);
@@ -45,7 +44,7 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
         }
         catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionResult_SingleParticipant"))
         {
-            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
+            return Result<CompetitionResult>.Failure(Participants.InvalidSelectionError);
         }
 
         return Result<CompetitionResult>.Success(input);
@@ -53,8 +52,8 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
 
     public async Task<Result<CompetitionResult>> UpdateAsync(Guid id, CompetitionResult input, CancellationToken ct = default)
     {
-        if ((input.MemberId is null) == (input.ExternalParticipantId is null))
-            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
+        if (!input.HasExactlyOneParticipant())
+            return Result<CompetitionResult>.Failure(Participants.InvalidSelectionError);
 
         var result = await db.CompetitionResults.FindAsync([id], ct);
         if (result is null) return Result<CompetitionResult>.NotFound(NotFoundError);
@@ -78,7 +77,7 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
         }
         catch (DbUpdateException ex) when (ex.IsCheckConstraintViolation("CK_CompetitionResult_SingleParticipant"))
         {
-            return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
+            return Result<CompetitionResult>.Failure(Participants.InvalidSelectionError);
         }
 
         return Result<CompetitionResult>.Success(result);

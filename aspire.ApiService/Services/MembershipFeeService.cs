@@ -70,12 +70,9 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
 
     public async Task<Result<int>> BulkCreateAsync(int year, decimal amount, DateOnly dueDate, int? minAge = null, string? ageOp = null, CancellationToken ct = default)
     {
-        var existingMemberIds = await db.MembershipFees
-            .Where(f => f.Year == year)
-            .Select(f => f.MemberId)
-            .ToHashSetAsync(ct);
-
-        var query = db.Members.Where(m => m.IsActive && !existingMemberIds.Contains(m.Id));
+        // NOT EXISTS in SQL, rather than loading every fee id for the year into memory first.
+        var query = db.Members.Where(m => m.IsActive
+            && !db.MembershipFees.Any(f => f.MemberId == m.Id && f.Year == year));
 
         if (minAge.HasValue)
         {

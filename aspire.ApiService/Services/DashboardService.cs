@@ -11,9 +11,20 @@ public class DashboardService(ArcheryDbContext db) : IDashboardService
         var today = DateOnly.FromDateTime(DateTime.Today);
         var year  = today.Year;
 
-        var totalActive   = await db.Members.CountAsync(m => m.IsActive, ct);
-        var totalInactive = await db.Members.CountAsync(m => !m.IsActive, ct);
-        var newThisYear   = await db.Members.CountAsync(m => m.IsActive && m.JoinDate.Year == year, ct);
+        var memberStats = await db.Members
+            .AsNoTracking()
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Active = g.Count(m => m.IsActive),
+                Inactive = g.Count(m => !m.IsActive),
+                NewThisYear = g.Count(m => m.IsActive && m.JoinDate.Year == year)
+            })
+            .SingleOrDefaultAsync(ct);
+
+        var totalActive   = memberStats?.Active ?? 0;
+        var totalInactive = memberStats?.Inactive ?? 0;
+        var newThisYear   = memberStats?.NewThisYear ?? 0;
 
         var feeStats = await db.MembershipFees
             .AsNoTracking()
@@ -40,17 +51,23 @@ public class DashboardService(ArcheryDbContext db) : IDashboardService
             ? (int)Math.Round(paid * 100.0 / totalActive)
             : 0;
 
-        var thisYearCount = await db.Competitions
+        var competitionStats = await db.Competitions
             .AsNoTracking()
-            .CountAsync(c => c.Date.Year == year, ct);
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                ThisYear = g.Count(c => c.Date.Year == year),
+                Upcoming = g.Count(c => c.Date > today)
+            })
+            .SingleOrDefaultAsync(ct);
 
-        var upcoming = await db.Competitions
+        // Only the next one is shown, so fetch one row rather than every future competition.
+        var nextComp = await db.Competitions
             .AsNoTracking()
             .Where(c => c.Date > today)
             .OrderBy(c => c.Date)
             .Select(c => new { c.Name, c.Date, c.Location })
-            .ToListAsync(ct);
-        var nextComp = upcoming.FirstOrDefault();
+            .FirstOrDefaultAsync(ct);
 
         var recentComps = await db.Competitions
             .AsNoTracking()
@@ -91,8 +108,8 @@ public class DashboardService(ArcheryDbContext db) : IDashboardService
             new DashboardFeeStats(paid, unpaid, partial, noFee,
                 totalCollected, totalOutstanding, collectionRatePct),
             new DashboardCompetitionStats(
-                thisYearCount,
-                upcoming.Count,
+                competitionStats?.ThisYear ?? 0,
+                competitionStats?.Upcoming ?? 0,
                 nextComp is null ? null : new DashboardNextCompetition(nextComp.Name, nextComp.Date, nextComp.Location)),
             topScorers,
             recentComps.Select(c => new DashboardRecentCompetition(

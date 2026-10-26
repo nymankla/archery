@@ -8,6 +8,8 @@ namespace aspire.ApiService.Services;
 
 public class MemberService(ArcheryDbContext db) : IMemberService
 {
+    const string DuplicatePersonnummerError = "A member with this personnummer already exists.";
+
     public async Task<IReadOnlyList<Member>> GetAllAsync(CancellationToken ct = default)
         => await db.Members.AsNoTracking()
             .OrderBy(m => m.LastName).ThenBy(m => m.FirstName)
@@ -31,7 +33,7 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            return Result<Member>.Failure("A member with this personnummer already exists.");
+            return Result<Member>.Failure(DuplicatePersonnummerError);
         }
         return Result<Member>.Success(member);
     }
@@ -60,7 +62,7 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            return Result<Member>.Failure("A member with this personnummer already exists.");
+            return Result<Member>.Failure(DuplicatePersonnummerError);
         }
         return Result<Member>.Success(member);
     }
@@ -81,6 +83,12 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         var existingByKey = await db.Members
             .Where(m => m.Email != null)
             .ToDictionaryAsync(m => (m.Email, m.DateOfBirth), ct);
+
+        // Who owns each personnummer, loaded once instead of queried per row. Rows claim theirs as
+        // they are accepted, so a number repeated within the file is caught as well.
+        var personnummerOwners = await db.Members
+            .Where(m => m.Personnummer != null)
+            .ToDictionaryAsync(m => m.Personnummer!, m => m.Id, ct);
 
         var imported = 0;
         var updated  = 0;
@@ -106,8 +114,8 @@ public class MemberService(ArcheryDbContext db) : IMemberService
             var isActive = bool.TryParse(row.Col("IsActive"), out var ia) ? ia : true;
             var bowClass = Enum.TryParse<BowClass>(row.Col("PreferredBowClass"), ignoreCase: true, out var bc) ? bc : BowClass.Recurve;
             var existing = email is not null ? existingByKey.GetValueOrDefault((email, dob)) : null;
-            var normalizedPersonnummer = await NormalizeAndValidatePersonnummerForImportAsync(personnummerRaw, existing?.Id, rowNum, ct);
-            if (normalizedPersonnummer == ImportValidationFailed.Value)
+            var memberId = existing?.Id ?? Guid.NewGuid();
+            if (!TryClaimPersonnummer(personnummerRaw, memberId, existing?.Personnummer, rowNum, out var normalizedPersonnummer))
                 continue;
 
             if (existing != null)
@@ -127,7 +135,7 @@ public class MemberService(ArcheryDbContext db) : IMemberService
             {
                 db.Members.Add(new Member
                 {
-                    Id                = Guid.NewGuid(),
+                    Id                = memberId,
                     FirstName         = firstName,
                     LastName          = lastName,
                     Email             = email,
@@ -146,16 +154,29 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         await db.SaveChangesAsync(ct);
         return new ImportResult(imported, updated, errors);
 
-        async Task<string?> NormalizeAndValidatePersonnummerForImportAsync(string? personnummer, Guid? memberId, int rowNumber, CancellationToken cancellationToken)
+        bool TryClaimPersonnummer(string? raw, Guid memberId, string? previous, int rowNumber, out string? normalized)
         {
-            var result = await NormalizeAndValidatePersonnummerAsync(personnummer, memberId, cancellationToken);
-            if (result.IsSuccess)
-                return result.Value;
+            var result = PersonnummerParser.Normalize(raw);
+            normalized = result.Value;
+            if (!result.IsSuccess)
+            {
+                errors.AddRange(result.Errors.Select(error => $"Row {rowNumber}: {error}"));
+                return false;
+            }
 
-            foreach (var error in result.Errors)
-                errors.Add($"Row {rowNumber}: {error}");
+            if (normalized is null)
+                return true;
 
-            return ImportValidationFailed.Value;
+            if (personnummerOwners.TryGetValue(normalized, out var owner) && owner != memberId)
+            {
+                errors.Add($"Row {rowNumber}: {DuplicatePersonnummerError}");
+                return false;
+            }
+
+            if (previous is not null && previous != normalized)
+                personnummerOwners.Remove(previous);
+            personnummerOwners[normalized] = memberId;
+            return true;
         }
     }
 
@@ -192,13 +213,8 @@ public class MemberService(ArcheryDbContext db) : IMemberService
 
         var exists = await db.Members.AnyAsync(m => m.Personnummer == normalized && m.Id != memberId, ct);
         if (exists)
-            return Result<string?>.Failure("A member with this personnummer already exists.");
+            return Result<string?>.Failure(DuplicatePersonnummerError);
 
         return normalizedResult;
-    }
-
-    private static class ImportValidationFailed
-    {
-        public const string Value = "__INVALID__";
     }
 }
