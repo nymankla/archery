@@ -17,6 +17,8 @@
     </div>
 </div>
 
+<ErrorAlert @bind-Error="pageError" />
+
 @if (showImport)
 {
     <ImportPanel Title="Import Members"
@@ -200,18 +202,17 @@ else
     }
 }
 
-<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+<ConfirmDialog @ref="confirm" Owner="this" />
 
 @code {
-    bool confirmVisible; string confirmMessage = string.Empty; Func<Task>? confirmAction;
-    void Confirm(string msg, Func<Task> action) { confirmMessage = msg; confirmAction = action; confirmVisible = true; }
-    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
+    ConfirmDialog confirm = default!;
 
     Member[]? members;
     Member? editing;
     bool showForm;
     bool showImport;
     List<string> validationErrors = [];
+    ApiError? pageError;
 
     string searchText = string.Empty;
     string statusFilter = string.Empty;
@@ -284,46 +285,25 @@ else
     {
         validationErrors = [];
 
-        using var response = editing!.Id == Guid.Empty
-            ? await Api.CreateMemberAsync(editing)
-            : await Api.UpdateMemberAsync(editing.Id, editing);
+        var error = await (editing!.Id == Guid.Empty
+            ? Api.CreateMemberAsync(editing)
+            : Api.UpdateMemberAsync(editing.Id, editing)).TryAsync();
 
-        if (response.IsSuccessStatusCode)
+        if (error is not null)
         {
-            showForm = false;
-            editing = null;
-            await Reload();
+            validationErrors = [.. error.Messages];
             return;
         }
 
-        validationErrors = await ReadValidationErrorsAsync(response);
-    }
-
-    static async Task<List<string>> ReadValidationErrorsAsync(HttpResponseMessage response)
-    {
-        try
-        {
-            var payload = await response.Content.ReadFromJsonAsync<ValidationErrorsResponse>();
-            if (payload?.Errors.Count > 0)
-                return payload.Errors;
-
-            var message = await response.Content.ReadFromJsonAsync<MessageResponse>();
-            if (!string.IsNullOrWhiteSpace(message?.Message))
-                return [message.Message];
-        }
-        catch (Exception ex)
-        {
-            return [$"Failed to parse server validation response: {ex.Message}"];
-        }
-
-        var text = await response.Content.ReadAsStringAsync();
-        return string.IsNullOrWhiteSpace(text) ? ["Save failed."] : [text];
+        showForm = false;
+        editing = null;
+        await Reload();
     }
 
     void Delete(Member m) =>
-        Confirm($"Delete member {m.FullName}?", async () =>
+        confirm.Show($"Delete member {m.FullName}?", async () =>
         {
-            await Api.DeleteMemberAsync(m.Id);
+            pageError = await Api.DeleteMemberAsync(m.Id).TryAsync();
             await Reload();
         });
 
@@ -339,7 +319,7 @@ else
         exporting = true;
         try
         {
-            var file = await Api.ExportMembersAsync(format);
+            (var file, pageError) = await Api.ExportMembersAsync(format).TryAsync();
             if (file != null)
             {
                 await FileDownloader.SaveAsync(file);

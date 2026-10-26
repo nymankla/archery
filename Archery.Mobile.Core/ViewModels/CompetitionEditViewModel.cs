@@ -82,8 +82,8 @@ public sealed partial class CompetitionEditViewModel(
         };
 
         var saved = await RunAsync(token => _competitionId is { } id
-            ? api.UpdateCompetitionAsync(id, competition, token).EnsureArcherySuccessAsync(token)
-            : api.CreateCompetitionAsync(competition, token).EnsureArcherySuccessAsync(token), ct);
+            ? api.UpdateCompetitionAsync(id, competition, token)
+            : api.CreateCompetitionAsync(competition, token), ct);
 
         if (saved)
             await navigation.GoBackAsync();

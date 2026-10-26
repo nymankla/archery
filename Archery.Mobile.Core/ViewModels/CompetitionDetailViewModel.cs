@@ -147,7 +147,7 @@ public sealed partial class CompetitionDetailViewModel(
         }
 
         var removed = await RunAsync(
-            token => api.RemoveParticipantAsync(participant.Id, token).EnsureArcherySuccessAsync(token), ct);
+            token => api.RemoveParticipantAsync(participant.Id, token), ct);
 
         if (removed)
         {
@@ -169,7 +169,7 @@ public sealed partial class CompetitionDetailViewModel(
         }
 
         var deleted = await RunAsync(
-            token => api.DeleteResultAsync(result.Id, token).EnsureArcherySuccessAsync(token), ct);
+            token => api.DeleteResultAsync(result.Id, token), ct);
 
         if (deleted)
         {

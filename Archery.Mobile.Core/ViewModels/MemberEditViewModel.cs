@@ -130,8 +130,8 @@ public sealed partial class MemberEditViewModel(
         };
 
         var saved = await RunAsync(token => _memberId is { } id
-            ? api.UpdateMemberAsync(id, member, token).EnsureArcherySuccessAsync(token)
-            : api.CreateMemberAsync(member, token).EnsureArcherySuccessAsync(token), ct);
+            ? api.UpdateMemberAsync(id, member, token)
+            : api.CreateMemberAsync(member, token), ct);
 
         if (saved)
             await navigation.GoBackAsync();

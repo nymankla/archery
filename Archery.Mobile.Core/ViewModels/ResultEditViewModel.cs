@@ -221,8 +221,8 @@ public sealed partial class ResultEditViewModel(
         };
 
         var saved = await RunAsync(token => _resultId is { } id
-            ? api.UpdateResultAsync(id, result, token).EnsureArcherySuccessAsync(token)
-            : api.CreateResultAsync(result, token).EnsureArcherySuccessAsync(token), ct);
+            ? api.UpdateResultAsync(id, result, token)
+            : api.CreateResultAsync(result, token), ct);
 
         if (saved)
             await navigation.GoBackAsync();

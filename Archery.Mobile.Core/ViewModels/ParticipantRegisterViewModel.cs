@@ -108,7 +108,7 @@ public sealed partial class ParticipantRegisterViewModel(
         };
 
         var saved = await RunAsync(token => api
-            .RegisterParticipantAsync(participant, token).EnsureArcherySuccessAsync(token), ct);
+            .RegisterParticipantAsync(participant, token), ct);
 
         if (saved)
             await navigation.GoBackAsync();

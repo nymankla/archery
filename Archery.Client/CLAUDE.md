@@ -6,3 +6,5 @@
   `[JsonSerializable]` entry and every call passes a `JsonTypeInfo`. Reflection JSON builds fine and then
   fails at runtime in a trimmed Release APK.
 - Enums are serialized as integers.
+- Every call throws `ArcheryApiException` (server messages pre-parsed in `.Error`) on a non-success
+  status; no method returns a raw `HttpResponseMessage` or `null` to mean failure.

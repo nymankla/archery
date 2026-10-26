@@ -212,8 +212,7 @@ else
     }
 }
 
-<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage"
-               OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+<ConfirmDialog @ref="confirm" Owner="this" />
 
 @code {
     static readonly (string Label, string Key)[] FilterOptions =
@@ -221,22 +220,7 @@ else
         ("All", "all"), ("Paid", "paid"), ("Unpaid / Partial", "unpaid"), ("No fee", "nofee")
     ];
 
-    bool confirmVisible;
-    string confirmMessage = string.Empty;
-    Func<Task>? confirmAction;
-
-    void Confirm(string msg, Func<Task> action)
-    {
-        confirmMessage = msg;
-        confirmAction = action;
-        confirmVisible = true;
-    }
-
-    async Task ExecuteConfirm()
-    {
-        confirmVisible = false;
-        if (confirmAction != null) await confirmAction();
-    }
+    ConfirmDialog confirm = default!;
 
     int currentYear = DateTime.Today.Year;
     int selectedYear = DateTime.Today.Year;
@@ -317,18 +301,18 @@ else
     {
         formError = null;
         busy = true;
-        using var response = await Api.BulkCreateFeesAsync(new BulkFeeRequest
+        var error = await Api.BulkCreateFeesAsync(new BulkFeeRequest
         {
             Year = selectedYear,
             Amount = defaultAmount,
             DueDate = defaultDueDate,
             MinAge = ageFilterEnabled ? ageFilterAge : null,
             AgeOp = ageFilterEnabled ? ageFilterOp : null
-        });
+        }).TryAsync();
 
-        if (!response.IsSuccessStatusCode)
+        if (error is not null)
         {
-            formError = string.Join(" ", await ReadValidationErrorsAsync(response));
+            formError = error.Summary;
             busy = false;
             return;
         }
@@ -341,20 +325,17 @@ else
     async Task CreateSingleFee(MemberFeeOverview r)
     {
         formError = null;
-        using var response = await Api.CreateFeeAsync(new MembershipFee
+        formError = (await Api.CreateFeeAsync(new MembershipFee
         {
             MemberId = r.MemberId,
             Year = selectedYear,
             Amount = defaultAmount,
             DueDate = defaultDueDate,
             Status = FeeStatus.Unpaid
-        });
+        }).TryAsync())?.Summary;
 
-        if (!response.IsSuccessStatusCode)
-        {
-            formError = string.Join(" ", await ReadValidationErrorsAsync(response));
+        if (formError is not null)
             return;
-        }
 
         await Reload();
     }
@@ -362,7 +343,7 @@ else
     async Task MarkPaid(MemberFeeOverview r)
     {
         formError = null;
-        using var response = await Api.UpdateFeeAsync(r.FeeId!.Value, new MembershipFee
+        formError = (await Api.UpdateFeeAsync(r.FeeId!.Value, new MembershipFee
         {
             Id = r.FeeId.Value,
             MemberId = r.MemberId,
@@ -371,21 +352,18 @@ else
             DueDate = r.DueDate!.Value,
             PaidDate = DateOnly.FromDateTime(DateTime.Today),
             Status = FeeStatus.Paid
-        });
+        }).TryAsync())?.Summary;
 
-        if (!response.IsSuccessStatusCode)
-        {
-            formError = string.Join(" ", await ReadValidationErrorsAsync(response));
+        if (formError is not null)
             return;
-        }
 
         await Reload();
     }
 
     void ConfirmDeleteFee(MemberFeeOverview r) =>
-        Confirm($"Delete fee for {r.FullName}?", async () =>
+        confirm.Show($"Delete fee for {r.FullName}?", async () =>
         {
-            await Api.DeleteFeeAsync(r.FeeId!.Value);
+            formError = (await Api.DeleteFeeAsync(r.FeeId!.Value).TryAsync())?.Summary;
             await Reload();
         });
 
@@ -395,25 +373,4 @@ else
         FeeStatus.Partial => "bg-warning text-dark",
         _                 => "bg-danger"
     };
-
-    static async Task<List<string>> ReadValidationErrorsAsync(HttpResponseMessage response)
-    {
-        try
-        {
-            var payload = await response.Content.ReadFromJsonAsync<ValidationErrorsResponse>();
-            if (payload?.Errors.Count > 0)
-                return payload.Errors;
-
-            var message = await response.Content.ReadFromJsonAsync<MessageResponse>();
-            if (!string.IsNullOrWhiteSpace(message?.Message))
-                return [message.Message];
-        }
-        catch (Exception ex)
-        {
-            return [$"Failed to parse server validation response: {ex.Message}"];
-        }
-
-        var text = await response.Content.ReadAsStringAsync();
-        return string.IsNullOrWhiteSpace(text) ? ["Operation failed."] : [text];
-    }
 }

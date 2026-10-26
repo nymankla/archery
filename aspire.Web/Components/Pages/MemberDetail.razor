@@ -16,6 +16,8 @@ else
         <a href="/members" class="btn btn-outline-secondary">Back</a>
     </div>
 
+    <ErrorAlert @bind-Error="pageError" />
+
     <div class="row mb-4">
         <div class="col-md-6">
             <dl class="row">
@@ -139,14 +141,13 @@ else
     }
 }
 
-<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+<ConfirmDialog @ref="confirm" Owner="this" />
 
 @code {
     [Parameter] public Guid Id { get; set; }
 
-    bool confirmVisible; string confirmMessage = string.Empty; Func<Task>? confirmAction;
-    void Confirm(string msg, Func<Task> action) { confirmMessage = msg; confirmAction = action; confirmVisible = true; }
-    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
+    ConfirmDialog confirm = default!;
+    ApiError? pageError;
 
     Member? member;
     MembershipFee[]? fees;
@@ -205,18 +206,20 @@ else
 
     async Task SaveFee()
     {
-        if (editingFee!.Id == Guid.Empty)
-            await Api.CreateFeeAsync(editingFee);
-        else
-            await Api.UpdateFeeAsync(editingFee.Id, editingFee);
+        pageError = await (editingFee!.Id == Guid.Empty
+            ? Api.CreateFeeAsync(editingFee)
+            : Api.UpdateFeeAsync(editingFee.Id, editingFee)).TryAsync();
+        if (pageError is not null)
+            return;
+
         showFeeForm = false;
         await ReloadFees();
     }
 
     void DeleteFee(MembershipFee fee) =>
-        Confirm($"Delete {fee.Year} fee ({fee.Amount.ToString("C")})?", async () =>
+        confirm.Show($"Delete {fee.Year} fee ({fee.Amount.ToString("C")})?", async () =>
         {
-            await Api.DeleteFeeAsync(fee.Id);
+            pageError = await Api.DeleteFeeAsync(fee.Id).TryAsync();
             await ReloadFees();
         });
 

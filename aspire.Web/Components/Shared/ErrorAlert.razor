@@ -1,0 +1,15 @@
+@* Page-level failure banner for actions with no form of their own (deletes, exports).
+   Use as <ErrorAlert @bind-Error="pageError" />; closing it clears the bound error. *@
+
+@if (Error is not null)
+{
+    <div class="alert alert-danger alert-dismissible" role="alert">
+        @Error.Summary
+        <button type="button" class="btn-close" aria-label="Close" @onclick="() => ErrorChanged.InvokeAsync(null)"></button>
+    </div>
+}
+
+@code {
+    [Parameter] public ApiError? Error { get; set; }
+    [Parameter] public EventCallback<ApiError?> ErrorChanged { get; set; }
+}

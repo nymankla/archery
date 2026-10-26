@@ -12,6 +12,8 @@
     </div>
 </div>
 
+<ErrorAlert @bind-Error="pageError" />
+
 @if (showImport)
 {
     <ImportPanel Title="Import Competitions"
@@ -112,12 +114,11 @@ else
     </table>
 }
 
-<ConfirmDialog Visible="confirmVisible" Message="@confirmMessage" OnConfirmed="ExecuteConfirm" OnCancelled="() => confirmVisible = false" />
+<ConfirmDialog @ref="confirm" Owner="this" />
 
 @code {
-    bool confirmVisible; string confirmMessage = string.Empty; Func<Task>? confirmAction;
-    void Confirm(string msg, Func<Task> action) { confirmMessage = msg; confirmAction = action; confirmVisible = true; }
-    async Task ExecuteConfirm() { confirmVisible = false; if (confirmAction != null) await confirmAction(); }
+    ConfirmDialog confirm = default!;
+    ApiError? pageError;
 
     Competition[]? competitions;
     Competition? editing;
@@ -166,18 +167,20 @@ else
 
     async Task Save()
     {
-        if (editing!.Id == Guid.Empty)
-            await Api.CreateCompetitionAsync(editing);
-        else
-            await Api.UpdateCompetitionAsync(editing.Id, editing);
+        pageError = await (editing!.Id == Guid.Empty
+            ? Api.CreateCompetitionAsync(editing)
+            : Api.UpdateCompetitionAsync(editing.Id, editing)).TryAsync();
+        if (pageError is not null)
+            return;
+
         showForm = false;
         await Reload();
     }
 
     void Delete(Competition c) =>
-        Confirm($"Delete competition \"{c.Name}\"?", async () =>
+        confirm.Show($"Delete competition \"{c.Name}\"?", async () =>
         {
-            await Api.DeleteCompetitionAsync(c.Id);
+            pageError = await Api.DeleteCompetitionAsync(c.Id).TryAsync();
             await Reload();
         });
 
