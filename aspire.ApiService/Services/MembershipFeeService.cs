@@ -51,6 +51,9 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
 
     public async Task<Result<MembershipFee>> CreateAsync(MembershipFee fee, CancellationToken ct = default)
     {
+        if (await db.MembershipFees.AnyAsync(f => f.MemberId == fee.MemberId && f.Year == fee.Year, ct))
+            return Result<MembershipFee>.Failure(DuplicateFeeError);
+
         fee.Id = Guid.NewGuid();
         db.MembershipFees.Add(fee);
         try
@@ -113,6 +116,9 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
     {
         var fee = await db.MembershipFees.FindAsync([id], ct);
         if (fee is null) return Result<MembershipFee>.Failure(NotFoundError);
+        if (await db.MembershipFees.AnyAsync(f => f.MemberId == fee.MemberId && f.Year == input.Year && f.Id != id, ct))
+            return Result<MembershipFee>.Failure(DuplicateFeeError);
+
         fee.Year     = input.Year;
         fee.Amount   = input.Amount;
         fee.DueDate  = input.DueDate;

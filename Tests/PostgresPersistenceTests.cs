@@ -176,6 +176,13 @@ public class PostgresPersistenceTests
 
         var connectionString = await app.GetConnectionStringAsync("db", ct);
 
+        // The postgres volume is persistent, so remove any member left behind by an earlier run.
+        const string personnummer = "199001010017";
+        await using (var db = CreateDb(connectionString))
+        {
+            await db.Members.Where(m => m.Personnummer == personnummer).ExecuteDeleteAsync(ct);
+        }
+
         await using (var db = CreateDb(connectionString))
         {
             db.Members.Add(new Member
@@ -183,7 +190,7 @@ public class PostgresPersistenceTests
                 Id = Guid.NewGuid(),
                 FirstName = "Anna",
                 LastName = "First",
-                Personnummer = "199001010017",
+                Personnummer = personnummer,
                 IsActive = true,
                 DateOfBirth = new DateOnly(1990, 1, 1),
                 JoinDate = new DateOnly(2020, 1, 1)
