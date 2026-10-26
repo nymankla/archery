@@ -1,6 +1,6 @@
 # Archery Club Management
 
-A .NET 11 [Aspire](https://learn.microsoft.com/dotnet/aspire/) distributed application for managing an archery club — members, membership fees, competitions, results, training attendance, and external (guest) participants. It exposes a secured minimal-API backend and an interactive Blazor Server frontend, orchestrated together with Redis, PostgreSQL, and Keycloak.
+A .NET 11 [Aspire](https://learn.microsoft.com/dotnet/aspire/) distributed application for managing an archery club — members, membership fees, competitions, results, training attendance, and external (guest) participants. It exposes a secured minimal-API backend and an interactive Blazor Server frontend, orchestrated together with PostgreSQL and Keycloak.
 
 A **.NET MAUI Android app** covers the work done at the range — adding members, recording
 training attendance, registering competitors and entering scores — against the same API. Desk
@@ -13,9 +13,9 @@ mobile head and its shared client alongside:
 
 | Project | Type | Responsibility |
 | --- | --- | --- |
-| **aspire.AppHost** | Aspire orchestrator | Defines the resource graph (Redis, PostgreSQL, Keycloak, API, Web). No business logic. |
+| **aspire.AppHost** | Aspire orchestrator | Defines the resource graph (PostgreSQL, Keycloak, API, Web). No business logic. |
 | **aspire.ApiService** | ASP.NET Core Web API | Domain logic, EF Core persistence, minimal-API endpoints, spreadsheet import. Secured with Keycloak JWT bearer. |
-| **aspire.Web** | Blazor interactive server | UI for the club. Authenticates users via Keycloak OIDC, calls the API with a bearer token, caches output in Redis. |
+| **aspire.Web** | Blazor interactive server | UI for the club. Authenticates users via Keycloak OIDC, calls the API with a bearer token. |
 | **aspire.ServiceDefaults** | Shared library | Cross-cutting wiring applied in every service: OpenTelemetry (OTLP), service discovery, HTTP resilience, `/health` + `/alive` endpoints. |
 | **Archery.Client** | Shared library (`net11.0`) | Wire models, the typed `ArcheryApiClient`, error normalisation, source-generated JSON. Used by both the web frontend and the Android app; no ASP.NET dependency. |
 | **Archery.Mobile.Core** | Shared library (`net11.0`) | All mobile ViewModels and platform abstractions. No MAUI reference, so they are testable on a build agent. |
@@ -32,15 +32,12 @@ registered in the AppHost.
 
 The AppHost ([AppHost.cs](aspire.AppHost/AppHost.cs)) provisions:
 
-- **Redis** (`cache`) — output caching for the Web frontend. Persistent container with a data volume.
 - **PostgreSQL** (`postgres` → database `db`) — primary data store. Persistent container with a data volume.
 - **Keycloak** (`keycloak`, port 8080) — identity provider. Persistent container, realm imported from the `keycloak/` config on startup.
 
 Dependency flow:
 
 ```
-Redis ─────────────┐
-                   ▼
 PostgreSQL ──► ApiService ──► Web (external HTTP)
                    ▲              │
 Keycloak ──────────┴──────────────┘
@@ -167,7 +164,7 @@ Debug-only manifest overlay adds it, and the resource is dropped from every othe
 ### Prerequisites
 
 - [.NET 11 SDK](https://dotnet.microsoft.com/download)
-- A container runtime (Docker Desktop or Podman) — required for the Redis, PostgreSQL, and Keycloak containers.
+- A container runtime (Docker Desktop or Podman) — required for the PostgreSQL and Keycloak containers.
 - The [Aspire CLI / workload](https://learn.microsoft.com/dotnet/aspire/fundamentals/setup-tooling) (optional but convenient).
 - For the Android app only: the `maui-android` workload, a JDK 21 on `JAVA_HOME`, and an
   Android emulator or device (API 24+).
@@ -175,7 +172,7 @@ Debug-only manifest overlay adds it, and the resource is dropped from every othe
 ### Run
 
 ```bash
-# Start the whole app: AppHost boots Redis, PostgreSQL, Keycloak, the API, and the Web frontend
+# Start the whole app: AppHost boots PostgreSQL, Keycloak, the API, and the Web frontend
 dotnet run --project aspire.AppHost
 ```
 
@@ -233,4 +230,4 @@ Key settings (via `appsettings*.json`, user secrets, or environment variables):
 
 ## Tech stack
 
-.NET 11 · Aspire 13.6 · ASP.NET Core Minimal APIs · Blazor (interactive server) · .NET MAUI (Android) · CommunityToolkit.Mvvm · Duende.IdentityModel.OidcClient · Entity Framework Core + Npgsql (PostgreSQL) · Redis output caching · Keycloak (OIDC / JWT) · OpenTelemetry · Scalar/OpenAPI · CsvHelper + ClosedXML · xUnit.
+.NET 11 · Aspire 13.6 · ASP.NET Core Minimal APIs · Blazor (interactive server) · .NET MAUI (Android) · CommunityToolkit.Mvvm · Duende.IdentityModel.OidcClient · Entity Framework Core + Npgsql (PostgreSQL) · Keycloak (OIDC / JWT) · OpenTelemetry · Scalar/OpenAPI · CsvHelper + ClosedXML · xUnit.
