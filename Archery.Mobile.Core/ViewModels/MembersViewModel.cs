@@ -83,7 +83,9 @@ public sealed partial class MembersViewModel(
         if (member is null)
             return;
 
-        if (!await dialogs.ConfirmAsync("Delete member", $"Delete {member.FullName}?", "Delete", "Cancel"))
+        if (!await dialogs.ConfirmAsync("Delete member",
+                $"Delete {member.FullName}? Their fees, competition results and training attendance are deleted too.",
+                "Delete", "Cancel"))
             return;
 
         var deleted = await RunAsync(

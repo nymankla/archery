@@ -79,6 +79,10 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
              .HasForeignKey(r => r.CompetitionId)
              .OnDelete(DeleteBehavior.Cascade);
 
+            // Deleting a member deletes their results with them, for now. That rewrites
+            // competition history (placements stay as recorded, but the archer disappears). A more
+            // elegant option may come later, e.g. keeping the result and anonymising it, or only
+            // allowing members to be deactivated (IsActive) once they have results.
             e.HasOne(r => r.Member)
              .WithMany(m => m.CompetitionResults)
              .HasForeignKey(r => r.MemberId)

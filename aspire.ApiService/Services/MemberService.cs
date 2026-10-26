@@ -68,6 +68,10 @@ public class MemberService(ArcheryDbContext db) : IMemberService
         return Result<Member>.Success(member);
     }
 
+    /// <summary>
+    /// Deletes the member and, through cascades, their fees, competition registrations, results and
+    /// training attendance. Deliberate for now; see the note on CompetitionResult in ArcheryDbContext.
+    /// </summary>
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var member = await db.Members.FindAsync([id], ct);
