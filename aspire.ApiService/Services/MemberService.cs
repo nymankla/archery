@@ -39,7 +39,7 @@ public class MemberService(ArcheryDbContext db) : IMemberService
     public async Task<Result<Member>> UpdateAsync(Guid id, Member input, CancellationToken ct = default)
     {
         var member = await db.Members.FindAsync([id], ct);
-        if (member is null) return Result<Member>.Failure("Member not found.");
+        if (member is null) return Result<Member>.NotFound("Member not found.");
         member.FirstName         = input.FirstName;
         member.LastName          = input.LastName;
         member.Address           = input.Address;

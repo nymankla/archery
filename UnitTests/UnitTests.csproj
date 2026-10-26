@@ -27,6 +27,8 @@
     <ProjectReference Include="..\aspire.ApiService\aspire.ApiService.csproj" />
   </ItemGroup>
 
+  <Import Project="..\WireEnums.props" />
+
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>

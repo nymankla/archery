@@ -6,6 +6,13 @@ namespace aspire.ApiService.Infrastructure;
 
 public enum ExportFormat { Csv, Xlsx }
 
+public static class ExportFormats
+{
+    /// <summary>Reads the <c>format</c> query value; anything other than <c>xlsx</c> means CSV.</summary>
+    public static ExportFormat Parse(string? format)
+        => string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase) ? ExportFormat.Xlsx : ExportFormat.Csv;
+}
+
 public record ExportFile(string FileName, string ContentType, byte[] Content);
 
 /// <summary>Writes tabular data to CSV or .xlsx bytes. Counterpart to <see cref="SpreadsheetParser"/>.</summary>

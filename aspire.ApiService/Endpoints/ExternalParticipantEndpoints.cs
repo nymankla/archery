@@ -1,5 +1,6 @@
-using aspire.ApiService.Models;
+using aspire.ApiService.Contracts;
 using aspire.ApiService.Services;
+using Wire = Archery.Client;
 
 namespace aspire.ApiService.Endpoints;
 
@@ -19,20 +20,20 @@ public static class ExternalParticipantEndpoints
     }
 
     static async Task<IResult> GetAll(IExternalParticipantService svc, CancellationToken ct)
-        => Results.Ok(await svc.GetAllAsync(ct));
+        => Results.Ok((await svc.GetAllAsync(ct)).Select(p => p.ToContract()));
 
     static async Task<IResult> GetById(Guid id, IExternalParticipantService svc, CancellationToken ct)
-        => await svc.GetByIdAsync(id, ct) is { } p ? Results.Ok(p) : Results.NotFound();
+        => EndpointResults.OkOrNotFound((await svc.GetByIdAsync(id, ct))?.ToContract());
 
-    static async Task<IResult> Create(ExternalParticipant participant, IExternalParticipantService svc, CancellationToken ct)
+    static async Task<IResult> Create(Wire.ExternalParticipant participant, IExternalParticipantService svc, CancellationToken ct)
     {
-        var created = await svc.CreateAsync(participant, ct);
-        return Results.Created($"/external-participants/{created.Id}", created);
+        var created = await svc.CreateAsync(participant.ToEntity(), ct);
+        return Results.Created($"/external-participants/{created.Id}", created.ToContract());
     }
 
-    static async Task<IResult> Update(Guid id, ExternalParticipant input, IExternalParticipantService svc, CancellationToken ct)
-        => await svc.UpdateAsync(id, input, ct) is { } p ? Results.Ok(p) : Results.NotFound();
+    static async Task<IResult> Update(Guid id, Wire.ExternalParticipant input, IExternalParticipantService svc, CancellationToken ct)
+        => EndpointResults.OkOrNotFound((await svc.UpdateAsync(id, input.ToEntity(), ct))?.ToContract());
 
     static async Task<IResult> Delete(Guid id, IExternalParticipantService svc, CancellationToken ct)
-        => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();
+        => EndpointResults.NoContentOrNotFound(await svc.DeleteAsync(id, ct));
 }

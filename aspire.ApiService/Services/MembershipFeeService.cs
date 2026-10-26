@@ -115,7 +115,7 @@ public class MembershipFeeService(ArcheryDbContext db) : IMembershipFeeService
     public async Task<Result<MembershipFee>> UpdateAsync(Guid id, MembershipFee input, CancellationToken ct = default)
     {
         var fee = await db.MembershipFees.FindAsync([id], ct);
-        if (fee is null) return Result<MembershipFee>.Failure(NotFoundError);
+        if (fee is null) return Result<MembershipFee>.NotFound(NotFoundError);
         if (await db.MembershipFees.AnyAsync(f => f.MemberId == fee.MemberId && f.Year == input.Year && f.Id != id, ct))
             return Result<MembershipFee>.Failure(DuplicateFeeError);
 

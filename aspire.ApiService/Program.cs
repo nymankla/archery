@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json.Serialization;
 using aspire.ApiService.Data;
 using aspire.ApiService.Endpoints;
 using aspire.ApiService.Services;
@@ -20,8 +19,6 @@ var keycloakAudience = builder.Configuration["Keycloak:Audience"]
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
-builder.Services.ConfigureHttpJsonOptions(o =>
-    o.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 builder.Services.AddAuthentication()
     .AddKeycloakJwtBearer(
         serviceName: "keycloak",
@@ -96,12 +93,10 @@ app.MapGet("/", (IHostEnvironment env) => env.IsDevelopment()
 
 app.MapDashboardEndpoints();
 app.MapMemberEndpoints();
-app.MapMemberImportEndpoints();
 app.MapMembershipFeeEndpoints();
 app.MapCompetitionEndpoints();
-app.MapCompetitionImportEndpoints();
 app.MapExternalParticipantEndpoints();
-app.MapExternalParticipantImportEndpoints();
+app.MapImportEndpoints();
 app.MapCompetitionResultEndpoints();
 app.MapCompetitionParticipantEndpoints();
 app.MapTrainingAttendanceEndpoints();

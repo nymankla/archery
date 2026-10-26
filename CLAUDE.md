@@ -36,9 +36,12 @@ URLs. Culture defaults to `sv-SE` (`Locale` config key).
 
 ## Cross-cutting rules
 
-- Enums cross the wire as **integers** (no `JsonStringEnumConverter`): never reorder `aspire.ApiService/Models/Enums.cs`.
-- Expected domain conflicts return `400 {"errors":[...]}` via `Result<T>` failures. Nothing returns 409
-  (`ConflictException` exists but is never thrown).
+- `Archery.Client` is the wire contract: the API binds and returns its types (mapped in
+  `aspire.ApiService/Contracts/ContractMapping.cs`) and uses its enums via `WireEnums.props`.
+- Enums cross the wire as **integers** (no `JsonStringEnumConverter`) and are stored as strings: never
+  reorder or rename them (`Archery.Client/Models/ArcheryModels.cs`).
+- Expected domain failures return `400 {"errors":[...]}` via `Result<T>`; `Result<T>.NotFound` gives 404.
+  Nothing returns 409.
 
 ## .NET 11 RC workarounds (remove on .NET 11 GA / next Aspire)
 

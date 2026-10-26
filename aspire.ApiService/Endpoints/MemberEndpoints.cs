@@ -1,6 +1,7 @@
-using aspire.ApiService.Models;
-using aspire.ApiService.Services;
+using aspire.ApiService.Contracts;
 using aspire.ApiService.Infrastructure;
+using aspire.ApiService.Services;
+using Wire = Archery.Client;
 
 namespace aspire.ApiService.Endpoints;
 
@@ -21,46 +22,25 @@ public static class MemberEndpoints
     }
 
     static async Task<IResult> GetAll(IMemberService svc, CancellationToken ct)
-        => Results.Ok(await svc.GetAllAsync(ct));
+        => Results.Ok((await svc.GetAllAsync(ct)).Select(m => m.ToContract()));
 
     static async Task<IResult> Export(string format, IMemberService svc, CancellationToken ct)
     {
-        var exportFormat = string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase)
-            ? ExportFormat.Xlsx
-            : ExportFormat.Csv;
-
-        var file = await svc.ExportAsync(exportFormat, ct);
+        var file = await svc.ExportAsync(ExportFormats.Parse(format), ct);
         return Results.File(file.Content, file.ContentType, file.FileName);
     }
 
     static async Task<IResult> GetById(Guid id, IMemberService svc, CancellationToken ct)
-        => await svc.GetByIdAsync(id, ct) is { } m ? Results.Ok(m) : Results.NotFound();
+        => EndpointResults.OkOrNotFound((await svc.GetByIdAsync(id, ct))?.ToContract());
 
-    static async Task<IResult> Create(Member member, IMemberService svc, CancellationToken ct)
-    {
-        var result = await svc.CreateAsync(member, ct);
-        if (result.IsSuccess)
-        {
-            var created = result.Value!;
-            return Results.Created($"/members/{created.Id}", created);
-        }
+    static async Task<IResult> Create(Wire.Member member, IMemberService svc, CancellationToken ct)
+        => (await svc.CreateAsync(member.ToEntity(), ct))
+            .ToHttpResult(created => Results.Created($"/members/{created.Id}", created.ToContract()));
 
-        return Results.BadRequest(new { errors = result.Errors });
-    }
-
-    static async Task<IResult> Update(Guid id, Member input, IMemberService svc, CancellationToken ct)
-    {
-        var result = await svc.UpdateAsync(id, input, ct);
-        if (result.IsSuccess)
-        {
-            return Results.Ok(result.Value!);
-        }
-
-        return result.Errors.Contains("Member not found.")
-            ? Results.NotFound()
-            : Results.BadRequest(new { errors = result.Errors });
-    }
+    static async Task<IResult> Update(Guid id, Wire.Member input, IMemberService svc, CancellationToken ct)
+        => (await svc.UpdateAsync(id, input.ToEntity(), ct))
+            .ToHttpResult(updated => Results.Ok(updated.ToContract()));
 
     static async Task<IResult> Delete(Guid id, IMemberService svc, CancellationToken ct)
-        => await svc.DeleteAsync(id, ct) ? Results.NoContent() : Results.NotFound();
+        => EndpointResults.NoContentOrNotFound(await svc.DeleteAsync(id, ct));
 }

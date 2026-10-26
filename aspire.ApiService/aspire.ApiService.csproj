@@ -6,7 +6,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <Import Project="..\WireEnums.props" />
+
   <ItemGroup>
+    <ProjectReference Include="..\Archery.Client\Archery.Client.csproj" />
     <ProjectReference Include="..\aspire.ServiceDefaults\aspire.ServiceDefaults.csproj" />
   </ItemGroup>
 

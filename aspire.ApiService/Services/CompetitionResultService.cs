@@ -57,7 +57,7 @@ public class CompetitionResultService(ArcheryDbContext db) : ICompetitionResultS
             return Result<CompetitionResult>.Failure(InvalidParticipantSelectionError);
 
         var result = await db.CompetitionResults.FindAsync([id], ct);
-        if (result is null) return Result<CompetitionResult>.Failure(NotFoundError);
+        if (result is null) return Result<CompetitionResult>.NotFound(NotFoundError);
         result.BowClass                = input.BowClass;
         result.AgeClass                = input.AgeClass;
         result.Gender                  = input.Gender;

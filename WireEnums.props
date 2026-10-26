@@ -1,0 +1,12 @@
+<Project>
+  <!-- The wire contract in Archery.Client owns the enums. Projects that also see the API's
+       entities (whose class names clash with the wire types) import this to use the enums
+       unqualified, so there is still exactly one declaration of each. -->
+  <ItemGroup>
+    <Using Include="Archery.Client.BowClass" Alias="BowClass" />
+    <Using Include="Archery.Client.AgeClass" Alias="AgeClass" />
+    <Using Include="Archery.Client.Gender" Alias="Gender" />
+    <Using Include="Archery.Client.FeeStatus" Alias="FeeStatus" />
+    <Using Include="Archery.Client.CompetitionType" Alias="CompetitionType" />
+  </ItemGroup>
+</Project>
