@@ -5,6 +5,9 @@
 
 # dotenv files
 .env
+# Per-environment files written by `aspire publish` / `aspire deploy` hold real secrets.
+.env.*
+!.env.*.example
 
 # User-specific files
 *.rsuser
