@@ -1,6 +1,6 @@
 services:
   production-dashboard:
-    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:13.5"
+    image: "mcr.microsoft.com/dotnet/nightly/aspire-dashboard:13.6"
     ports:
       - "18888"
     expose:
@@ -71,6 +71,26 @@ services:
         condition: "service_started"
     networks:
       - "aspire"
+  migrations:
+    image: "${MIGRATIONS_IMAGE}"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ConnectionStrings__db: "Host=postgres;Port=5432;Username=postgres;Password=${POSTGRES_PASSWORD};Database=db"
+      DB_HOST: "postgres"
+      DB_PORT: "5432"
+      DB_USERNAME: "postgres"
+      DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      DB_URI: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/db"
+      DB_JDBCCONNECTIONSTRING: "jdbc:postgresql://postgres:5432/db"
+      DB_DATABASENAME: "db"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://production-dashboard:18889"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+      OTEL_SERVICE_NAME: "migrations"
+    depends_on:
+      postgres:
+        condition: "service_started"
+    networks:
+      - "aspire"
   apiservice:
     image: "${APISERVICE_IMAGE}"
     environment:
@@ -90,11 +110,11 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://production-dashboard:18889"
       OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
       OTEL_SERVICE_NAME: "apiservice"
-    expose:
+    ports:
       - "${APISERVICE_PORT}"
     depends_on:
-      postgres:
-        condition: "service_started"
+      migrations:
+        condition: "service_completed_successfully"
       keycloak:
         condition: "service_started"
     networks:

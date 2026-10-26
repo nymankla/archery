@@ -50,13 +50,19 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithEnvironment("KC_METRICS_ENABLED", "true");
 }
 
+// Applies the EF Core migrations and exits. The API waits for it to complete successfully, so
+// the schema is current before any API instance starts and replicas never race to migrate.
+var migrations = builder.AddProject<Projects.aspire_MigrationService>("migrations")
+    .WithReference(db)
+    .WaitFor(db);
+
 // The Android client cannot use Aspire service discovery, so unlike the Blazor frontend it
 // needs the API published on a real address it can reach from the emulator (10.0.2.2).
 var apiService = builder.AddProject<Projects.aspire_ApiService>("apiservice")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
     .WithReference(db)
-    .WaitFor(db)
+    .WaitForCompletion(migrations)
     .WithReference(keycloak)
     .WaitFor(keycloak);
 

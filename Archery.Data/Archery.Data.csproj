@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- EF Core entities, ArcheryDbContext and its migrations. Shared by the API, which queries it,
+       and aspire.MigrationService, which applies the migrations before the API starts. -->
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <Import Project="..\WireEnums.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Archery.Client\Archery.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Aspire 13.6 targets EF Core 10; pin the provider to the EF Core 11 line until Aspire catches up.
+         Projects referencing this one get the 11 provider transitively. -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

@@ -1,6 +1,6 @@
-using aspire.ApiService.Data;
+using Archery.Data;
 using aspire.ApiService.Infrastructure;
-using aspire.ApiService.Models;
+using Archery.Data.Models;
 using aspire.ApiService.Services;
 using System.Text;
 using Microsoft.AspNetCore.Http;

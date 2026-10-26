@@ -1,13 +1,10 @@
 # aspire.ApiService
 
-- `Models/`: EF entities (`Member`, `MembershipFee`, `Competition`, `CompetitionResult`,
-  `CompetitionParticipant`, `ExternalParticipant`, training). Enums come from `Archery.Client`.
+- Entities, `ArcheryDbContext` and migrations live in `Archery.Data` (see its CLAUDE.md). The API never
+  migrates; the `migrations` resource does, and the API starts only after it completed.
 - Endpoints **never bind or return entities** (over-posting: EF inserts any posted navigation graph).
   Bind `Archery.Client` types and map with `Contracts/ContractMapping.cs` (`ToEntity` copies scalars only).
   A new entity field needs adding there too.
-- `Data/ArcheryDbContext.cs`: fluent config, unique indexes, check constraints (a result/participant is
-  *either* a member *or* an external participant).
-- Schema changes: `dotnet ef migrations add <Name> --project aspire.ApiService`; applied on startup.
 - `Endpoints/`: grouped minimal APIs, all `RequireAuthorization()`, registered via `Map*Endpoints()`. Keep
   them thin; logic goes in `Services/` (scoped, behind `I*Service` interfaces, returning `Result<T>`).
   Turn outcomes into statuses only through `EndpointResults` (`ToHttpResult`, `OkOrNotFound`, ...).

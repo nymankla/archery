@@ -1,5 +1,5 @@
 using aspire.ApiService.Infrastructure;
-using aspire.ApiService.Models;
+using Archery.Data.Models;
 
 namespace aspire.ApiService.Services;
 
