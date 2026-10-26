@@ -43,6 +43,9 @@ builder.Services.AddOptions<AuthSessionOptions>()
 
 builder.AddServiceDefaults();
 builder.AddRedisOutputCache("cache");
+// Aspire 13.6 registers only the Redis store; the ASP.NET Core 11 middleware also needs the
+// policy services that AddOutputCache provides. All registrations are TryAdd, so this is safe to keep.
+builder.Services.AddOutputCache();
 
 builder.Services.AddLocalization();
 builder.Services.AddMemoryCache();

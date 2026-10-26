@@ -22,7 +22,7 @@
                     Message="{Binding ErrorMessage}"
                     RetryCommand="{Binding LoadCommand}" />
 
-                <VerticalStackLayout Spacing="10" IsVisible="{Binding HasMember}" BindingContext="{Binding Member}" x:DataType="client:Member">
+                <VerticalStackLayout Spacing="10" IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:MemberDetailViewModel}}, Path=HasMember}" BindingContext="{Binding Member}" x:DataType="client:Member">
 
                     <Label Text="{Binding FullName}" FontSize="24" FontAttributes="Bold" />
 
