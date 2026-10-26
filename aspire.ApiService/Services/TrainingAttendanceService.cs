@@ -7,7 +7,9 @@ namespace aspire.ApiService.Services;
 
 public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanceService
 {
-    const string DuplicateAttendanceError = "One or more selected participants are already registered for this training session.";
+    // Raised when another request saved the same date at the same time (the unique index on
+    // TrainingSession.Date or on an attendance row fired). Reloading shows the winning save.
+    const string ConcurrentSaveError = "Attendance for this date was changed by someone else. Reload and try again.";
 
 
     public async Task<IReadOnlyList<DateOnly>> GetTrainingDatesAsync(CancellationToken ct = default)
@@ -50,6 +52,7 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
         CancellationToken ct = default)
     {
         var session = await db.TrainingSessions
+            .Include(s => s.Attendances)
             .FirstOrDefaultAsync(s => s.Date == date, ct);
 
         if (session is null)
@@ -57,49 +60,41 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
             session = new TrainingSession
             {
                 Id = Guid.NewGuid(),
-                Date = date,
-                Notes = request.Notes
+                Date = date
             };
             db.TrainingSessions.Add(session);
         }
-        else
+
+        session.Notes = request.Notes;
+
+        // Apply the difference rather than delete-all-then-insert, so the whole save is one
+        // SaveChanges (atomic) and an attendee who stays never has their row deleted and re-added.
+        var memberIds = request.MemberIds.ToHashSet();
+        var externalIds = request.ExternalParticipantIds.ToHashSet();
+
+        foreach (var attendance in session.Attendances.ToList())
         {
-            session.Notes = request.Notes;
+            var stays = attendance.MemberId is { } memberId
+                ? memberIds.Remove(memberId)
+                : externalIds.Remove(attendance.ExternalParticipantId!.Value);
 
-            var existingAttendances = await db.TrainingAttendances
-                .Where(a => a.TrainingSessionId == session.Id)
-                .ToListAsync(ct);
-
-            if (existingAttendances.Count > 0)
-            {
-                db.TrainingAttendances.RemoveRange(existingAttendances);
-                await db.SaveChangesAsync(ct);
-            }
+            if (!stays)
+                db.TrainingAttendances.Remove(attendance);
         }
 
-        var newAttendances = new List<TrainingAttendance>();
-
-        foreach (var memberId in request.MemberIds.Distinct())
+        // Whatever is left in the two sets was not there before.
+        db.TrainingAttendances.AddRange(memberIds.Select(id => new TrainingAttendance
         {
-            newAttendances.Add(new TrainingAttendance
-            {
-                Id = Guid.NewGuid(),
-                TrainingSessionId = session.Id,
-                MemberId = memberId
-            });
-        }
-
-        foreach (var extId in request.ExternalParticipantIds.Distinct())
+            Id = Guid.NewGuid(),
+            TrainingSessionId = session.Id,
+            MemberId = id
+        }));
+        db.TrainingAttendances.AddRange(externalIds.Select(id => new TrainingAttendance
         {
-            newAttendances.Add(new TrainingAttendance
-            {
-                Id = Guid.NewGuid(),
-                TrainingSessionId = session.Id,
-                ExternalParticipantId = extId
-            });
-        }
-
-        db.TrainingAttendances.AddRange(newAttendances);
+            Id = Guid.NewGuid(),
+            TrainingSessionId = session.Id,
+            ExternalParticipantId = id
+        }));
 
         try
         {
@@ -107,7 +102,7 @@ public class TrainingAttendanceService(ArcheryDbContext db) : ITrainingAttendanc
         }
         catch (DbUpdateException ex) when (ex.IsUniqueConstraintViolation())
         {
-            return Result<TrainingSessionDetail>.Failure(DuplicateAttendanceError);
+            return Result<TrainingSessionDetail>.Failure(ConcurrentSaveError);
         }
 
         var detail = await GetByDateAsync(date, ct)

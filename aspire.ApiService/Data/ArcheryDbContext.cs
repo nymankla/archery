@@ -141,7 +141,8 @@ public class ArcheryDbContext(DbContextOptions<ArcheryDbContext> options) : DbCo
         {
             e.HasKey(s => s.Id);
             e.Property(s => s.Notes).HasMaxLength(1000);
-            e.HasIndex(s => s.Date);
+            // One session per day: attendance is saved by date and looked up by date.
+            e.HasIndex(s => s.Date).IsUnique();
         });
 
         modelBuilder.Entity<TrainingAttendance>(e =>
