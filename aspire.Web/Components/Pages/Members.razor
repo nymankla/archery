@@ -301,7 +301,7 @@ else
     }
 
     void Delete(Member m) =>
-        confirm.Show($"Delete member {m.FullName}?", async () =>
+        confirm.Show($"Delete member {m.FullName}? Their fees, competition results and training attendance are deleted too.", async () =>
         {
             pageError = await Api.DeleteMemberAsync(m.Id).TryAsync();
             await Reload();
