@@ -2,11 +2,6 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Enable Docker 
  builder.AddDockerComposeEnvironment("production");
  
-var cache = builder.AddRedis("cache")
-    .WithDataVolume("redisdata")
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WithContainerName("archery-redis");
-
 var postgres = builder.AddPostgres("postgres")
     .WithDataVolume("dbdata-pg18")
     .WithLifetime(ContainerLifetime.Persistent)
@@ -68,8 +63,6 @@ var apiService = builder.AddProject<Projects.aspire_ApiService>("apiservice")
 builder.AddProject<Projects.aspire_Web>("webfrontend")
     .WithExternalHttpEndpoints()
     .WithHttpHealthCheck("/health")
-    .WithReference(cache)
-    .WaitFor(cache)
     .WithReference(apiService)
     .WaitFor(apiService)
     .WithReference(keycloak)

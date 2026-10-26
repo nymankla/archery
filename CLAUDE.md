@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Archery club management (members, fees, competitions, results, guests). .NET 11 Aspire app: minimal-API
-backend, Blazor Server frontend, Redis/PostgreSQL/Keycloak, plus a MAUI Android client. Project-specific
+backend, Blazor Server frontend, PostgreSQL/Keycloak, plus a MAUI Android client. Project-specific
 notes live in each project's own CLAUDE.md.
 
 ## Commands
@@ -20,10 +20,10 @@ aspire publish | aspire deploy
 
 ## Projects
 
-- **aspire.AppHost**: resource graph only. Redis `cache`, Postgres `postgres`→`db`, Keycloak `keycloak`
+- **aspire.AppHost**: resource graph only. Postgres `postgres`→`db`, Keycloak `keycloak`
   (persistent volumes) → `apiservice` → `webfrontend`.
 - **aspire.ApiService**: minimal API, EF Core/Npgsql, Keycloak JWT bearer.
-- **aspire.Web**: Blazor interactive server, Keycloak OIDC, Redis output cache.
+- **aspire.Web**: Blazor interactive server, Keycloak OIDC.
 - **aspire.ServiceDefaults**: OTel, service discovery, HTTP resilience, `/health` + `/alive`.
 - **Archery.Client** (`net11.0`): wire models + typed `ArcheryApiClient`, shared by Web and Mobile.
 - **Archery.Mobile.Core** (`net11.0`): mobile ViewModels + platform abstractions; no MAUI reference.
@@ -56,5 +56,3 @@ Targets .NET 11 RC2 (SDK pinned in `global.json`); Aspire 13.6 is built against 
 
 - `aspire.ApiService` references `Npgsql.EntityFrameworkCore.PostgreSQL` directly, or Aspire resolves the
   EF Core 10 provider. Keep it on the EF Core line. GA swap: edit the RC2 group in `Directory.Packages.props`.
-- `aspire.Web` calls `builder.Services.AddOutputCache()` after `AddRedisOutputCache`; without it the
-  middleware can't resolve `IOutputCachePolicyProvider` and the frontend crashes on startup.
