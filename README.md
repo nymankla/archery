@@ -1,6 +1,6 @@
 # Archery Club Management
 
-A .NET 10 [Aspire](https://learn.microsoft.com/dotnet/aspire/) distributed application for managing an archery club — members, membership fees, competitions, results, training attendance, and external (guest) participants. It exposes a secured minimal-API backend and an interactive Blazor Server frontend, orchestrated together with Redis, PostgreSQL, and Keycloak.
+A .NET 11 [Aspire](https://learn.microsoft.com/dotnet/aspire/) distributed application for managing an archery club — members, membership fees, competitions, results, training attendance, and external (guest) participants. It exposes a secured minimal-API backend and an interactive Blazor Server frontend, orchestrated together with Redis, PostgreSQL, and Keycloak.
 
 A **.NET MAUI Android app** covers the work done at the range — adding members, recording
 training attendance, registering competitors and entering scores — against the same API. Desk
@@ -17,9 +17,9 @@ mobile head and its shared client alongside:
 | **aspire.ApiService** | ASP.NET Core Web API | Domain logic, EF Core persistence, minimal-API endpoints, spreadsheet import. Secured with Keycloak JWT bearer. |
 | **aspire.Web** | Blazor interactive server | UI for the club. Authenticates users via Keycloak OIDC, calls the API with a bearer token, caches output in Redis. |
 | **aspire.ServiceDefaults** | Shared library | Cross-cutting wiring applied in every service: OpenTelemetry (OTLP), service discovery, HTTP resilience, `/health` + `/alive` endpoints. |
-| **Archery.Client** | Shared library (`net10.0`) | Wire models, the typed `ArcheryApiClient`, error normalisation, source-generated JSON. Used by both the web frontend and the Android app; no ASP.NET dependency. |
-| **Archery.Mobile.Core** | Shared library (`net10.0`) | All mobile ViewModels and platform abstractions. No MAUI reference, so they are testable on a build agent. |
-| **Archery.Mobile** | .NET MAUI (`net10.0-android`) | Android app: XAML views, Shell navigation, Keycloak OIDC, Android platform code. |
+| **Archery.Client** | Shared library (`net11.0`) | Wire models, the typed `ArcheryApiClient`, error normalisation, source-generated JSON. Used by both the web frontend and the Android app; no ASP.NET dependency. |
+| **Archery.Mobile.Core** | Shared library (`net11.0`) | All mobile ViewModels and platform abstractions. No MAUI reference, so they are testable on a build agent. |
+| **Archery.Mobile** | .NET MAUI (`net11.0-android`) | Android app: XAML views, Shell navigation, Keycloak OIDC, Android platform code. |
 | **Tests** | xUnit | Integration tests spinning up the full AppHost in-process (`Aspire.Hosting.Testing`), including Postgres persistence checks. |
 | **UnitTests** | xUnit | Fast unit tests for services (dashboard stats, membership fee logic). |
 | **Archery.Client.Tests** | xUnit | Contract tests for the shared client against a stubbed handler — URLs, date formats, error envelopes, exact wire JSON. |
@@ -146,7 +146,7 @@ kept in Keystore-backed `SecureStorage` and refreshed ahead of expiry. The app i
 dotnet workload install maui-android     # and a JAVA_HOME pointing at JDK 21
 
 # With the AppHost running and an emulator started
-dotnet build Archery.Mobile -f net10.0-android -t:Run
+dotnet build Archery.Mobile -f net11.0-android -t:Run
 ```
 
 `Archery.Mobile` is **excluded from the solution build configurations**, so
@@ -166,7 +166,7 @@ Debug-only manifest overlay adds it, and the resource is dropped from every othe
 
 ### Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [.NET 11 SDK](https://dotnet.microsoft.com/download)
 - A container runtime (Docker Desktop or Podman) — required for the Redis, PostgreSQL, and Keycloak containers.
 - The [Aspire CLI / workload](https://learn.microsoft.com/dotnet/aspire/fundamentals/setup-tooling) (optional but convenient).
 - For the Android app only: the `maui-android` workload, a JDK 21 on `JAVA_HOME`, and an
@@ -217,7 +217,7 @@ dotnet test UnitTests
 dotnet test Tests --filter "FullyQualifiedName~WebTests"
 
 # Build and deploy the Android app to a running emulator or device
-dotnet build Archery.Mobile -f net10.0-android -t:Run
+dotnet build Archery.Mobile -f net11.0-android -t:Run
 ```
 
 > The integration tests in `Tests` start the full AppHost in-process and therefore require a running container runtime. They also write fixed-identity rows into the persistent `db` database and do not clean up, so they only pass against a fresh volume.
@@ -233,4 +233,4 @@ Key settings (via `appsettings*.json`, user secrets, or environment variables):
 
 ## Tech stack
 
-.NET 10 · Aspire 13.6 · ASP.NET Core Minimal APIs · Blazor (interactive server) · .NET MAUI (Android) · CommunityToolkit.Mvvm · Duende.IdentityModel.OidcClient · Entity Framework Core + Npgsql (PostgreSQL) · Redis output caching · Keycloak (OIDC / JWT) · OpenTelemetry · Scalar/OpenAPI · CsvHelper + ClosedXML · xUnit.
+.NET 11 · Aspire 13.6 · ASP.NET Core Minimal APIs · Blazor (interactive server) · .NET MAUI (Android) · CommunityToolkit.Mvvm · Duende.IdentityModel.OidcClient · Entity Framework Core + Npgsql (PostgreSQL) · Redis output caching · Keycloak (OIDC / JWT) · OpenTelemetry · Scalar/OpenAPI · CsvHelper + ClosedXML · xUnit.

@@ -33,7 +33,8 @@ public class PostgresPersistenceTests
         await app.StartAsync(ct).WaitAsync(DefaultTimeout, ct);
         await app.ResourceNotifications.WaitForResourceHealthyAsync("db", ct).WaitAsync(DefaultTimeout, ct);
 
-        var connectionString = await app.GetConnectionStringAsync("db", ct);
+        var connectionString = await app.GetConnectionStringAsync("db", ct)
+            ?? throw new InvalidOperationException("Connection string for 'db' was not resolved.");
         var memberId = Guid.NewGuid();
         var year = DateTime.Today.Year;
 
@@ -99,7 +100,8 @@ public class PostgresPersistenceTests
         await app.StartAsync(ct).WaitAsync(DefaultTimeout, ct);
         await app.ResourceNotifications.WaitForResourceHealthyAsync("db", ct).WaitAsync(DefaultTimeout, ct);
 
-        var connectionString = await app.GetConnectionStringAsync("db", ct);
+        var connectionString = await app.GetConnectionStringAsync("db", ct)
+            ?? throw new InvalidOperationException("Connection string for 'db' was not resolved.");
         var competitionId = Guid.NewGuid();
         var memberId = Guid.NewGuid();
 
@@ -174,7 +176,8 @@ public class PostgresPersistenceTests
         await app.StartAsync(ct).WaitAsync(DefaultTimeout, ct);
         await app.ResourceNotifications.WaitForResourceHealthyAsync("db", ct).WaitAsync(DefaultTimeout, ct);
 
-        var connectionString = await app.GetConnectionStringAsync("db", ct);
+        var connectionString = await app.GetConnectionStringAsync("db", ct)
+            ?? throw new InvalidOperationException("Connection string for 'db' was not resolved.");
 
         // The postgres volume is persistent, so remove any member left behind by an earlier run.
         const string personnummer = "199001010017";
