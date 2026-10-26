@@ -10,22 +10,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Archery.Client\Archery.Client.csproj" />
+    <ProjectReference Include="..\Archery.Data\Archery.Data.csproj" />
     <ProjectReference Include="..\aspire.ServiceDefaults\aspire.ServiceDefaults.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Aspire.Keycloak.Authentication" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
-    <!-- Aspire 13.6 targets EF Core 10; pin the provider to the EF Core 11 line until Aspire catches up. -->
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="ClosedXML" />
     <PackageReference Include="CsvHelper" />
     <PackageReference Include="System.IO.Packaging" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="Scalar.AspNetCore" />
   </ItemGroup>
 

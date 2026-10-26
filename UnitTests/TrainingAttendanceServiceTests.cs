@@ -1,5 +1,5 @@
-using aspire.ApiService.Data;
-using aspire.ApiService.Models;
+using Archery.Data;
+using Archery.Data.Models;
 using aspire.ApiService.Services;
 using Microsoft.EntityFrameworkCore;
 

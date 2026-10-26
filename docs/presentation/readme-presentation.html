@@ -431,7 +431,7 @@
     <div class="slide-inner">
       <p class="eyebrow reveal">02 — Domain model</p>
       <h2 class="display reveal">Eight entities,<br>five enums</h2>
-      <p class="lede-body reveal">Persisted with EF Core through <code>ArcheryDbContext</code>; migrations apply automatically at API startup.</p>
+      <p class="lede-body reveal">Persisted with EF Core through <code>ArcheryDbContext</code>; a migration worker applies the migrations before the API starts.</p>
       <div class="card-grid reveal" style="margin-top: 1.1rem;">
         <div class="card"><h3>Member</h3><p>Contact details, personnummer (unique), date of birth, join date, active flag, preferred bow class.</p></div>
         <div class="card"><h3>MembershipFee</h3><p>A member's fee for a year — amount, due date, status. Unique per member + year.</p></div>

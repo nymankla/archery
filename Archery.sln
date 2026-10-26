@@ -25,6 +25,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archery.Mobile", "Archery.M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archery.Mobile.Core.Tests", "Archery.Mobile.Core.Tests\Archery.Mobile.Core.Tests.csproj", "{CF532B15-224E-4B32-8782-6CEF7604DFC5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Archery.Data", "Archery.Data\Archery.Data.csproj", "{D3CF5767-0816-48CA-B327-EB76C59E8ED0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aspire.MigrationService", "aspire.MigrationService\aspire.MigrationService.csproj", "{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +165,30 @@ Global
 		{CF532B15-224E-4B32-8782-6CEF7604DFC5}.Release|x64.Build.0 = Release|Any CPU
 		{CF532B15-224E-4B32-8782-6CEF7604DFC5}.Release|x86.ActiveCfg = Release|Any CPU
 		{CF532B15-224E-4B32-8782-6CEF7604DFC5}.Release|x86.Build.0 = Release|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Debug|x64.Build.0 = Debug|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Debug|x86.Build.0 = Debug|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Release|x64.ActiveCfg = Release|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Release|x64.Build.0 = Release|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Release|x86.ActiveCfg = Release|Any CPU
+		{D3CF5767-0816-48CA-B327-EB76C59E8ED0}.Release|x86.Build.0 = Release|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Debug|x64.Build.0 = Debug|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Debug|x86.Build.0 = Debug|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Release|x64.ActiveCfg = Release|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Release|x64.Build.0 = Release|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Release|x86.ActiveCfg = Release|Any CPU
+		{F6BB1BE7-A904-4985-BB4D-2A2574A3A60A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

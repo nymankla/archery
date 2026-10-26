@@ -8,13 +8,15 @@ work (spreadsheet import/export, the year-wide fee matrix and bulk fee runs) sta
 
 ## Architecture
 
-The solution is an Aspire app model that wires four runtime pieces plus shared defaults, with a
+The solution is an Aspire app model that wires five runtime pieces plus shared defaults, with a
 mobile head and its shared client alongside:
 
 | Project | Type | Responsibility |
 | --- | --- | --- |
 | **aspire.AppHost** | Aspire orchestrator | Defines the resource graph (PostgreSQL, Keycloak, API, Web). No business logic. |
-| **aspire.ApiService** | ASP.NET Core Web API | Domain logic, EF Core persistence, minimal-API endpoints, spreadsheet import. Secured with Keycloak JWT bearer. |
+| **aspire.ApiService** | ASP.NET Core Web API | Domain logic, minimal-API endpoints, spreadsheet import. Secured with Keycloak JWT bearer. |
+| **aspire.MigrationService** | Worker | Applies the EF Core migrations, then exits. The API starts only after it completed successfully. |
+| **Archery.Data** | Shared library (`net11.0`) | EF Core entities, `ArcheryDbContext` and migrations, shared by the API and the migration worker. |
 | **aspire.Web** | Blazor interactive server | UI for the club. Authenticates users via Keycloak OIDC, calls the API with a bearer token. |
 | **aspire.ServiceDefaults** | Shared library | Cross-cutting wiring applied in every service: OpenTelemetry (OTLP), service discovery, HTTP resilience, `/health` + `/alive` endpoints. |
 | **Archery.Client** | Shared library (`net11.0`) | Wire models, the typed `ArcheryApiClient`, error normalisation, source-generated JSON. Used by both the web frontend and the Android app; no ASP.NET dependency. |
@@ -38,12 +40,12 @@ The AppHost ([AppHost.cs](aspire.AppHost/AppHost.cs)) provisions:
 Dependency flow:
 
 ```
-PostgreSQL ──► ApiService ──► Web (external HTTP)
-                   ▲              │
-Keycloak ──────────┴──────────────┘
+PostgreSQL ──► migrations ──(completes)──► ApiService ──► Web (external HTTP)
+                                              ▲              │
+Keycloak ─────────────────────────────────────┴──────────────┘
 ```
 
-`WithReference(...)` + `WaitFor(...)` ensure each service starts only once its dependencies are healthy. Inter-service calls use Aspire service discovery (e.g. the Web client targets `https://apiservice`, Keycloak is resolved by service name) — no hardcoded URLs.
+`WithReference(...)` + `WaitFor(...)` ensure each service starts only once its dependencies are healthy; the API uses `WaitForCompletion(migrations)`, so it starts only after the schema is current. Inter-service calls use Aspire service discovery (e.g. the Web client targets `https://apiservice`, Keycloak is resolved by service name) — no hardcoded URLs.
 
 Service discovery does not reach off the host, so the mobile app uses real URLs: the API is
 published with `WithExternalHttpEndpoints()`, and Keycloak additionally exposes its plain-HTTP
@@ -52,7 +54,7 @@ whose self-signed certificate an emulator will not accept).
 
 ## Domain model
 
-Persisted with EF Core (Npgsql) via `ArcheryDbContext` ([ArcheryDbContext.cs](aspire.ApiService/Data/ArcheryDbContext.cs)); schema is created/updated by migrations applied automatically at API startup.
+Persisted with EF Core (Npgsql) via `ArcheryDbContext` ([ArcheryDbContext.cs](Archery.Data/ArcheryDbContext.cs)); the schema is created/updated by the `migrations` worker, which runs to completion before the API starts.
 
 - **Member** — club member: contact details, personnummer (unique), date of birth, join date, active flag, preferred bow class.
 - **MembershipFee** — a member's fee for a given year, with amount, due date, and status (`Unpaid` / `Paid` / `Partial`). Unique per member + year.

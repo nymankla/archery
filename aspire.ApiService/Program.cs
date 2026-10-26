@@ -1,7 +1,6 @@
-using aspire.ApiService.Data;
+using Archery.Data;
 using aspire.ApiService.Endpoints;
 using aspire.ApiService.Services;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,12 +55,6 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ITrainingAttendanceService, TrainingAttendanceService>();
 
 var app = builder.Build();
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ArcheryDbContext>();
-    await db.Database.MigrateAsync();
-}
 
 app.UseExceptionHandler();
 // Not in development: the Android emulator reaches the API over plain HTTP, because it does

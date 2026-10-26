@@ -21,10 +21,12 @@ aspire publish | aspire deploy
 ## Projects
 
 - **aspire.AppHost**: resource graph only. Postgres `postgres`→`db`, Keycloak `keycloak`
-  (persistent volumes) → `apiservice` → `webfrontend`.
+  (persistent volumes) → `migrations` (runs to completion) → `apiservice` → `webfrontend`.
 - **aspire.ApiService**: minimal API, EF Core/Npgsql, Keycloak JWT bearer.
 - **aspire.Web**: Blazor interactive server, Keycloak OIDC.
+- **aspire.MigrationService**: worker that applies the EF Core migrations, then exits.
 - **aspire.ServiceDefaults**: OTel, service discovery, HTTP resilience, `/health` + `/alive`.
+- **Archery.Data** (`net11.0`): EF entities, `ArcheryDbContext`, migrations.
 - **Archery.Client** (`net11.0`): wire models + typed `ArcheryApiClient`, shared by Web and Mobile.
 - **Archery.Mobile.Core** (`net11.0`): mobile ViewModels + platform abstractions; no MAUI reference.
 - **Archery.Mobile** (`net11.0-android`): MAUI head.

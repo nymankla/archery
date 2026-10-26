@@ -1,4 +1,4 @@
-using aspire.ApiService.Models;
+using Archery.Data.Models;
 using Wire = Archery.Client;
 
 namespace aspire.ApiService.Contracts;

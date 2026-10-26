@@ -1,4 +1,4 @@
-using aspire.ApiService.Models;
+using Archery.Data.Models;
 using aspire.ApiService.Infrastructure;
 
 namespace aspire.ApiService.Services;

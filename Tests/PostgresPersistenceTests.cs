@@ -1,6 +1,6 @@
-using aspire.ApiService.Data;
+using Archery.Data;
 using aspire.ApiService.Infrastructure;
-using aspire.ApiService.Models;
+using Archery.Data.Models;
 using aspire.ApiService.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,28 +10,13 @@ namespace Tests;
 
 public class PostgresPersistenceTests
 {
-    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
-
     [Fact]
     public async Task MembershipFeeService_CreateAsync_ReturnsValidationError_ForDuplicateMemberYear()
     {
         var ct = TestContext.Current.CancellationToken;
 
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.aspire_AppHost>(ct);
-        appHost.Services.AddLogging(logging =>
-        {
-            logging.SetMinimumLevel(LogLevel.Warning);
-            logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Warning);
-            logging.AddFilter("Aspire.", LogLevel.Warning);
-        });
-        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
-        {
-            clientBuilder.AddStandardResilienceHandler();
-        });
-
-        await using var app = await appHost.BuildAsync(ct).WaitAsync(DefaultTimeout, ct);
-        await app.StartAsync(ct).WaitAsync(DefaultTimeout, ct);
-        await app.ResourceNotifications.WaitForResourceHealthyAsync("db", ct).WaitAsync(DefaultTimeout, ct);
+        await using var app = await TestAppHost.StartAsync(LogLevel.Warning, ct);
+        await app.WaitForMigrationsAsync(ct);
 
         var connectionString = await app.GetConnectionStringAsync("db", ct)
             ?? throw new InvalidOperationException("Connection string for 'db' was not resolved.");
@@ -84,21 +69,8 @@ public class PostgresPersistenceTests
     {
         var ct = TestContext.Current.CancellationToken;
 
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.aspire_AppHost>(ct);
-        appHost.Services.AddLogging(logging =>
-        {
-            logging.SetMinimumLevel(LogLevel.Warning);
-            logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Warning);
-            logging.AddFilter("Aspire.", LogLevel.Warning);
-        });
-        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
-        {
-            clientBuilder.AddStandardResilienceHandler();
-        });
-
-        await using var app = await appHost.BuildAsync(ct).WaitAsync(DefaultTimeout, ct);
-        await app.StartAsync(ct).WaitAsync(DefaultTimeout, ct);
-        await app.ResourceNotifications.WaitForResourceHealthyAsync("db", ct).WaitAsync(DefaultTimeout, ct);
+        await using var app = await TestAppHost.StartAsync(LogLevel.Warning, ct);
+        await app.WaitForMigrationsAsync(ct);
 
         var connectionString = await app.GetConnectionStringAsync("db", ct)
             ?? throw new InvalidOperationException("Connection string for 'db' was not resolved.");
@@ -160,21 +132,8 @@ public class PostgresPersistenceTests
     {
         var ct = TestContext.Current.CancellationToken;
 
-        var appHost = await DistributedApplicationTestingBuilder.CreateAsync<Projects.aspire_AppHost>(ct);
-        appHost.Services.AddLogging(logging =>
-        {
-            logging.SetMinimumLevel(LogLevel.Warning);
-            logging.AddFilter(appHost.Environment.ApplicationName, LogLevel.Warning);
-            logging.AddFilter("Aspire.", LogLevel.Warning);
-        });
-        appHost.Services.ConfigureHttpClientDefaults(clientBuilder =>
-        {
-            clientBuilder.AddStandardResilienceHandler();
-        });
-
-        await using var app = await appHost.BuildAsync(ct).WaitAsync(DefaultTimeout, ct);
-        await app.StartAsync(ct).WaitAsync(DefaultTimeout, ct);
-        await app.ResourceNotifications.WaitForResourceHealthyAsync("db", ct).WaitAsync(DefaultTimeout, ct);
+        await using var app = await TestAppHost.StartAsync(LogLevel.Warning, ct);
+        await app.WaitForMigrationsAsync(ct);
 
         var connectionString = await app.GetConnectionStringAsync("db", ct)
             ?? throw new InvalidOperationException("Connection string for 'db' was not resolved.");
