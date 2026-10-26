@@ -150,8 +150,9 @@ public sealed partial class ResultEditViewModel(
         if (!CanSave || Selected is null)
             return;
 
-        TryParseInt(TotalScore, out var score);
-        TryParseInt(XCount, out var xCount);
+        // CanSave already required both to parse (ScoreError is null).
+        _ = TryParseInt(TotalScore, out var score);
+        _ = TryParseInt(XCount, out var xCount);
         int? placement = TryParseInt(Placement, out var parsedPlacement) ? parsedPlacement : null;
 
         var result = new CompetitionResult

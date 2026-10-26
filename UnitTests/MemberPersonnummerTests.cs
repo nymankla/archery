@@ -109,7 +109,7 @@ public class MemberPersonnummerTests
         Assert.Equal("123", updated.Value.Phone);
     }
 
-    static IFormFile Csv(string content)
+    static FormFile Csv(string content)
     {
         var bytes = Encoding.UTF8.GetBytes(content);
         return new FormFile(new MemoryStream(bytes), 0, bytes.Length, "file", "members.csv");

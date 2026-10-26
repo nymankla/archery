@@ -1,3 +1,4 @@
+using System.Globalization;
 using aspire.ApiService.Data;
 using aspire.ApiService.Infrastructure;
 using aspire.ApiService.Models;
@@ -189,11 +190,11 @@ public class MemberService(ArcheryDbContext db) : IMemberService
             m.FirstName,
             m.LastName,
             m.Personnummer,
-            m.DateOfBirth.ToString("yyyy-MM-dd"),
+            m.DateOfBirth.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             m.Address,
             m.Phone,
             m.Email,
-            m.JoinDate.ToString("yyyy-MM-dd"),
+            m.JoinDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             m.PreferredBowClass.ToString(),
             m.IsActive ? "Active" : "Inactive"
         ]);

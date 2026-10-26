@@ -130,7 +130,7 @@ public class ExternalParticipantsViewModelTests
         await vm.DeleteCommand.ExecuteAsync(vm.Participants[0]);
 
         Assert.Single(dialogs.Confirmations);
-        Assert.Contains(api.Calls, c => c.StartsWith("DeleteExternalParticipant"));
+        Assert.Contains(api.Calls, c => c.StartsWith("DeleteExternalParticipant", StringComparison.Ordinal));
         Assert.Empty(vm.Participants);
     }
 

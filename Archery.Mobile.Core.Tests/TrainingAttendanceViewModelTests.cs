@@ -90,7 +90,7 @@ public class TrainingAttendanceViewModelTests
         var (vm, _, _) = Build([M("Alex", "Anderson"), M("Bo", "Berg")]);
         await vm.OnAppearingAsync();
 
-        var alex = vm.MemberRows.First(r => r.Name.StartsWith("Alex"));
+        var alex = vm.MemberRows.First(r => r.Name.StartsWith("Alex", StringComparison.Ordinal));
         vm.ToggleCommand.Execute(alex);
         Assert.Equal(1, vm.SelectedCount);
 

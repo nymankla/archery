@@ -13,7 +13,7 @@ namespace Archery.Mobile.Auth;
 /// launch. The manifest sets android:allowBackup="false" to prevent that, but a failure here is
 /// still treated as "not signed in" rather than being allowed to crash the app.
 /// </remarks>
-public sealed class SecureStorageTokenStore(ILogger<SecureStorageTokenStore> logger) : ISecureTokenStore
+public sealed partial class SecureStorageTokenStore(ILogger<SecureStorageTokenStore> logger) : ISecureTokenStore
 {
     const string AccessKey = "archery.access_token";
     const string RefreshKey = "archery.refresh_token";
@@ -43,7 +43,7 @@ public sealed class SecureStorageTokenStore(ILogger<SecureStorageTokenStore> log
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Could not read the secure token store; treating as signed out");
+            LogReadFailed(logger, ex);
             await ClearAsync(ct);
             return null;
         }
@@ -66,7 +66,7 @@ public sealed class SecureStorageTokenStore(ILogger<SecureStorageTokenStore> log
         catch (Exception ex)
         {
             // Not fatal: the session still works until the app is closed.
-            logger.LogWarning(ex, "Could not persist tokens; the session will not survive a restart");
+            LogWriteFailed(logger, ex);
         }
     }
 
@@ -80,10 +80,19 @@ public sealed class SecureStorageTokenStore(ILogger<SecureStorageTokenStore> log
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Could not remove {Key} from secure storage", key);
+                LogRemoveFailed(logger, ex, key);
             }
         }
 
         return Task.CompletedTask;
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not read the secure token store; treating as signed out")]
+    static partial void LogReadFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not persist tokens; the session will not survive a restart")]
+    static partial void LogWriteFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not remove {Key} from secure storage")]
+    static partial void LogRemoveFailed(ILogger logger, Exception exception, string key);
 }

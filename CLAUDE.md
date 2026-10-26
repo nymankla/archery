@@ -34,6 +34,13 @@ aspire publish | aspire deploy
 Services find each other via Aspire service discovery (`https://apiservice`, `keycloak`), never hardcoded
 URLs. Culture defaults to `sv-SE` (`Locale` config key).
 
+## Build configuration
+
+- Package versions live only in `Directory.Packages.props` (central package management); csprojs list
+  names. MAUI is the exception (`VersionOverride="$(MauiVersion)"`).
+- `Directory.Build.props` turns on `AnalysisLevel=latest-recommended` + `EnforceCodeStyleInBuild`;
+  rule tuning is in `.editorconfig`. Keep new code warning-free; log via `[LoggerMessage]` (CA1848).
+
 ## Cross-cutting rules
 
 - `Archery.Client` is the wire contract: the API binds and returns its types (mapped in
@@ -48,6 +55,6 @@ URLs. Culture defaults to `sv-SE` (`Locale` config key).
 Targets .NET 11 RC2 (SDK pinned in `global.json`); Aspire 13.6 is built against .NET 10.
 
 - `aspire.ApiService` references `Npgsql.EntityFrameworkCore.PostgreSQL` directly, or Aspire resolves the
-  EF Core 10 provider. Keep it on the EF Core line.
+  EF Core 10 provider. Keep it on the EF Core line. GA swap: edit the RC2 group in `Directory.Packages.props`.
 - `aspire.Web` calls `builder.Services.AddOutputCache()` after `AddRedisOutputCache`; without it the
   middleware can't resolve `IOutputCachePolicyProvider` and the frontend crashes on startup.

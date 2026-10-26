@@ -3,7 +3,7 @@ using aspire.ApiService.Services;
 
 namespace aspire.ApiService.Endpoints;
 
-public static class ImportEndpoints
+public static partial class ImportEndpoints
 {
     public static IEndpointRouteBuilder MapImportEndpoints(this IEndpointRouteBuilder app)
     {
@@ -31,8 +31,11 @@ public static class ImportEndpoints
         catch (SpreadsheetFormatException ex)
         {
             // The parser's message describes library internals; log it, tell the user what to fix.
-            logger.LogInformation(ex, "Rejected unreadable import file {FileName}", file.FileName);
+            LogUnreadableFile(logger, ex, file.FileName);
             return EndpointResults.Errors(["The file could not be read. Upload a CSV or .xlsx file with a header row."]);
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Rejected unreadable import file {FileName}")]
+    static partial void LogUnreadableFile(ILogger logger, Exception exception, string fileName);
 }

@@ -29,7 +29,7 @@ public sealed partial class LoginViewModel(
         catch (Exception ex)
         {
             // A broken store must never block the sign-in button; the user can just sign in again.
-            Logger.LogWarning(ex, "Could not restore the stored session");
+            LogRestoreFailed(Logger, ex);
         }
         finally
         {
@@ -51,7 +51,7 @@ public sealed partial class LoginViewModel(
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Sign-in failed");
+            LogSignInFailed(Logger, ex);
 #if DEBUG
             // Diagnosing an OIDC failure from a generic message means guessing; on a device the
             // logger output is not readily visible either. Debug builds show the real reason.
@@ -65,4 +65,10 @@ public sealed partial class LoginViewModel(
             IsBusy = false;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Could not restore the stored session")]
+    static partial void LogRestoreFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Sign-in failed")]
+    static partial void LogSignInFailed(ILogger logger, Exception exception);
 }

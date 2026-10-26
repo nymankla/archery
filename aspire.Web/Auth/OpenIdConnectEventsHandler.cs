@@ -6,7 +6,7 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace aspire.Web.Auth;
 
-public class OpenIdConnectEventsHandler : OpenIdConnectEvents
+public partial class OpenIdConnectEventsHandler : OpenIdConnectEvents
 {
     private readonly ILogger<OpenIdConnectEventsHandler> _logger;
 
@@ -18,8 +18,7 @@ public class OpenIdConnectEventsHandler : OpenIdConnectEvents
     public override Task TokenValidated(TokenValidatedContext context)
     {
         context.Properties?.UpdateTokenValue("last_activity_utc", DateTimeOffset.UtcNow.ToString("O"));
-        _logger.LogDebug("Token validated for {Subject}",
-            context.Principal?.FindFirst("sub")?.Value ?? "unknown");
+        LogTokenValidated(_logger, context.Principal?.FindFirst("sub")?.Value ?? "unknown");
         return Task.CompletedTask;
     }
 
@@ -41,7 +40,7 @@ public class OpenIdConnectEventsHandler : OpenIdConnectEvents
         }
         else
         {
-            _logger.LogWarning("OIDC sign-out is missing an id_token for id_token_hint.");
+            LogSignOutWithoutIdToken(_logger);
         }
 
         await base.RedirectToIdentityProviderForSignOut(context);
@@ -52,7 +51,7 @@ public class OpenIdConnectEventsHandler : OpenIdConnectEvents
         context.HandleResponse();
 
         var message = context.Failure?.Message ?? "unknown";
-        _logger.LogWarning("OIDC remote failure: {Message}", message);
+        LogRemoteFailure(_logger, message);
 
         // "Correlation failed" fires when:
         //  - The app restarted and lost its data-protection keys (correlation cookie unreadable)
@@ -62,4 +61,13 @@ public class OpenIdConnectEventsHandler : OpenIdConnectEvents
         context.Response.Redirect("/login");
         return Task.CompletedTask;
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Token validated for {Subject}")]
+    static partial void LogTokenValidated(ILogger logger, string subject);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "OIDC sign-out is missing an id_token for id_token_hint.")]
+    static partial void LogSignOutWithoutIdToken(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "OIDC remote failure: {Message}")]
+    static partial void LogRemoteFailure(ILogger logger, string message);
 }
