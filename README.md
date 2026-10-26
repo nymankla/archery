@@ -200,6 +200,8 @@ aspire deploy
 
 The generated artifacts are written under `aspire-output/docker` (including Docker Compose files and environment templates).
 
+The generated `.env.<Environment>` files hold real passwords and are git-ignored; only `aspire.AppHost/aspire-output/.env.Production.example` (secrets blanked) is committed. Copy it to `.env.Production` and fill it in, or let `aspire deploy` write it.
+
 ### Build & test
 
 ```bash
